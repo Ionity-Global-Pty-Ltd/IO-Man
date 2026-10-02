@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 =====================================================================================
- IONITY IO-MAN - GET OVER IT DOOR  |  Document ID: GME-2026-10-007  |  Version: 4.3.0
+ IONITY IO-MAN - GET OVER IT DOOR  |  Document ID: GME-2026-10-008  |  Version: 4.4.0
  ASCII / ANSI side-scrolling beat-em-up - single-file HTML5 canvas build - INTERNAL USE
 -------------------------------------------------------------------------------------
  Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI (Antwerp Ecosystems Designs Ionity)
@@ -35,7 +35,7 @@
 <meta name="theme-color" content="#0d1b2a">
 <meta name="generator" content="AEDI GME pipeline (Claude Cowork)">
 <meta name="copyright" content="© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd. All rights reserved.">
-<meta name="dc.identifier" content="GME-2026-10-007">
+<meta name="dc.identifier" content="GME-2026-10-008">
 <meta name="dc.creator" content="Johan Wilhelm van Antwerp">
 <meta name="dc.publisher" content="Ionity (Pty) Ltd">
 <meta name="dc.rights" content="Policy 986 AED | AED 900">
@@ -88,14 +88,15 @@
   #hint kbd{color:var(--cyan);border:1px solid var(--dim);border-radius:3px;padding:0 4px;font-family:var(--mono)}
 
   /* ---------- touch deck (terminal-styled, overlays the canvas edges) ---------- */
-  #touch{display:none;position:fixed;inset:0;z-index:20;pointer-events:none;font-family:var(--mono)}
-  #stick{position:absolute;left:max(10px,env(safe-area-inset-left));bottom:max(10px,env(safe-area-inset-bottom));width:132px;height:132px;
+  #touch{display:none;position:fixed;inset:0;z-index:20;pointer-events:none;font-family:var(--mono);--lift:38px}  /* v4.4: lifted clear of the browser / OS bottom-edge popup */
+  @media (max-height:380px){#touch{--lift:26px}}
+  #stick{position:absolute;left:max(10px,env(safe-area-inset-left));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--lift));width:132px;height:132px;
          border:1px dashed rgba(0,198,255,.45);border-radius:50%;pointer-events:auto;touch-action:none;background:rgba(13,27,42,.28)}
   #stick::before{content:"W";position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(0,198,255,.5)}
   #stick::after{content:"S";position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:11px;color:rgba(0,198,255,.5)}
   #knob{position:absolute;left:50%;top:50%;width:58px;height:58px;margin:-29px 0 0 -29px;border-radius:50%;
         border:1px solid var(--cyan);background:rgba(0,198,255,.16);color:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:13px}
-  #deck{position:absolute;right:max(10px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));
+  #deck{position:absolute;right:max(10px,env(safe-area-inset-right));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--lift));
         display:grid;grid-template-columns:repeat(3,54px);grid-auto-rows:42px;gap:6px;pointer-events:auto}
   #deck button{font-family:var(--mono);border-radius:6px;border:1px solid rgba(0,198,255,.7);background:rgba(13,27,42,.30);color:var(--cyan);
       font-size:10px;letter-spacing:.03em;user-select:none;-webkit-user-select:none;touch-action:none;padding:0;line-height:1.1}
@@ -107,7 +108,7 @@
   #deck .slow{border-color:#7fb3ff;color:#7fb3ff}
   #deck .menu{display:none}
   body:not(.playing) #deck .menu{display:block}
-  #topdeck{position:absolute;top:22%;right:max(6px,env(safe-area-inset-right));display:flex;flex-direction:column;gap:6px;pointer-events:auto}
+  #topdeck{position:absolute;top:16%;right:max(6px,env(safe-area-inset-right));display:flex;flex-direction:column;gap:6px;pointer-events:auto}
   #topdeck button{font-family:var(--mono);font-size:11px;width:34px;height:28px;padding:0;border:1px solid var(--dim);background:rgba(13,27,42,.45);color:var(--cyan);border-radius:4px}
   /* ---------- rotate overlay ---------- */
   #rotate{display:none;position:fixed;inset:0;z-index:40;background:var(--bg);color:var(--cyan);align-items:center;justify-content:center;
@@ -178,6 +179,19 @@
   .sh-links a.brand{border-color:#1658A4;color:#7fb3ff}
   .sh-foot{display:block;margin-top:12px;font-size:9px;color:var(--dim);letter-spacing:.06em}
   .sh-ok{color:var(--green)!important;border-color:var(--green)!important}
+  /* ---------- v4.4 name entry ---------- */
+  #namebox{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;pointer-events:none}
+  #namebox[hidden]{display:none}
+  #namebox form{pointer-events:auto;background:rgba(8,18,32,.96);border:1px solid var(--yellow);border-radius:6px;padding:14px 18px;text-align:center;
+     box-shadow:0 0 30px rgba(255,224,102,.25);display:flex;flex-direction:column;gap:8px;min-width:min(340px,86vw)}
+  #namebox label{font-size:11px;letter-spacing:.35em;color:var(--yellow)}
+  #nb-in{font-family:var(--mono);font-size:26px;letter-spacing:.32em;text-transform:uppercase;text-align:center;background:#050c15;color:var(--cyan);
+     border:1px solid var(--cyan);border-radius:4px;padding:8px 6px;width:100%;outline:none}
+  #nb-in:focus{box-shadow:0 0 0 2px rgba(0,198,255,.35)}
+  .nb-row{display:flex;gap:8px;justify-content:center}
+  .nb-row button{font-family:var(--mono);font-size:13px;letter-spacing:.08em;padding:8px 16px;border-radius:4px;cursor:pointer;background:transparent;color:var(--cyan);border:1px solid var(--cyan)}
+  .nb-row .nb-ok{background:var(--cyan);color:var(--bg);font-weight:700}
+  #nb-msg{font-size:10px;color:var(--dim);letter-spacing:.06em} #nb-msg.bad{color:var(--red)}
   @media (max-height:480px){.sh-card{padding:10px 12px 8px}.sh-banner svg{width:min(230px,48%)}.sh-sub{margin-top:4px}.sh-msg{margin:4px auto 8px}
     .sh-grid{gap:4px}.sh-grid a,.sh-grid button{padding:6px 4px}.sh-card h4{margin:8px 0 4px}.sh-foot{margin-top:6px}}
 </style>
@@ -185,7 +199,7 @@
 <body>
 <div class="bar" id="bar-top">
   <span><b>AEDI</b> · IONITY GLOBAL · <b>IO-MAN</b> · GET OVER IT DOOR</span>
-  <span>DOC <b>GME-2026-10-007</b> · V<b>4.3.0</b> · <b>INTERNAL</b></span>
+  <span>DOC <b>GME-2026-10-008</b> · V<b>4.4.0</b> · <b>INTERNAL</b></span>
 </div>
 <div id="wrap">
   <canvas id="cv" width="1075" height="552" aria-label="IONITY IO-MAN game canvas"></canvas>
@@ -258,7 +272,7 @@
    IONITY IO-MAN - engine core
    Terminal-grid renderer + depth-lane (semi-3D) arena. Everything is a glyph.
    ===================================================================================== */
-const BUILD = { id: 'GME-2026-10-007', version: '4.3.0', title: 'IONITY IO-MAN - GET OVER IT DOOR', classification: 'INTERNAL',
+const BUILD = { id: 'GME-2026-10-008', version: '4.4.0', title: 'IONITY IO-MAN - GET OVER IT DOOR', classification: 'INTERNAL',
                 org: 'Ionity (Pty) Ltd | AEDI', author: 'Johan Wilhelm van Antwerp', governance: 'Policy 986 AED' };
 
 const COLS = 112, ROWS = 30;
@@ -476,6 +490,10 @@ const SFX = {
   fuse: () => beep(1800, 0.05, 'square', 0.03),
   grow: () => beep(200 + Math.random() * 600, 0.08, 'sine', 0.03, 300),
   spread: () => beep(700, 0.05, 'square', 0.035, 500),
+  bit: () => beep(1700 + Math.random() * 500, 0.04, 'square', 0.025, 300),
+  byte: () => { [880, 1175, 1568].forEach((f, i) => setTimeout(() => beep(f, 0.07, 'square', 0.04), i * 45)); },
+  jump2: () => { beep(480, 0.08, 'square', 0.035, 520); setTimeout(() => beep(720, 0.06, 'triangle', 0.03, 400), 40); },
+  stomp: () => { beep(150, 0.08, 'square', 0.06, 300); beep(600, 0.06, 'triangle', 0.04, 500); },
 };
 
 /* Original chiptune loops. 16th-note grids, MIDI note numbers, 0 = rest.
@@ -634,6 +652,14 @@ const LOOT = {
   coin:   { ch: '$', color: C.YELLOW, name: '+50' },
   star:   { ch: '*', color: C.CYAN,   name: '+75' },
   ultra:  { ch: 'U', color: C.PINK,   name: 'ULTRA CHARGE -60s' },
+  bit:     { ch: '1', color: C.GREEN,  name: '+1 BIT' },
+  bitpack: { ch: '%', color: C.GREEN,  name: '+8 BITS' },
+  magnet:  { ch: 'M', color: C.RED,    name: 'BIT MAGNET 12s' },
+  coffee:  { ch: 'c', color: C.ORANGE, name: 'JAVA · SPEED 8s' },
+  duck:    { ch: 'd', color: C.YELLOW, name: 'RUBBER DUCK · 5 CRITS' },
+  bubble:  { ch: 'o', color: C.CYAN,   name: 'BUBBLE SHIELD' },
+  floppy:  { ch: 'f', color: C.BLUE,   name: 'SAVE STATE · 1 REVIVE' },
+  frag:    { ch: '?', color: C.PINK,   name: 'SOURCE FRAGMENT' },
 };
 const DROPS = { // chance, table
   normal:   { p: 0.08, t: { hp: 2, coin: 3 } },
@@ -647,8 +673,8 @@ const DROPS = { // chance, table
   mini:     { p: 0.03, t: { coin: 1 } },
   sprout:   { p: 0.00, t: { coin: 1 } },
   rider:    { p: 0.30, t: { hp: 1, armor: 1 } },
-  thief:    { p: 1.00, t: { ultra: 1, armor: 2, hp: 2, gem: 2 } },
-  crate:    { p: 1.00, t: { hp: 3, armor: 2, spread: 2, gem: 2, boots: 1, axe: 1 } },
+  thief:    { p: 1.00, t: { ultra: 1, armor: 2, hp: 2, gem: 2, magnet: 1, coffee: 1 } },
+  crate:    { p: 1.00, t: { hp: 3, armor: 2, spread: 2, gem: 2, boots: 1, axe: 1, coffee: 1, duck: 1, bubble: 1, magnet: 1 } },
 };
 
 /* ---------- stage table ----------
@@ -656,16 +682,18 @@ const DROPS = { // chance, table
    zones   : number of lock-and-fight waves along the level (the last one sits in front of the door)
    wave    : spores per wave                                     theme : parallax backdrop key       */
 const STAGES = [
-  { id: 1, name: 'INIT',        sub: 'System boot. The spores wake up in the city.',            screens: 2, zones: 2, wave: 5,  interval: 1.8, speed: 5.0, types: { normal: 1 },                                              sources: ['L', 'R'],           track: 'runngun', theme: 'city' },
-  { id: 2, name: 'HANDSHAKE',   sub: 'Server row. SHA-256 says no. Fast ones now.',             screens: 3, zones: 3, wave: 5,  interval: 1.6, speed: 6.0, types: { normal: 3, fast: 1 },                                     sources: ['L', 'R', 'T'],      track: 'runngun', theme: 'servers' },
-  { bonus: 'COINS',  name: 'SPORE COIN RAIN', sub: 'Catch $ and @ for 20 seconds. Nothing bites.', time: 20, track: 'theme', theme: 'city' },
-  { id: 3, name: 'FIREWALL',    sub: 'It burns. Tanks take 3 chops, spitters keep their range.', screens: 3, zones: 3, wave: 6,  interval: 1.5, speed: 6.5, types: { normal: 3, fast: 2, tank: 1, spitter: 1 },                sources: ['L', 'R', 'T', 'G'], track: 'edge',    theme: 'flames' },
-  { id: 4, name: 'GOVERNANCE',  sub: 'The courthouse. Shields, flyers... THE AUDITOR signs off.', screens: 3, zones: 3, wave: 6,  interval: 1.5, speed: 7.0, types: { normal: 3, fast: 2, tank: 1, flyer: 2, shield: 2 },       sources: ['L', 'R', 'T', 'G'], track: 'axe',     theme: 'pillars', midboss: true },
-  { id: 5, name: 'DATA FOREST', sub: 'Old growth. Splitters in the undergrowth, flyers above.',  screens: 4, zones: 4, wave: 6,  interval: 1.4, speed: 7.0, types: { normal: 2, fast: 2, flyer: 3, splitter: 3, spitter: 1 },   sources: ['L', 'R', 'T', 'G'], track: 'axe',     theme: 'forest' },
+  { id: 1, name: 'INIT',        sub: 'System boot. The spores wake up in the city. Mind the spikes.', screens: 3, zones: 3, wave: 5,  interval: 1.8, speed: 5.0, types: { normal: 1 },                                              sources: ['L', 'R'],           track: 'runngun', theme: 'city', mini: true },
+  { id: 2, name: 'HANDSHAKE',   sub: 'Server row. SHA-256 says no. Fast ones and mines now.',      screens: 4, zones: 4, wave: 5,  interval: 1.6, speed: 6.0, types: { normal: 3, fast: 1 },                                     sources: ['L', 'R', 'T'],      track: 'runngun', theme: 'servers', mini: true },
+  { bonus: 'COINS',  name: 'SPORE COIN RAIN', sub: 'Catch $, @ and BITS for 20 seconds. Nothing bites.', time: 20, track: 'theme', theme: 'city' },
+  { id: 3, name: 'FIREWALL',    sub: 'It burns. Laser gates pulse. Tanks take 3 chops.',            screens: 4, zones: 4, wave: 6,  interval: 1.5, speed: 6.5, types: { normal: 3, fast: 2, tank: 1, spitter: 1 },                sources: ['L', 'R', 'T', 'G'], track: 'edge',    theme: 'flames', mini: true },
+  { bonus: 'DODGE',  name: 'FIREWALL RUN',    sub: 'No axe needed. Dodge barrels, lasers and 404 blocks. Grab the bits.', time: 22, track: 'edge', theme: 'flames' },
+  { id: 4, name: 'GOVERNANCE',  sub: 'The courthouse. Shields, flyers... THE AUDITOR signs off.', screens: 4, zones: 4, wave: 6,  interval: 1.5, speed: 7.0, types: { normal: 3, fast: 2, tank: 1, flyer: 2, shield: 2 },       sources: ['L', 'R', 'T', 'G'], track: 'axe',     theme: 'pillars', midboss: true },
+  { id: 5, name: 'DATA FOREST', sub: 'Old growth. Rolling logs, splitters below, flyers above.',   screens: 5, zones: 5, wave: 6,  interval: 1.4, speed: 7.0, types: { normal: 2, fast: 2, flyer: 3, splitter: 3, spitter: 1 },   sources: ['L', 'R', 'T', 'G'], track: 'axe',     theme: 'forest', mini: true },
   { bonus: 'FRENZY', name: 'CHOP FRENZY',     sub: 'Sprouts everywhere. Harmless. Combo points, 15 seconds.', time: 15, track: 'runngun', theme: 'forest' },
-  { id: 6, name: 'ENCRYPTION',  sub: 'Cipher ruins. Bombers rush and blow. Splitters split.',    screens: 4, zones: 4, wave: 6,  interval: 1.35, speed: 7.5, types: { normal: 2, fast: 2, tank: 2, spitter: 1, bomber: 2, splitter: 2 }, sources: ['L', 'R', 'T', 'G'], track: 'edge', theme: 'glyphs' },
-  { id: 7, name: 'EDGE NODE',   sub: 'Antenna field. Low power, high pressure.',                 screens: 4, zones: 4, wave: 7,  interval: 1.2, speed: 8.0, types: { normal: 2, fast: 3, tank: 3, flyer: 2, spitter: 2, shield: 2, bomber: 2, splitter: 2 }, sources: ['L', 'R', 'T', 'G'], track: 'edge', theme: 'antennas' },
-  { id: 8, name: 'UPLINK',      sub: 'The bridge over the data sea. Bombers love a bridge.',     screens: 4, zones: 4, wave: 7,  interval: 1.15, speed: 8.5, types: { fast: 3, tank: 2, flyer: 3, shield: 2, bomber: 4, spitter: 2 }, sources: ['L', 'R', 'T'], track: 'runngun', theme: 'bridge' },
+  { id: 6, name: 'ENCRYPTION',  sub: 'Cipher ruins. Mines, lasers, bombers. Splitters split.',      screens: 5, zones: 5, wave: 6,  interval: 1.35, speed: 7.5, types: { normal: 2, fast: 2, tank: 2, spitter: 1, bomber: 2, splitter: 2 }, sources: ['L', 'R', 'T', 'G'], track: 'edge', theme: 'glyphs', mini: true },
+  { id: 7, name: 'EDGE NODE',   sub: 'Antenna field. Lasers AND barrels. Low power, high pressure.', screens: 5, zones: 5, wave: 7,  interval: 1.2, speed: 8.0, types: { normal: 2, fast: 3, tank: 3, flyer: 2, spitter: 2, shield: 2, bomber: 2, splitter: 2 }, sources: ['L', 'R', 'T', 'G'], track: 'edge', theme: 'antennas', mini: true },
+  { bonus: 'DODGE',  name: 'PACKET STORM',    sub: 'Faster. Meaner. More 404s. Survive 22 seconds, keep the bits.', time: 22, track: 'runngun', theme: 'antennas' },
+  { id: 8, name: 'UPLINK',      sub: 'The bridge over the data sea. Bombers love a bridge.',       screens: 5, zones: 5, wave: 7,  interval: 1.15, speed: 8.5, types: { fast: 3, tank: 2, flyer: 3, shield: 2, bomber: 4, spitter: 2 }, sources: ['L', 'R', 'T'], track: 'runngun', theme: 'bridge', mini: true },
   { bonus: 'SHRINE', name: 'HP SHRINE',       sub: 'Catch + to heal, A for armor, * for score. 15 seconds.', time: 15, track: 'theme', theme: 'pillars' },
   { id: 9, name: 'ROOT',        sub: 'Down into the roots. At the bottom: THE GREAT FUNGUS.',    screens: 3, zones: 3, wave: 6,  interval: 3.6, speed: 7.0, types: { normal: 2, fast: 2, spitter: 1, tank: 1 },                 sources: ['L', 'R', 'T'],      track: 'root',    theme: 'roots', boss: true },
 ];
@@ -756,7 +784,7 @@ const LOAD_STEPS = ['INIT AEDI KERNEL', 'MOUNTING POLICY 986 AED', 'GROWING ECOS
 /* =====================================================================================
    game state
    ===================================================================================== */
-const JUMP = 14, GRAV = 40;
+const JUMP = 17, GRAV = 40;   // v4.4: higher jump (+ air jumps, stomp, mega slam)
 let state = 'boot';                   // boot | intro | title | card | play | pause | over | win
 let introT = 0, titleT = 0, bootT = 0;
 /* scrolling waves */
@@ -776,6 +804,11 @@ let progress = { maxIdx: 0 };
 
 try { best = JSON.parse(localStorage.getItem('ioman_best') || 'null'); } catch (e) { best = null; }
 try { progress = JSON.parse(localStorage.getItem('ioman_progress') || '{"maxIdx":0}'); } catch (e) { progress = { maxIdx: 0 }; }
+if (!progress.v) {   // v4.4 inserted two DODGE stages: map an old checkpoint index onto the new table by name
+  const OLD = ['INIT', 'HANDSHAKE', 'SPORE COIN RAIN', 'FIREWALL', 'GOVERNANCE', 'DATA FOREST', 'CHOP FRENZY', 'ENCRYPTION', 'EDGE NODE', 'UPLINK', 'HP SHRINE', 'ROOT'];
+  progress.maxIdx = Math.max(0, STAGES.findIndex(s => s.name === OLD[progress.maxIdx | 0])); progress.v = 44;
+  try { localStorage.setItem('ioman_progress', JSON.stringify(progress)); } catch (e) { }
+}
 function saveBest() {
   try {
     const cur = { score, stage: stage && stage.id ? stage.id : (stageIdx + 1), date: new Date().toISOString().slice(0, 10) };
@@ -813,11 +846,14 @@ function dtaLines() {
 function mkPlayer() {
   return { x: 54, z: 3, h: 0, vh: 0, w: 3, hgt: 3, facing: 1, onGround: true, hp: 100, armor: 0, inv: 0, atk: 0, atkCd: 0, atkHits: new Set(),
            knock: 0, anim: 0, slamming: false, gear: { boots: 0, axe: 0 }, spreadT: 0, slowT: 0, slowCd: 0, cleaveCd: 0, ultraCd: 0, cleaveAnim: 0, moving: false,
-           chain: 0, chainT: 0, finisher: false, dashT: 0, dashCd: 0, dashStrike: false, tapDir: 0, tapT: -9, mount: null };
+           chain: 0, chainT: 0, finisher: false, dashT: 0, dashCd: 0, dashStrike: false, tapDir: 0, tapT: -9, mount: null,
+           maxhp: 100, bits: 0, bytes: 0, airJumps: 1, airLeft: 1, peakH: 0, src: [false, false, false, false, false, false],
+           up: {}, items: { magnet: 0, coffee: 0, duck: 0, bubble: false, floppy: false } };
 }
 function newGamePlus() {
   loop++; const keep = player; dta = Object.assign(newDTA(), { ngPlus: loop }); runT = 0; combo = 0; ultra = null; coachMsg = null;
-  player = mkPlayer(); player.gear = keep.gear; player.armor = keep.armor; player.hp = 100;
+  player = mkPlayer(); player.gear = keep.gear; player.armor = keep.armor; player.up = keep.up; player.maxhp = keep.maxhp; player.hp = keep.maxhp;
+  player.airJumps = keep.airJumps; player.bytes = keep.bytes; player.bits = keep.bits;
   document.getElementById('dta').classList.remove('show'); toast(`NEW GAME+  ·  LOOP ${loop + 1}  ·  spores hit ${Math.round(dmgMult() * 100)}%  ·  gear kept`);
   loadStage(0);
 }
@@ -843,10 +879,13 @@ function loadStage(i) {
   stars = []; for (let s = 0; s < 46; s++) stars.push({ x: rndi(1, COLS - 2), y: rndi(3, WALL - 5), seed: Math.random() });
   // data crates along the route (props: never block a wave, always drop loot)
   if (stage.id) { const nc = 1 + Math.min(3, stage.screens - 1); for (let k = 0; k < nc; k++) { const c = spawnEnemy('crate', 'L', { x: 40 + k * (stage.worldW - 60) / nc + rnd(0, 20), z: rnd(1, ZMAX - 1) }); spawned--; } }
+  placeObstacles(); dlgQ.length = 0; dlg = null; bonusNoHit = true;
+  if (stage.id && STAGE_TALK[stage.id] && !loop) STAGE_TALK[stage.id].forEach(([w, t]) => say(w, t));
+  if (stage.bonus === 'DODGE') say('AEDI', 'No enemies. Just physics and poor decisions. Move and JUMP.');
   if (stage.id) { dta.stagesReached = stage.id; if (i > progress.maxIdx) { progress.maxIdx = i; saveProgress(); } }
   const head = stage.bonus ? `BONUS STAGE  ·  ${stage.name}` : `STAGE ${stage.id} / ${MAIN_STAGE_COUNT}  ·  ${stage.name}`;
-  const foot = stage.bonus ? `TIMER ${stage.time}s` : `${stage.screens} SCREENS  ·  ${stage.zones} ${stage.boss ? 'ZONES  +  THE GREAT FUNGUS' : 'WAVES'}${stage.midboss ? '  +  THE AUDITOR' : ''}  ·  ${TRACKS[stage.track].name}`;
-  showCard([head, '', stage.sub, '', foot, '', stage.bonus ? 'GRAB EVERYTHING.' : stage.boss ? '>> PUSH TO THE BOTTOM. ULTRA [U] HALVES THE BOSS. <<' : 'CLEAR THE WAVE  >>  GO >>>  >>  DOOR AT THE END  >>  WALK TO THE BACK WALL'], 2.6, 'play', stage.boss ? C.RED : C.CYAN);
+  const foot = stage.bonus ? `TIMER ${stage.time}s` : `${stage.screens} SCREENS  ·  ${stage.zones} ${stage.boss ? 'ZONES  +  THE GREAT FUNGUS' : 'WAVES'}${stage.midboss ? '  +  THE AUDITOR' : ''}${stage.mini && MINIS[stage.id] ? '  +  MINI-BOSS ' + MINIS[stage.id].name : ''}  ·  ${TRACKS[stage.track].name}`;
+  showCard([head, '', stage.sub, '', foot, '', stage.bonus === 'DODGE' ? 'DODGE EVERYTHING. JUMP BARRELS. WATCH THE !___! MARKS.' : stage.bonus ? 'GRAB EVERYTHING.' : stage.boss ? '>> PUSH TO THE BOTTOM. ULTRA [U] HALVES THE BOSS. <<' : 'CLEAR THE WAVE  >>  GO >>>  >>  DOOR AT THE END  >>  WALK TO THE BACK WALL'], 2.6, 'play', stage.boss ? C.RED : C.CYAN);
   noiseT = 0.35; if (stage.boss) SFX.boss(); else SFX.stage();
   musicSet(stage.track); resetWeather();
 }
@@ -863,8 +902,9 @@ function stageClear() {
   SFX.stage();
 }
 function bonusClear() {
+  if (stage.bonus === 'DODGE') { rolls = []; blocks = []; obst = []; if (bonusNoHit) { bonusScore += 2000; score += 2000; banner('FLAWLESS  ·  +2000', C.GREEN); } }
   dta.stages.push({ id: null, type: 'BONUS', name: stage.name, timeSec: stage.time, kills: stageKills, dmgTaken: 0, score: bonusScore, timeBonus: 0 });
-  showCard([`BONUS COMPLETE  ·  ${stage.name}`, '', `BONUS SCORE +${bonusScore}`, '', 'BACK TO WORK.'], 2.0, 'next', C.YELLOW);
+  showCard([`BONUS COMPLETE  ·  ${stage.name}`, '', `BONUS SCORE +${bonusScore}${stage.bonus === 'DODGE' ? (bonusNoHit ? '  ·  FLAWLESS +2000' : '  ·  got hit (no flawless)') : ''}`, '', `BYTES ${player.bytes}  ·  BITS ${player.bits}/8`, '', 'BACK TO WORK.'], 2.0, 'next', C.YELLOW);
   SFX.stage();
 }
 function gameOver() { state = 'over'; finalizeDTA('HALTED_HP0'); SFX.over(); buzz([80, 60, 160]); if (qualifies(score)) enterInitials('over'); else showDTA(); }
@@ -891,6 +931,7 @@ function coach(key, msg) { if (coached.has(key)) return; coached.add(key); coach
 /* ---------- player ---------- */
 function hurt(dmg, srcX) {
   if (player.inv > 0 || player.hp <= 0 || player.dashT > 0) return;
+  if (player.items.bubble) { player.items.bubble = false; player.inv = 1; SFX.armor(); burst(player.x + 1, player.z, 2, C.CYAN, 14, ['o', 'O', '.']); floatText(player.x, player.z, 4, 'POP! BUBBLE', C.CYAN); return; }
   let d = Math.round(dmg * dmgMult());
   if (player.mount) { const b = player.mount; b.hp--; d = Math.round(d * 0.3); floatText(b.x + 2, b.z, 4, 'BEAST HIT', C.ORANGE); if (b.hp <= 0) dismount(true); }
   buzz(50);
@@ -900,12 +941,13 @@ function hurt(dmg, srcX) {
   dta.dmgTaken += d; stageDmg += d; director.recentDmg += d; combo = 0; SFX.hurt();
   floatText(player.x, player.z, 3, `-${d}`, C.RED);
   if (player.hp < 30) coach('lowhp', 'HP low. SLOW time [K], hunt + drops, keep a lane between you and the pack.');
+  if (player.hp <= 0 && player.items.floppy) { player.items.floppy = false; player.hp = Math.round(player.maxhp / 2); player.inv = 2.5; SFX.heal(); noiseT = 0.5; banner('SAVE STATE LOADED  ·  1.44 MB OF HOPE', C.BLUE); say('IO', pick(['Did I just... respawn? Nobody saw that.', 'Loading saved game... ah, much better.'])); dta.revives = (dta.revives || 0) + 1; return; }
   if (player.hp <= 0) { burst(player.x + 1, player.z, 1, C.RED, 30); gameOver(); }
 }
 function chopBox() {
   const p = player; return p.facing > 0 ? { x: p.x + 3, w: 4, z: p.z, h: p.h } : { x: p.x - 4, w: 4, z: p.z, h: p.h };
 }
-function chopDmg() { return (1 + player.gear.axe) * (player.finisher ? 2 : 1); }
+function chopDmg() { return (1 + player.gear.axe) * (player.finisher ? 2 : 1) * (player.critSwing ? 2 : 1); }
 function updatePlayer(dt) {
   const p = player;
   if (p.atk > 0 && p.atk - dt <= 0 && p.atkHits.size) dta.connected = (dta.connected || 0) + 1;
@@ -928,43 +970,52 @@ function updatePlayer(dt) {
     if (p.tapDir === d && runT - p.tapT < 0.28 && p.dashCd <= 0 && p.onGround && !p.mount) { p.dashT = 0.22; p.dashCd = 0.6; p.facing = d; SFX.jump(); dta.dashes = (dta.dashes || 0) + 1; burst(p.x + 1, p.z, 0.3, C.DIM, 6, ['-', '=', '.']); coach('dash', 'DASH! Chop during a dash for a DASH STRIKE - it smashes straight through shields.'); }
     p.tapDir = d; p.tapT = runT;
   }
-  const sp = (24 + p.gear.boots * 4) * (p.mount ? 1.35 : 1), zs = 8 + p.gear.boots;
+  const sp = (24 + p.gear.boots * 4) * (p.mount ? 1.35 : 1) * (p.items.coffee > 0 ? 1.4 : 1) * (p.onGround ? 1 : 1.15), zs = (8 + p.gear.boots) * (p.items.coffee > 0 ? 1.3 : 1);
   const dashV = p.dashT > 0 ? p.facing * 72 : 0;
   p.x += (mv * sp + p.knock + dashV) * dt; p.z = clamp(p.z + mz * zs * dt, 0, ZMAX);
   p.x = clamp(p.x, xmin(p.z), xmaxw(p.z, p.w));
   if (hit('Space') && p.mount) dismount(false);
-  else if (hit('Space') && p.onGround) { p.vh = JUMP; p.onGround = false; SFX.jump(); dta.jumps++; }
+  else if (hit('Space') && p.onGround) { p.vh = JUMP; p.onGround = false; p.airLeft = p.airJumps; p.peakH = 0; SFX.jump(); dta.jumps++; }
+  else if (hit('Space') && !p.onGround && p.airLeft > 0) {
+    p.airLeft--; p.vh = JUMP2; p.slamming = false; SFX.jump2(); dta.airJumps = (dta.airJumps || 0) + 1;
+    for (let a = 0; a < 8; a++) { const ang = a / 8 * Math.PI * 2; parts.push({ x: p.x + 1.5, z: p.z, h: p.h, vx: Math.cos(ang) * 12, vh: Math.sin(ang) * 3, life: 0.25, ch: pick(['*', '.', 'o']), color: C.CYAN, nograv: true }); }
+    coach('air', 'DOUBLE JUMP! Jump again in the air. Land on spores to STOMP. Chop at the peak for a MEGA SLAM.');
+  }
   if ((hit('KeyJ') || hit('KeyX') || hit('KeyF')) && p.atkCd <= 0 && p.mount) { p.atk = 0.15; p.atkCd = 0.28; p.atkHits = new Set(); dta.chops++; beastBreath(); }
   else if ((hit('KeyJ') || hit('KeyX') || hit('KeyF')) && p.atkCd <= 0) {
-    if (!p.onGround) { p.slamming = true; }
+    if (!p.onGround) { p.slamming = true; p.vh = Math.min(p.vh, -16); }
+    p.critSwing = p.items.duck > 0; if (p.critSwing) { p.items.duck--; floatText(p.x, p.z, 5, 'QUACK! CRIT', C.YELLOW); }
     p.chain = p.chainT > 0 && p.onGround ? (p.chain + 1) % 3 : 0; p.chainT = 0.6;
     p.finisher = p.chain === 2 && p.onGround; p.dashStrike = p.dashT > 0;
-    p.atk = p.finisher ? 0.28 : 0.2; p.atkCd = p.finisher ? 0.42 : 0.24; p.atkHits = new Set(); dta.chops++;
+    p.atk = p.finisher ? 0.28 : 0.2; p.atkCd = (p.finisher ? 0.42 : 0.24) * (p.items.coffee > 0 ? 0.7 : 1); p.atkHits = new Set(); dta.chops++;
     if (p.finisher) { SFX.cleave(); floatText(p.x, p.z, 4, 'FINISHER', C.ORANGE); dta.finishers = (dta.finishers || 0) + 1; } else SFX.chop();
     if (p.dashStrike) { floatText(p.x, p.z, 4, 'DASH STRIKE', C.CYAN); }
     const b = chopBox(); parts.push({ x: p.facing > 0 ? b.x + 3 : b.x, z: p.z, h: p.h + 1, vx: p.facing * 10, vh: 2, life: 0.15, ch: '*', color: C.CYAN });
     if (p.spreadT > 0) { for (let dz = -1; dz <= 1; dz++) bullets.push({ x: p.x + (p.facing > 0 ? 3 : -1), z: clamp(p.z + dz, 0, ZMAX), h: p.h + 1, vx: p.facing * 60, life: 0.55 }); SFX.spread(); }
   }
-  if (hit('KeyK') && p.slowCd <= 0) { p.slowT = 3; p.slowCd = 18; dta.abilities.slow++; SFX.slow(); noiseT = 0.2; floatText(p.x, p.z, 4, 'SLOW', C.CYAN); }
+  if (hit('KeyK') && p.slowCd <= 0) { p.slowT = 3 + (p.up.slow || 0); p.slowCd = 18; dta.abilities.slow++; SFX.slow(); noiseT = 0.2; floatText(p.x, p.z, 4, 'SLOW', C.CYAN); }
   if (hit('KeyL') && p.cleaveCd <= 0) doCleave();
   if ((hit('KeyU') || hit('KeyI')) && p.ultraCd <= 0) doUltra();
   // vertical
   if (!p.onGround) {
-    p.vh -= GRAV * dt; p.h += p.vh * dt;
+    p.vh -= GRAV * dt; p.h += p.vh * dt; p.peakH = Math.max(p.peakH, p.h);
+    checkStomp();
     if (p.h <= 0) {
-      p.h = 0; p.vh = 0; p.onGround = true;
-      if (p.slamming) { p.slamming = false; doSlam(); }
+      p.h = 0; p.vh = 0; p.onGround = true; p.airLeft = p.airJumps;
+      if (p.slamming) { p.slamming = false; doSlam(p.peakH > 4); }
+      p.peakH = 0;
     }
   }
 }
-function doSlam() {
-  SFX.slam(); shake = 0.25; dta.slams++;
-  burst(player.x + 1, player.z, 0.5, C.CYAN, 14, ['*', '~', '-', '.']);
-  for (const e of enemies) if (Math.abs(e.x + e.w / 2 - (player.x + 1.5)) <= 6 && Math.abs(e.z - player.z) <= 2 && e.state !== 'rise') { e.knock = (e.x > player.x ? 1 : -1) * 22; if (e.guard > 0) e.guard = 0; damageEnemy(e, chopDmg()); }
-  hitBigs(2, 6);
+function doSlam(mega) {
+  const R = mega ? 11 : 8, dz = mega ? 3 : 2;
+  SFX.slam(); shake = mega ? 0.6 : 0.3; dta.slams++; if (mega) { dta.megaSlams = (dta.megaSlams || 0) + 1; freeze(0.06); buzz([30, 20, 60]); floatText(player.x - 3, player.z, 5, 'MEGA SLAM', C.CYAN); quakes.push({ x: player.x + 1.5, z: player.z, r: 2, spd: 34, life: 0.6, foe: false }); }
+  burst(player.x + 1, player.z, 0.5, C.CYAN, mega ? 26 : 14, ['*', '~', '-', '.']);
+  for (const e of enemies) if (Math.abs(e.x + e.w / 2 - (player.x + 1.5)) <= R && Math.abs(e.z - player.z) <= dz && e.state !== 'rise') { e.knock = (e.x > player.x ? 1 : -1) * (mega ? 32 : 24); if (e.guard > 0) e.guard = 0; damageEnemy(e, chopDmg() + (mega ? 2 : 1)); }
+  hitBigs(mega ? 4 : 2, R);
 }
 function doCleave() {
-  const p = player; p.cleaveCd = 7; p.cleaveAnim = 0.4; dta.abilities.cleave++; SFX.cleave(); shake = 0.3; noiseT = 0.1;
+  const p = player; p.cleaveCd = 7 - (p.up.cleave || 0) * 1.5; p.cleaveAnim = 0.4; dta.abilities.cleave++; SFX.cleave(); shake = 0.3; noiseT = 0.1;
   for (let a = 0; a < 16; a++) { const ang = a / 16 * Math.PI * 2; parts.push({ x: p.x + 1.5, z: p.z, h: 1, vx: Math.cos(ang) * 26, vh: Math.sin(ang) * 6 + 4, life: 0.4, ch: pick(['*', 'o', '~', '=']), color: C.CYAN, nograv: true }); }
   for (const e of enemies) if (Math.abs(e.x + e.w / 2 - (p.x + 1.5)) <= 10 && Math.abs(e.z - p.z) <= 3 && e.state !== 'rise') { e.guard = 0; e.knock = (e.x > p.x ? 1 : -1) * 30; damageEnemy(e, 2 + p.gear.axe); }
   hitBigs(2 + p.gear.axe, 10);
@@ -974,6 +1025,7 @@ function hitBigs(dmg, radius) {
   const px = player.x + 1.5;
   if (mid && !mid.dead && Math.abs(mid.x + mid.w / 2 - px) <= radius + mid.w / 2 && Math.abs(mid.z - player.z) <= 3) damageMid(dmg);
   if (boss && !boss.dead && Math.abs(boss.x + boss.w / 2 - px) <= radius + boss.w / 2 && Math.abs(boss.z - player.z) <= 3.5) damageBoss(dmg);
+  if (mb && !mb.dead && !mb.hidden && mb.talkT <= 0 && Math.abs(mb.x + mb.w / 2 - px) <= radius + mb.w / 2 && Math.abs(mb.z - player.z) <= 3) damageMini(dmg);
 }
 function doUltra() {
   player.ultraCd = 240; dta.abilities.ultra++; ultra = { x: 0, t: 0 }; SFX.ultra(); shake = 1.0; noiseT = 0.6;
@@ -985,6 +1037,7 @@ function updateUltra(dt) {
   const ux = camX + ultra.x;   // the wipe sweeps across the visible screen
   for (const e of enemies) if (!e.dead && e.x < ux && e.x > camX - 6) { e.guard = 0; e.fuse = -1; killEnemy(e, true); }
   if (mid && !mid.dead && !mid.halved && mid.x < ux) { mid.halved = true; damageMid(Math.ceil(mid.hp / 2)); floatText(mid.x, mid.z, 5, 'HALVED', C.PINK); }
+  if (mb && !mb.dead && !mb.halved && mb.talkT <= 0 && mb.x < ux) { mb.halved = true; damageMini(Math.ceil(mb.hp / 2)); floatText(mb.x, mb.z, 5, 'HALVED', C.PINK); }
   if (boss && !boss.dead && !boss.halved && boss.x < ux) { boss.halved = true; damageBoss(Math.ceil(boss.hp / 2)); floatText(boss.x + 10, boss.z, 8, 'HALVED', C.PINK); }
   shots = shots.filter(s => s.x > ux);
   if (ultra.x > COLS + 5) ultra = null;
@@ -1006,6 +1059,7 @@ function spawnEnemy(type, src, at) {
   if (!T.prop && !T.thief) e.x = clamp(e.x, xmin(e.z), xmaxw(e.z, e.w));
   if (!T.prop && type !== 'sprout' && type !== 'mini') e.hp += hpBonus();
   enemies.push(e); spawned++;
+  if (!T.prop && !T.thief && Math.random() < 0.06 && !stage.bonus) parts.push({ x: e.x, z: e.z, h: e.hgt + 1.5, vx: 0, vh: 1.2, life: 1.8, ch: `"${pick(SPORE_QUIPS)}"`, color: shade(T.color, 0.85), txt: true });
   if (type === 'rider') coach('rider', 'A RIDER on an IO-BEAST. Knock the rider off and the beast is yours.');
   if (type === 'tank') coach('tank', 'Tanks take 3 chops. CLEAVE [L] or a jump-slam [Space then J] softens the pack.');
   if (type === 'spitter') coach('spitter', 'Spitters keep range and lob spores. Close the gap through depth (W/S), not head-on.');
@@ -1037,6 +1091,9 @@ function killEnemy(e, silent) {
   if (e.T.rider) { spawnBeast(e.x, e.z); floatText(e.x, e.z, 5, 'RIDER DOWN', C.ORANGE); }
   if (player.finisher && player.atk > 0) { freeze(0.07); buzz(35); }
   if (!stage.bonus) rollDrop(e);
+  const nb = bitsFor(e); if (nb && stage.bonus !== 'COINS') dropBits(nb, e.x + e.w / 2, e.z, 2);
+  if (player.finisher && player.atk > 0 && Math.random() < 0.12 && !dlg && !dlgQ.length) say('IO', pick(IO_QUIPS));
+  if (combo === 10 && !dlgQ.length) say('IO', pick(['TEN in a row. Somebody clip that.', 'Combo x10. My axe needs a union.']));
 }
 function explode(e, hurtsPlayer) {
   SFX.bomb(); shake = 0.4;
@@ -1052,7 +1109,7 @@ function rollDrop(e) {
   if (director.mood === 'CALM' && Math.random() < 0.4) kind = 'hp';
   spawnLoot(kind, e.x + e.w / 2, e.z, 2);
 }
-function spawnLoot(kind, x, z, h) { loot.push({ id: ++uid, kind, L: LOOT[kind], x: clamp(x, xmin(z), xmaxw(z, 1)), z: clamp(z, 0, ZMAX), h: h || 0, t: 14, bob: Math.random() * 6 }); }
+function spawnLoot(kind, x, z, h) { loot.push({ id: ++uid, kind, L: LOOT[kind], ch: kind === 'bit' ? (Math.random() < 0.5 ? '0' : '1') : null, x: clamp(x, xmin(z), xmaxw(z, 1)), z: clamp(z, 0, ZMAX), h: h || 0, t: kind === 'bit' ? 10 : 14, bob: Math.random() * 6 }); }
 const sp_thief = e => (stage.speed || 6) * e.T.spd;
 function updateEnemies(dt) {
   const spd0 = (stage.speed || 6) * spdMult(), pcx = player.x + 1.5;
@@ -1171,6 +1228,7 @@ function updateSpawner(dt) {
       coach('go', 'Area clear. Push right [D] - the screen follows you forward, never back. GO >>>');
       if (Math.random() < 0.45 || wave.done === 1) spawnEnemy('thief', 'L');
     } else if (stage.midboss && !mid) spawnMid();
+    else if (stage.mini && !mb && MINIS[stage.id]) spawnMini();
     else if (stage.boss) { wave.goT = 3.5; floatText(camX + 40, 6, 6, 'THE ROOTS GO DEEPER  ·  GO >>>', C.PURPLE); }
   }
 }
@@ -1260,11 +1318,12 @@ function updateShots(dt) {
 function applyLoot(l) {
   const p = player, k = l.kind;
   dta.lootPicked[k] = (dta.lootPicked[k] || 0) + 1;
-  if (k === 'hp') { const h = Math.min(20, 100 - p.hp); p.hp += h; dta.healed += h; SFX.heal(); }
+  if (applyLoot44(l)) return;
+  if (k === 'hp') { const h = Math.min(20, p.maxhp - p.hp); p.hp += h; dta.healed += h; SFX.heal(); }
   else if (k === 'armor') { p.armor = Math.min(75, p.armor + 25); SFX.armor(); }
   else if (k === 'spread') { p.spreadT = 12; SFX.loot(); coach('spread', 'SPREAD SHOT - every chop now fires three ion bolts across lanes. 12 seconds.'); }
   else if (k === 'boots') { p.gear.boots = Math.min(2, p.gear.boots + 1); SFX.loot(); }
-  else if (k === 'axe') { p.gear.axe = Math.min(2, p.gear.axe + 1); SFX.loot(); }
+  else if (k === 'axe') { p.gear.axe = Math.max(p.gear.axe, Math.min(2, p.gear.axe + 1)); SFX.loot(); }
   else if (k === 'ultra') { p.ultraCd = Math.max(0, p.ultraCd - 60); SFX.loot(); }
   else if (k === 'gem') { score += 200; bonusScore += 200; dta.coins++; SFX.coin(); }
   else if (k === 'coin') { score += 50; bonusScore += 50; dta.coins++; SFX.coin(); }
@@ -1273,10 +1332,15 @@ function applyLoot(l) {
   burst(l.x, l.z, 1, l.L.color, 6, ['.', '\'', '*']);
 }
 function updateLoot(dt) {
+  const R = magnetR(), magAll = player.items.magnet > 0;
   for (const l of loot) {
-    l.bob += dt; if (l.h > 0) { l.h -= 8 * dt; if (l.h < 0) l.h = 0; } else { l.t -= dt; }
+    l.bob += dt;
+    if (l.float) { l.t -= dt; } else if (l.h > 0) { l.h -= 8 * dt; if (l.h < 0) l.h = 0; } else { l.t -= dt; }
     if (l.t <= 0) { l.dead = true; continue; }
-    if (l.h <= 0.5 && Math.abs(player.x + 1.5 - l.x) <= 2 && Math.abs(player.z - l.z) <= 1.1 && player.h < 1.5) { l.dead = true; applyLoot(l); }
+    const dx = player.x + 1.5 - l.x, dz = player.z - l.z;
+    if (!l.high && (l.kind === 'bit' || l.kind === 'bitpack' || magAll) && Math.hypot(dx, dz * 3) < R) { l.x += dx * Math.min(1, 7 * dt); l.z += dz * Math.min(1, 7 * dt); if (l.float) l.h += (player.h + 1 - l.h) * Math.min(1, 5 * dt); }
+    const reach = l.float ? Math.abs(player.h + 1 - l.h) < (l.high ? 1.3 : 1.7) : (l.h <= 0.5 && player.h < 1.5);
+    if (reach && Math.abs(dx) <= 2 && Math.abs(dz) <= 1.1) { l.dead = true; applyLoot(l); }
   }
   loot = loot.filter(l => !l.dead);
 }
@@ -1286,8 +1350,11 @@ function updateBonus(dt) {
   if (stage.bonus === 'COINS') {
     pickT -= dt; if (pickT <= 0) { sky('coin'); pickT = 0.26; }
     pickT2 -= dt; if (pickT2 <= 0) { sky('gem'); pickT2 = rnd(1.2, 2.2); }
+    if (Math.random() < dt * 3) sky('bit');
   } else if (stage.bonus === 'FRENZY') {
     pickT -= dt; if (pickT <= 0 && enemies.length < 26) { spawnEnemy('sprout', pick(['L', 'R', 'T', 'T', 'G'])); pickT = 0.22; }
+  } else if (stage.bonus === 'DODGE') {
+    updateDodge(dt);
   } else if (stage.bonus === 'SHRINE') {
     pickT -= dt; if (pickT <= 0) { sky(Math.random() < 0.3 ? 'armor' : 'hp'); pickT = 0.9; }
     pickT2 -= dt; if (pickT2 <= 0) { sky('star'); pickT2 = 0.4; }
@@ -1302,7 +1369,7 @@ function updateParts(dt) {
 /* ---------- door ---------- */
 function updateDoor(dt) {
   door.t += dt;
-  const shouldOpen = stage.boss ? (boss && boss.dead) : stage.midboss ? (mid && mid.dead) : allWavesDone();
+  const shouldOpen = stage.boss ? (boss && boss.dead) : stage.midboss ? (mid && mid.dead) : (stage.mini && MINIS[stage.id]) ? (mb && mb.dead) : allWavesDone();
   if (!door.open && shouldOpen) { door.open = true; SFX.door(); noiseT = 0.2; floatText(door.x, ZMAX, 6, 'DOOR OPEN - GET OVER IT', C.CYAN); coach('door', 'Door is open. Walk to the back wall (W) under the frame. Loot on the floor first if you need it.'); }
   if (door.open && player.z >= ZMAX - 0.6 && player.h < 1 && player.x + player.w > door.x + 1 && player.x < door.x + door.w - 1) {
     burst(player.x + 1, player.z, 1, C.CYAN, 20, ['|', ':', '.']); stageClear();
@@ -1337,12 +1404,13 @@ function update(dt) {
   if (state === 'options') { titleT += dt; updateOptions(); return; }
   if (state === 'map') { runT += dt; updateMap(dt); return; }
   if (state === 'initials') { updateInitials(); return; }
+  if (state === 'shop') { updateShop(dt); return; }
   if (state === 'card') {
     card.t -= dt;
     if (card.t <= 0 || hit('Enter')) {
       const nx = card.next; card = null;
       if (nx === 'play') { state = 'play'; noiseT = 0.3; }
-      else if (nx === 'next') startMap(stageIdx + 1);
+      else if (nx === 'next') { if (stage.id) openShop(stageIdx + 1); else startMap(stageIdx + 1); }
       else if (nx === 'win') winGame();
     }
     return;
@@ -1355,6 +1423,7 @@ function update(dt) {
     runT += dt; stageT += dt; shake = Math.max(0, shake - dt); noiseT = Math.max(0, noiseT - dt);
     if (coachMsg) { coachMsg.t -= dt; if (coachMsg.t <= 0) coachMsg = null; }
     if (bannerMsg) { bannerMsg.t -= dt; if (bannerMsg.t <= 0) bannerMsg = null; }
+    updateDialog(dt); updateItems(dt);
     updateWeather(dt);
     comboT -= dt; if (comboT <= 0) combo = 0;
     updatePlayer(dt);
@@ -1364,7 +1433,7 @@ function update(dt) {
     if (stage.bonus) updateBonus(dt); else { updateSpawner(et); updateDirector(dt); }
     if (state !== 'play') return;
     updateEnemies(et); if (state !== 'play') return;
-    updateMid(et); updateBoss(et); updateShots(et);
+    updateMid(et); updateMini(et); updateBoss(et); updateShots(et); updateObstacles(et); if (state !== 'play') return;
     updateBullets(dt); updateLoot(dt); updateParts(dt); updateUltra(dt); updateBeasts(dt);
     if (state === 'play' && !stage.bonus) updateDoor(dt);
   }
@@ -1625,6 +1694,447 @@ function drawInitials() {
   scoreLines().forEach((l, i) => textC(18 + i, l, C.GRAY));
 }
 applySettings();
+
+/* =====================================================================================
+   v4.4 "BITS & BYTES": purpose loop (bits -> bytes -> upgrade terminal, IONITY source
+   fragments -> true ending), new items, obstacles, mini-bosses, dialogue + humour,
+   empowered jumping (double jump, stomp, mega slam shockwave), DODGE bonus stages.
+   ===================================================================================== */
+const JUMP2 = 13;                                   // air-jump impulse
+const SRC = ['I', 'O', 'N', 'I', 'T', 'Y'];         // the six IONITY source fragments
+const FRAG_STAGE = { 2: 0, 3: 1, 5: 2, 6: 3, 7: 4, 8: 5 };   // stage id -> fragment index
+let obst = [], rolls = [], blocks = [], quakes = [], mb = null;
+
+/* ---------- dialogue ---------- */
+let dlg = null; const dlgQ = [];
+const WHO = {
+  IO: { face: ' O ', col: C.WHITE, tag: 'IO-MAN' }, AEDI: { face: '[A]', col: C.CYAN, tag: 'AEDI' },
+  TERM: { face: '>_ ', col: C.GREEN, tag: 'TERMINAL' }, SPORE: { face: '(o)', col: C.GREEN, tag: 'SPORE' },
+};
+function say(who, text, extra) {
+  const W = WHO[who] || { face: (extra && extra.face) || '(@)', col: (extra && extra.col) || C.RED, tag: who };
+  dlgQ.push({ W, text, t: 0, dur: 1.5 + text.length * 0.05 });
+  return dlgQ.reduce((s, d) => s + d.dur, 0) + (dlg ? dlg.dur - dlg.t : 0);
+}
+function updateDialog(dt) {
+  if (!dlg && dlgQ.length) dlg = dlgQ.shift();
+  if (dlg) { dlg.t += dt; if (dlg.t >= dlg.dur) dlg = null; }
+}
+function drawDialog() {
+  if (!dlg) return;
+  const d = dlg, txt = d.text, n = Math.min(txt.length, Math.floor(d.t * 60));
+  const w = Math.min(COLS - 8, Math.max(txt.length + 10, d.W.tag.length + 8)), x0 = Math.floor((COLS - w) / 2), x1 = x0 + w - 1;
+  panel(x0, 3, x1, 5, d.W.tag, d.W.col, false);
+  text(x0 + 2, 4, d.W.face, d.W.col);
+  text(x0 + 6, 4, txt.slice(0, n), C.WHITE);
+  if (n < txt.length || ((d.t * 3) | 0) % 2) put(x0 + 6 + n, 4, '_', d.W.col);
+}
+const STAGE_TALK = {
+  1: [['IO', 'Day one. Coffee: cold. Spores: hot. Axe: sharp.'], ['AEDI', 'Collect the 0s and 1s they drop. That is IONITY source code.']],
+  2: [['AEDI', 'Server row. Somewhere up high floats a SOURCE FRAGMENT.'], ['IO', 'Up high? I was told there would be no climbing.']],
+  3: [['AEDI', 'Firewall at 451 degrees. Lasers pulse. Do not touch them.'], ['IO', 'Noted. Touching everything.']],
+  4: [['IO', 'A courthouse. Great. I left my lawyer in the cloud.'], ['AEDI', 'Policy 986 applies. Chop responsibly.']],
+  5: [['AEDI', 'Old growth. Rolling logs ahead. Jump them.'], ['IO', 'Logs. Finally, a bug I can step over.']],
+  6: [['AEDI', 'Encrypted ruins. Mines everywhere. Chop one to defuse it.'], ['IO', 'Chop the bomb. Sounds like a plan nobody vetted.']],
+  7: [['IO', 'Edge node. Low power, high pressure... like my Mondays.'], ['AEDI', 'Lasers AND barrels. Double jump clears both.']],
+  8: [['AEDI', 'The uplink bridge. Last fragment is out here somewhere.'], ['IO', 'If I fall in the data sea, tell my axe I loved it.']],
+  9: [['AEDI', 'ROOT. The Great Fungus is below. This is it.'], ['IO', 'Deep breath. Not too deep. Spores.']],
+};
+const SPORE_QUIPS = ['mush!', 'spore-ry!', 'we are fungi!', 'shroom shroom', 'hyphae hi!', 'cap-tain!', 'morel support!', 'myc-ed it!', 'got spores?', 'i am root?'];
+const IO_QUIPS = ['Chop chop.', 'I am not a fun guy. I am IO-MAN.', 'Compost incoming.', 'Another one bites the dust. Literally.', 'You have been chopped.', 'Error 404: spore not found.'];
+
+/* ---------- mini-bosses (one per stage, with things to say) ---------- */
+const MINIS = {
+  1: { name: 'SUDO SHROOM', hp: 10, dmg: 14, spd: 4, col: C.GREEN, minion: 'normal', pats: ['summon', 'charge'],
+       art: [' _/sudo\\_ ', '( o    o )', ' \\__ww__/ ', '   |  |   '],
+       intro: [['SUDO SHROOM', 'sudo make me a sandwich.'], ['IO', 'Permission denied.']], p2: 'sudo rm -rf /hero ... why is that not working?',
+       die: 'user is not in the sudoers file. this incident will be reported.' },
+  2: { name: 'CAPTCHA CAP', hp: 12, dmg: 14, spd: 5, col: C.BLUE, guard: true, minion: 'fast', pats: ['charge', 'summon'],
+       art: [' [#][ ][#] ', ' [ ][@][ ] ', ' [#][ ][#] ', '   /   \\   '],
+       intro: [['CAPTCHA CAP', 'Select all squares that contain a hero.'], ['IO', 'I am an ASCII stick man. Close enough?'], ['AEDI', 'It blocks frontal hits. STOMP it or hit it from behind.']],
+       p2: 'Fine. Now the traffic lights. ALL of them.', die: '...ok. You are human. Probably.' },
+  3: { name: 'BLAZE PORT 443', hp: 14, dmg: 16, spd: 4, col: C.ORANGE, minion: 'spitter', pats: ['shoot', 'charge', 'shoot'],
+       art: ['  ) ( ) (  ', ' (443:443) ', ' (  >_<  ) ', '  /|   |\\  '],
+       intro: [['BLAZE PORT 443', 'Everything through me is encrypted. Even the pain.'], ['IO', 'Cool. I brought a key. It is an axe.']],
+       p2: 'TLS HANDSHAKE FAILED. FALLING BACK TO FIRE.', die: 'connection reset by peer...' },
+  5: { name: 'ROOTKIT ROSIE', hp: 16, dmg: 18, spd: 4.5, col: C.TEAL, minion: 'splitter', pats: ['burrow', 'summon', 'burrow'],
+       art: ['  .-~~~-.  ', ' ( @   @ ) ', '  \\ --- /  ', ' ~~|/ \\|~~ '],
+       intro: [['ROOTKIT ROSIE', 'You cannot remove me. I live in your BIOS now.'], ['IO', 'Then I will reboot you. With prejudice.'], ['AEDI', 'Watch the ground: ^^^ means she is coming up.']],
+       p2: 'Ctrl+Alt+Del will not save you!', die: 'rm -rf me? rude.' },
+  6: { name: 'HASH BROWN', hp: 16, dmg: 18, spd: 4, col: C.YELLOW, minion: 'mini', pats: ['quake', 'summon', 'charge'],
+       art: [' ######### ', ' # $   $ # ', ' #  ___  # ', ' ######### '],
+       intro: [['HASH BROWN', 'I am one-way. You can never reverse me.'], ['IO', 'I do not need to reverse you. I need to fry you.'], ['AEDI', 'When it slams, JUMP the shockwave.']],
+       p2: 'COLLISION DETECTED. Splitting into salt.', die: 'sha-ved... by an axe.' },
+  7: { name: 'LAG SPIKE', hp: 18, dmg: 18, spd: 3.5, col: C.PURPLE, minion: 'flyer', pats: ['teleport', 'quake', 'shoot'],
+       art: ['  /\\/\\/\\   ', ' < ping! > ', ' (9999 ms) ', '  /    \\   '],
+       intro: [['LAG SPIKE', 'Y o u r . . . i n p u t . . . i s . . .'], ['IO', '...late? Buffering... buffering... CHOP.']],
+       p2: 'PACKET LOSS 50%. YOUR HITS: 50% FEWER. (not really)', die: 'gg... (connection timed out)' },
+  8: { name: 'SPAM KING', hp: 20, dmg: 18, spd: 4, col: C.PINK, minion: 'bomber', pats: ['spam', 'summon', 'charge', 'spam'],
+       art: ['  \\|/^\\|/  ', ' [ @ $ @ ] ', ' [ FREE! ] ', '  /|   |\\  '],
+       intro: [['SPAM KING', 'CONGRATULATIONS! You have WON a FREE CRUISE!'], ['IO', 'Unsubscribe.'], ['SPAM KING', 'You cannot unsubscribe from ROYALTY.']],
+       p2: 'REPLY ALL! REPLY ALL! REPLY ALL!', die: 'This message has been marked as spam.' },
+};
+function spawnMini() {
+  const D = MINIS[stage.id]; if (!D) return;
+  const w = Math.max(...D.art.map(l => l.length));
+  mb = { D, x: xmaxw(5, w) - 6, z: 5, h: 0, vh: 0, w, hgt: D.art.length, hp: D.hp + hpBonus() * 2, maxhp: 0, t: 0, flash: 0, dir: -1, atkCd: 1,
+         patT: 1.6, pat: null, patI: 0, talkT: 0, dead: false, halved: false, phase2: false, charging: 0, teleT: 0, burrow: 0, hidden: false };
+  mb.maxhp = mb.hp;
+  dlgQ.length = 0; dlg = null;
+  banner(`MINI-BOSS  ·  ${D.name}`, D.col); SFX.boss(); shake = 0.5; noiseT = 0.3;
+  let t = 0; D.intro.forEach(([who, line]) => { t = WHO[who] ? say(who, line) : say(who, line, { col: D.col, face: '(@)' }); });
+  mb.talkT = t;
+  dta.minis = dta.minis || [];
+}
+function damageMini(d, how) {
+  const m = mb; if (!m || m.dead || m.hidden) return;
+  m.hp -= d; m.flash = 0.18; SFX.hit(); dta.hits++; burst(m.x + m.w / 2, m.z, 2, m.D.col, 6); freeze(0.03);
+  if (!m.phase2 && m.hp > 0 && m.hp <= m.maxhp / 2) {
+    m.phase2 = true; banner(`${m.D.name}  ·  PHASE 2`, m.D.col); SFX.boss(); shake = 0.5; say(m.D.name, m.D.p2, { col: m.D.col });
+    if (m.D.name === 'HASH BROWN') for (let k = 0; k < 2; k++) { const s = spawnEnemy('splitter', 'L', { x: m.x + (k ? m.w : -5), z: clamp(m.z + (k ? 1 : -1), 0, ZMAX) }); spawned--; }
+  }
+  if (m.hp <= 0) {
+    m.dead = true; m.talkT = 0; kills++; stageKills++; score += 1500 + stage.id * 250; shake = 0.7; SFX.kill(); buzz([40, 30, 80]);
+    for (let i = 0; i < 4; i++) setTimeout(() => burst(m.x + rnd(0, m.w), m.z, rnd(0, 3), pick([m.D.col, C.WHITE, C.YELLOW]), 16), i * 110);
+    floatText(m.x, m.z, 5, `+${1500 + stage.id * 250}  ${m.D.name} DOWN`, C.YELLOW);
+    say(m.D.name, m.D.die, { col: m.D.col }); if (Math.random() < 0.6) say('IO', pick(['Mini-boss? More like mini-loss.', 'Next.', 'That was the tutorial, right?', 'Put that on my LinkedIn.']));
+    dropBits(6, m.x + m.w / 2, m.z, 3); spawnLoot('bitpack', m.x + 1, m.z, 4); spawnLoot('bitpack', m.x + m.w - 2, m.z, 4);
+    spawnLoot(Math.random() < 0.35 ? 'floppy' : pick(['coffee', 'duck', 'bubble', 'magnet']), m.x + m.w / 2, m.z - 1, 5);
+    (dta.minis = dta.minis || []).push({ name: m.D.name, stage: stage.id, at: Math.round(stageT) });
+  }
+}
+function startPattern(m, pcx, mcx) {
+  const D = m.D, p = D.pats[m.patI++ % D.pats.length];
+  if (p === 'charge') { m.pat = 'tele'; m.teleT = 0.55; m.dir = Math.sign(pcx - mcx) || -1; floatText(m.x + 2, m.z, m.hgt + 1, '!!', C.ORANGE); }
+  else if (p === 'summon') { const n = m.phase2 ? 3 : 2; for (let k = 0; k < n; k++) { spawnEnemy(D.minion, k % 2 ? 'L' : 'R'); spawned--; } floatText(m.x, m.z, m.hgt + 1, 'SUMMON', D.col); SFX.spore(); }
+  else if (p === 'shoot') { const n = m.phase2 ? 5 : 3; for (let k = 0; k < n; k++) shots.push({ x: mcx, z: m.z, h: m.hgt, vx: (pcx - mcx) / 1.1 + rnd(-7, 7), vz: (player.z - m.z) / 1.1 + rnd(-1.2, 1.2), vh: 16, dmg: 10 }); SFX.spore(); }
+  else if (p === 'burrow') { m.pat = 'burrow'; m.burrow = 2.2; m.hidden = true; SFX.spore(); burst(mcx, m.z, 0.5, C.WOOD, 12, ['#', '%', '.']); }
+  else if (p === 'quake') { m.pat = 'quake'; m.vh = 17; SFX.jump(); }
+  else if (p === 'teleport') { m.x = clamp(player.x + (Math.random() < 0.5 ? -14 : 12), xmin(player.z), xmaxw(player.z, m.w)); m.z = player.z; floatText(m.x, m.z, m.hgt + 1, 'L A G', C.PURPLE); burst(m.x + m.w / 2, m.z, 2, C.PURPLE, 14, [':', '.', '/']); m.pat = 'quake'; m.vh = 12; }
+  else if (p === 'spam') { const n = m.phase2 ? 12 : 8; for (let k = 0; k < n; k++) shots.push({ x: camX + rnd(4, COLS - 6), z: rnd(0, ZMAX), h: 14 + rnd(0, 8), vx: 0, vz: 0, vh: 0, dmg: 8, mail: true }); floatText(m.x, m.z, m.hgt + 1, 'YOU GOT MAIL', D.col); SFX.spore(); }
+  m.patT = (m.phase2 ? 1.5 : 2.4) * rnd(0.85, 1.2);
+}
+function updateMini(dt) {
+  const m = mb; if (!m || m.dead) return;
+  m.t += dt; m.flash = Math.max(0, m.flash - dt);
+  if (m.talkT > 0) { m.talkT -= dt; return; }
+  m.atkCd -= dt; m.patT -= dt;
+  const pcx = player.x + 1.5, mcx = m.x + m.w / 2, dx = pcx - mcx, dz = player.z - m.z;
+  if (m.pat === 'tele') { m.teleT -= dt; if (m.teleT <= 0) { m.pat = 'charge'; m.charging = m.phase2 ? 0.75 : 0.6; SFX.spore(); } }
+  else if (m.pat === 'charge') { m.charging -= dt; m.x += m.dir * (m.phase2 ? 56 : 44) * dt; if (m.charging <= 0) m.pat = null; }
+  else if (m.pat === 'burrow') {
+    m.burrow -= dt; m.x += Math.sign(dx) * Math.min(Math.abs(dx), 30 * dt); m.z += Math.sign(dz) * Math.min(Math.abs(dz), 6 * dt);
+    if (m.burrow <= 0) { m.hidden = false; m.pat = null; shake = 0.4; SFX.slam(); burst(m.x + m.w / 2, m.z, 0.5, C.WOOD, 18, ['#', '^', '.']);
+      if (Math.abs(pcx - (m.x + m.w / 2)) < m.w / 2 + 2 && Math.abs(player.z - m.z) < 1.6 && player.h < 2) hurt(m.D.dmg + 6, m.x + m.w / 2); }
+  }
+  else if (m.pat === 'quake') {
+    m.vh -= 50 * dt; m.h += m.vh * dt;
+    if (m.h <= 0 && m.vh < 0) { m.h = 0; m.vh = 0; m.pat = null; shake = 0.5; SFX.slam(); quakes.push({ x: mcx, z: m.z, r: m.w / 2, spd: 30, life: 1.5, foe: true, hit: false });
+      if (m.phase2) setTimeout(() => { if (mb === m && !m.dead) quakes.push({ x: m.x + m.w / 2, z: m.z, r: m.w / 2, spd: 22, life: 1.8, foe: true, hit: false }); }, 450); }
+  }
+  else {
+    if (Math.abs(dx) > m.w / 2 + 1) m.x += Math.sign(dx) * m.D.spd * (m.phase2 ? 1.3 : 1) * dt;
+    m.z += Math.sign(dz) * Math.min(Math.abs(dz), 2.3 * dt);
+    m.dir = Math.sign(dx) || m.dir;
+    if (m.patT <= 0) startPattern(m, pcx, mcx);
+  }
+  m.x = clamp(m.x, xmin(m.z), xmaxw(m.z, m.w)); m.z = clamp(m.z, 0, ZMAX);
+  if (!m.hidden && player.hp > 0 && m.atkCd <= 0 && near(m, player, 1.4) && player.h < m.hgt - 0.6) { m.atkCd = 1; hurt(m.D.dmg, mcx); }
+  if (!m.hidden && player.atk > 0 && !player.atkHits.has('mb') && near(chopBox(), m, 1.6)) {
+    player.atkHits.add('mb');
+    const front = (player.x + 1.5 < mcx) === (m.dir < 0);   // player stands on the side it faces
+    if (m.D.guard && !m.phase2 && front && !player.dashStrike && player.onGround) { SFX.block(); floatText(m.x + 2, m.z, m.hgt + 1, pick(['NOT A ROBOT?', 'BLOCKED', 'TRY AGAIN']), C.BLUE); }
+    else damageMini(chopDmg());
+  }
+}
+function drawMini() {
+  const m = mb; if (!m || m.dead) return;
+  if (m.hidden) { const cx = Math.round(m.x + m.w / 2), r = rowOf(m.z, 0); text(cx - 2, r, ((m.t * 8) | 0) % 2 ? '^^^^^' : '^ ^ ^', m.burrow < 0.8 ? C.RED : C.WOOD); return; }
+  const r = rowOf(m.z, m.h); if (m.h > 0.5) shadow(m.x, m.z, m.w);
+  const col = m.flash > 0 ? C.WHITE : m.pat === 'tele' ? (((m.t * 14) | 0) % 2 ? C.WHITE : C.ORANGE) : m.pat === 'charge' ? C.ORANGE : zshade(m.D.col, m.z);
+  sprite(m.x, r, m.D.art, col);
+  const lbl = `${m.D.name} [${bar(Math.max(0, m.hp), m.maxhp, 10)}]`;
+  text(Math.round(m.x + m.w / 2 - lbl.length / 2), r - m.hgt, lbl, m.D.col);
+}
+
+/* ---------- bits, bytes, items ---------- */
+function addBits(n) {
+  const p = player; p.bits += n; dta.bits = (dta.bits || 0) + n; score += n * 10; if (stage.bonus) bonusScore += n * 10;
+  while (p.bits >= 8) { p.bits -= 8; p.bytes++; dta.bytes = (dta.bytes || 0) + 1; floatText(p.x - 3, p.z, 5, 'BYTE COMPILED', C.GREEN); SFX.byte(); }
+  if (!coached.has('bits')) { coach('bits', '0 and 1 = IONITY source BITS. 8 bits compile 1 BYTE. Spend bytes at the UPGRADE TERMINAL after each stage.'); }
+}
+function dropBits(n, x, z, h) { for (let k = 0; k < n; k++) spawnLoot('bit', x + rnd(-2.5, 2.5), z + rnd(-0.8, 0.8), (h || 2) + rnd(0, 2)); }
+function bitsFor(e) { if (e.T.prop) return 6; if (e.type === 'sprout') return Math.random() < 0.25 ? 1 : 0; if (e.type === 'mini') return Math.random() < 0.5 ? 1 : 0; return e.T.score >= 300 ? 3 : e.T.score >= 200 ? 2 : 1; }
+const magnetR = () => (player.items.magnet > 0 ? 22 : 2.5 + player.up.magnet * 3);
+/* returns true when the v4.4 loot kinds were handled */
+function applyLoot44(l) {
+  const p = player, k = l.kind, I = p.items;
+  if (k === 'bit') { addBits(1); SFX.bit(); return true; }
+  if (k === 'bitpack') { addBits(8); SFX.loot(); floatText(l.x - 2, l.z, 3, '+8 BITS', C.GREEN); return true; }
+  if (k === 'frag') {
+    const i = l.frag; p.src[i] = true; dta.fragments = p.src.map((v, j) => v ? SRC[j] : '_').join('');
+    SFX.win(); shake = 0.3; banner(`SOURCE FRAGMENT  '${SRC[i]}'  RECOVERED  ·  ${p.src.filter(Boolean).length}/6`, C.PINK);
+    burst(l.x, l.z, 4, C.PINK, 24, ['*', '+', '.']);
+    const left = 6 - p.src.filter(Boolean).length;
+    say('AEDI', left ? `Fragment '${SRC[i]}' restored. ${left} to go. All six = the real ending.` : 'All six fragments! IONITY source is whole. Now go finish the Fungus.');
+    if (Math.random() < 0.7) say('IO', pick(['Shiny.', 'Mine now.', 'Is this... a letter? I am a letter collector now.', 'Spelling it out, one jump at a time.']));
+    return true;
+  }
+  if (k === 'magnet') { I.magnet = 12; SFX.loot(); say('IO', 'Magnetic personality. Finally official.'); }
+  else if (k === 'coffee') { I.coffee = 8; SFX.loot(); say('IO', pick(['JAVA. Hot. Strong. Type-safe.', 'Coffee++. I can hear colours.', 'Espresso patronum!'])); }
+  else if (k === 'duck') { I.duck = 5; SFX.loot(); say('IO', 'A rubber duck. I explained my bug to it. It told me: CHOP HARDER.'); }
+  else if (k === 'bubble') { I.bubble = true; SFX.armor(); say('AEDI', 'Bubble shield up. Absorbs the next hit.'); }
+  else if (k === 'floppy') { I.floppy = true; SFX.heal(); say('AEDI', 'SAVE STATE on a 1.44 MB floppy. If you go down, you load back in.'); say('IO', 'It holds 1.44 megabytes of hope.'); }
+  else return false;
+  floatText(l.x - 2, l.z, 3, l.L.name, l.L.color); burst(l.x, l.z, 1, l.L.color, 8, ['.', '\'', '*']);
+  return true;
+}
+function updateItems(dt) {
+  const I = player.items;
+  I.magnet = Math.max(0, I.magnet - dt); I.coffee = Math.max(0, I.coffee - dt);
+}
+
+/* ---------- obstacles ---------- */
+const OB_PLAN = { 1: ['spikes'], 2: ['spikes', 'mine'], 3: ['laser', 'spikes'], 4: ['laser', 'mine'], 5: ['roller', 'spikes'], 6: ['mine', 'laser', 'spikes'], 7: ['laser', 'roller', 'mine'], 8: ['roller', 'mine', 'laser'], 9: ['spikes', 'mine'] };
+function mkObstacle(type, x, R) {
+  if (type === 'spikes') { const z0 = Math.floor(R() * 6), n = 2 + Math.floor(R() * 3); return { type, x, w: 6 + Math.floor(R() * 4), z0, z1: Math.min(ZMAX, z0 + n), t: 0 }; }
+  if (type === 'laser') return { type, x, period: 3.2 + R() * 1.2, onT: 1.3, phase: R() * 3, t: 0, hitT: 0 };
+  if (type === 'roller') return { type, x, every: 1.6 + R() * 0.8, cd: 0.5, t: 0 };
+  if (type === 'mine') return { type, x, z: 1 + Math.floor(R() * 9), fuse: -1, dead: false, t: 0 };
+}
+function placeObstacles() {
+  obst = []; rolls = []; blocks = []; quakes = []; mb = null;
+  if (!stage.id) return;
+  const plan = OB_PLAN[stage.id] || ['spikes'], R = seeded(stage.id * 977 + loop * 13 + 7);
+  const x0 = 72, x1 = door.x - 24, n = Math.max(2, stage.screens * 2 - 1);
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(x0 + (i + 0.5) * (x1 - x0) / n + (R() - 0.5) * 12), o = mkObstacle(plan[i % plan.length], x, R);
+    obst.push(o);
+    // a bit trail arcs over every obstacle: jumping it pays
+    const zc = o.type === 'spikes' ? Math.round((o.z0 + o.z1) / 2) : o.type === 'mine' ? o.z : 3 + Math.floor(R() * 5);
+    const peak = o.type === 'laser' ? 3.4 : 2.6;
+    for (let k = 0; k < 5; k++) { const f = k / 4; loot.push({ id: ++uid, kind: 'bit', L: LOOT.bit, ch: R() < 0.5 ? '0' : '1', x: x - 4 + k * 2.5, z: zc, h: 1 + Math.sin(f * Math.PI) * peak, t: 999, bob: R() * 6, float: true }); }
+  }
+  // the stage's SOURCE FRAGMENT floats high above the middle obstacle - double jump to reach it
+  const fi = FRAG_STAGE[stage.id];
+  if (fi !== undefined && !player.src[fi] && obst.length) {
+    const o = obst[Math.floor(obst.length / 2)], z = o.type === 'spikes' ? Math.round((o.z0 + o.z1) / 2) : o.type === 'mine' ? o.z : 5;
+    loot.push({ id: ++uid, kind: 'frag', frag: fi, L: LOOT.frag, ch: SRC[fi], x: o.x + 2, z, h: 6.2, t: 999, bob: 0, float: true, high: true });
+  }
+}
+function obHurt(dmg, srcX, what) {
+  if (stage.bonus === 'DODGE') { const p = player; if (p.inv > 0) return; p.inv = 1; p.hp = Math.max(1, p.hp - 5); bonusNoHit = false; SFX.hurt(); shake = 0.25; floatText(p.x, p.z, 3, '-5', C.RED); buzz(40); return; }
+  if (player.inv <= 0 && player.dashT <= 0) floatText(player.x, player.z, 5, what, C.RED);
+  hurt(dmg, srcX);
+}
+let bonusNoHit = true;
+function updateObstacles(dt) {
+  const p = player, pcx = p.x + 1.5;
+  for (const o of obst) {
+    o.t += dt;
+    if (o.type === 'spikes') {
+      if (p.h < 0.4 && pcx > o.x - 0.5 && pcx < o.x + o.w + 0.5 && p.z > o.z0 - 0.5 && p.z < o.z1 + 0.5) obHurt(10, pcx + p.facing * 2, 'SPIKES!');
+    } else if (o.type === 'laser') {
+      const ph = (o.t + o.phase) % o.period; o.on = ph < o.onT; o.warn = !o.on && ph > o.period - 0.7;
+      if (o.on) {
+        if (Math.abs(pcx - o.x) < 1.6 && p.h < 3.2) obHurt(14, o.x, 'LASER!');
+        o.hitT -= dt; if (o.hitT <= 0) { o.hitT = 0.4; for (const e of enemies) if (!e.dead && !e.T.prop && Math.abs(e.x + e.w / 2 - o.x) < e.w / 2 + 0.6 && e.h < 3) damageEnemy(e, 1); }
+      }
+    } else if (o.type === 'roller') {
+      const vis = o.x > camX - 4 && o.x < camX + COLS + 30;
+      if (vis) { o.cd -= dt; if (o.cd <= 0) { o.cd = o.every; const z = rndi(0, ZMAX); rolls.push({ x: camX + COLS - 3, z, vx: -26, t: 0, jumped: false }); } }
+    } else if (o.type === 'mine' && !o.dead) {
+      if (o.fuse < 0) {
+        if (Math.abs(pcx - (o.x + 1)) < 1.6 && Math.abs(p.z - o.z) < 0.8 && p.h < 0.5) { o.fuse = 0.55; SFX.fuse(); floatText(o.x, o.z, 3, 'click.', C.ORANGE); }
+        for (const e of enemies) if (!e.dead && !e.T.prop && !e.T.fly && Math.abs(e.x + e.w / 2 - (o.x + 1)) < 1.8 && Math.abs(e.z - o.z) < 0.8) o.fuse = 0.3;
+        if (p.atk > 0 && !p.atkHits.has('mine' + o.x) && near(chopBox(), { x: o.x, w: 3, z: o.z, h: 0 }, 1)) {
+          p.atkHits.add('mine' + o.x); o.dead = true; SFX.block(); floatText(o.x, o.z, 3, 'DEFUSED +5', C.GREEN); dropBits(5, o.x + 1, o.z, 2); dta.defused = (dta.defused || 0) + 1;
+          if (!coached.has('defuse')) { coached.add('defuse'); say('IO', 'Chopped the red wire. Or the blue one. Whatever.'); }
+        }
+      } else {
+        o.fuse -= dt; if (o.fuse <= 0) mineBoom(o);
+      }
+    }
+  }
+  obst = obst.filter(o => !o.dead);
+  // rollers (barrels): jump them; they bowl through spores
+  for (const r of rolls) {
+    r.t += dt; r.x += r.vx * dt;
+    if (r.x < camX - 6 || r.t > 9) { r.dead = true; continue; }
+    const over = Math.abs(pcx - (r.x + 1.5)) < 2 && Math.abs(p.z - r.z) < 0.9;
+    if (over && p.h < 1.1) { obHurt(12, r.x + 1.5, 'BARREL!'); r.dead = true; burst(r.x + 1, r.z, 1, C.WOOD, 10, ['#', '=', '.']); continue; }
+    if (over && p.h >= 1.1 && !r.jumped) { r.jumped = true; addBits(2); floatText(p.x, p.z, 4, 'NICE HOP +2', C.GREEN); dta.hops = (dta.hops || 0) + 1; }
+    for (const e of enemies) if (!e.dead && !e.T.prop && !e.T.fly && e.h < 1 && Math.abs(e.x + e.w / 2 - (r.x + 1.5)) < e.w / 2 + 1 && Math.abs(e.z - r.z) < 0.9) { damageEnemy(e, 3); floatText(e.x, e.z, 4, 'STRIKE!', C.WOOD); }
+  }
+  rolls = rolls.filter(r => !r.dead);
+  // falling 404 blocks (DODGE stages)
+  for (const b of blocks) {
+    b.t -= dt; if (b.t > 0) continue;
+    b.h -= 40 * dt;
+    if (b.h <= 0) { b.dead = true; shake = 0.2; SFX.slam(); burst(b.x + 2, b.z, 0.5, C.RED, 10, ['#', '4', '0', '.']);
+      if (Math.abs(pcx - (b.x + 2.5)) < 3 && Math.abs(p.z - b.z) < 1.1 && p.h < 2) obHurt(14, b.x + 2.5, '404!'); }
+  }
+  blocks = blocks.filter(b => !b.dead);
+  // shockwaves: foe waves must be jumped; your MEGA SLAM waves flatten spores
+  for (const q of quakes) {
+    q.life -= dt; q.r += q.spd * dt; if (q.life <= 0) { q.dead = true; continue; }
+    if (q.foe) { if (!q.hit && p.h < 0.8 && Math.abs(Math.abs(pcx - q.x) - q.r) < 1.4 && Math.abs(p.z - q.z) <= 4) { q.hit = true; hurt(12, q.x); } }
+    else { q.done = q.done || new Set(); for (const e of enemies) if (!e.dead && !q.done.has(e.id) && e.h < 1 && Math.abs(Math.abs(e.x + e.w / 2 - q.x) - q.r) < 1.5 && Math.abs(e.z - q.z) <= 4) { q.done.add(e.id); e.guard = 0; e.knock = (e.x > q.x ? 1 : -1) * 26; damageEnemy(e, 2); } }
+  }
+  quakes = quakes.filter(q => !q.dead);
+}
+function mineBoom(o) {
+  o.dead = true; SFX.bomb(); shake = 0.4; burst(o.x + 1, o.z, 1, C.EMBER, 22, ['*', '#', '%', '.']);
+  for (const e of enemies) if (!e.dead && Math.abs(e.x + e.w / 2 - (o.x + 1)) <= 5 && Math.abs(e.z - o.z) <= 2) { e.guard = 0; damageEnemy(e, 3); }
+  if (Math.abs(player.x + 1.5 - (o.x + 1)) <= 4.5 && Math.abs(player.z - o.z) <= 1.8 && player.h < 2) obHurt(16, o.x + 1, 'MINE!');
+}
+function drawObstacles() {
+  worldMode = true;
+  for (const o of obst) {
+    if (o.type === 'spikes') for (let z = o.z0; z <= o.z1; z++) for (let x = 0; x < o.w; x++) put(o.x + x, rowOf(z, 0), '^', (x + z) % 2 ? zshade(C.GRAY, z) : zshade(C.WHITE, z));
+    else if (o.type === 'laser') {
+      const top = rowOf(ZMAX, 0) - 3, bot = FRONT;
+      text(o.x - 1, top - 1, '[=]', o.on ? C.RED : C.DIM);
+      for (let y = top; y < bot; y++) {
+        if (o.on) put(o.x, y, ((y + ((o.t * 20) | 0)) % 3) ? '|' : '!', ((o.t * 16) | 0) % 2 ? C.RED : C.PINK);
+        else if (o.warn) { if (y % 2) put(o.x, y, ':', ((o.t * 10) | 0) % 2 ? C.ORANGE : C.DIM); }
+        else if (y % 3 === 0) put(o.x, y, '.', C.DIM2);
+      }
+    } else if (o.type === 'roller') { text(o.x - 1, WALL + 1, '(o)', C.DIM); text(o.x - 2, WALL + 2, '/###\\', shade(C.WOOD, 0.6)); }
+    else if (o.type === 'mine' && !o.dead) text(o.x, rowOf(o.z, 0), '(o)', o.fuse >= 0 ? (((o.fuse * 16) | 0) % 2 ? C.WHITE : C.RED) : ((o.t * 2 | 0) % 2 ? C.RED : shade(C.RED, 0.5)));
+  }
+  for (const b of blocks) {
+    if (b.t > 0) { text(b.x, rowOf(b.z, 0), (((b.t * 10) | 0) % 2) ? '!___!' : ' ___ ', C.RED); continue; }
+    shadow(b.x, b.z, 5); sprite(b.x, rowOf(b.z, b.h), ['.---.', '[404]'], C.RED);
+  }
+  for (const q of quakes) {
+    const ch = q.foe ? (((q.r * 2) | 0) % 2 ? '^' : '~') : (((q.r * 2) | 0) % 2 ? '*' : '~'), col = q.foe ? C.ORANGE : C.CYAN;
+    for (let dz = -3; dz <= 3; dz++) { const z = q.z + dz; if (z < 0 || z > ZMAX) continue; put(q.x - q.r, rowOf(z, 0), ch, col); put(q.x + q.r, rowOf(z, 0), ch, col); }
+  }
+  worldMode = false;
+}
+const drawRoll = r => { const a = ((r.t * 10) | 0) % 2 ? ['.-.', '(@)'] : ['.-.', '(o)']; if (player) sprite(r.x, rowOf(r.z, 0), a, zshade(C.WOOD, r.z)); };
+
+/* ---------- empowered jump: stomp + mega slam ---------- */
+function checkStomp() {
+  const p = player; if (p.onGround || p.vh >= 0 || p.mount) return;
+  const pcx = p.x + 1.5;
+  for (const e of enemies) {
+    if (e.dead || e.T.prop || e.state === 'rise' || e.state === 'drop') continue;
+    const top = e.h + e.hgt;
+    if (Math.abs(pcx - (e.x + e.w / 2)) < e.w / 2 + 0.8 && Math.abs(e.z - p.z) < 1.1 && p.h <= top + 0.7 && p.h >= top - 1.3) {
+      e.guard = 0; damageEnemy(e, chopDmg() + 1); bounce('STOMP'); return;
+    }
+  }
+  const m = mb;
+  if (m && !m.dead && !m.hidden && m.talkT <= 0 && Math.abs(pcx - (m.x + m.w / 2)) < m.w / 2 + 0.6 && Math.abs(m.z - p.z) < 1.4 && p.h <= m.h + m.hgt + 1 && p.h >= m.h + m.hgt - 1.4) {
+    damageMini(2 + p.gear.axe); bounce('BONK');
+  }
+}
+function bounce(word) {
+  const p = player; p.vh = 13; p.airLeft = p.airJumps; p.inv = Math.max(p.inv, 0.3); p.slamming = false;
+  SFX.stomp(); floatText(p.x, p.z, p.h + 2, word, C.YELLOW); dta.stomps = (dta.stomps || 0) + 1; buzz(20);
+  if (!coached.has('stomp')) { coached.add('stomp'); say('IO', 'Stomped. I do my own stunts.'); }
+}
+
+/* ---------- DODGE bonus stage ---------- */
+function updateDodge(dt) {
+  pickT -= dt;
+  if (pickT <= 0) { rolls.push({ x: COLS - 2, z: rndi(0, ZMAX), vx: -rnd(24, 34), t: 0, jumped: false }); if (Math.random() < 0.35) rolls.push({ x: COLS - 2, z: rndi(0, ZMAX), vx: -rnd(24, 34), t: 0, jumped: false }); pickT = rnd(0.45, 0.8) * (bonusT < 8 ? 0.75 : 1); }
+  pickT2 -= dt;
+  if (pickT2 <= 0) {
+    const r = Math.random();
+    if (r < 0.45) blocks.push({ x: clamp(player.x + rnd(-6, 6), 3, COLS - 8), z: clamp(player.z + rnd(-1.5, 1.5), 0, ZMAX), h: 14, t: 0.9 });
+    else if (r < 0.75 && obst.filter(o => o.type === 'laser').length < 2) obst.push({ type: 'laser', x: rnd(14, COLS - 14) | 0, period: 99, onT: 1.0, phase: 99 - 0.9, t: 0, hitT: 0, life: 2.2 });
+    else for (let k = 0; k < 6; k++) loot.push({ id: ++uid, kind: 'bit', L: LOOT.bit, ch: Math.random() < 0.5 ? '0' : '1', x: rnd(8, COLS - 8), z: rnd(0, ZMAX), h: rnd(0.5, 3.5), t: 6, bob: 0, float: true });
+    pickT2 = rnd(0.8, 1.3);
+  }
+  for (const o of obst) if (o.life !== undefined) { o.life -= dt; if (o.life <= 0) o.dead = true; }
+}
+
+/* ---------- upgrade terminal (spend bytes between stages) ---------- */
+const UPGRADES = [
+  { k: 'hp',     name: 'HP PATCH',         desc: 'max HP +10 (heals 10)',          max: 5, cost: 4 },
+  { k: 'air',    name: 'AIR JUMP',         desc: '+1 jump in mid-air',             max: 2, cost: 6 },
+  { k: 'axe',    name: 'AXE FIRMWARE',     desc: '+1 chop damage (beyond AXE+2)',  max: 2, cost: 6 },
+  { k: 'cleave', name: 'CLEAVE OVERCLOCK', desc: 'CLEAVE recharge -1.5s',          max: 2, cost: 4 },
+  { k: 'slow',   name: 'SLOW EXTENDER',    desc: 'SLOW lasts +1s',                 max: 3, cost: 3 },
+  { k: 'magnet', name: 'BIT MAGNET',       desc: 'pull bits from further away',    max: 3, cost: 3 },
+  { k: 'armor',  name: 'ARMOR PLATING',    desc: '+25 ion armor now',              max: 99, cost: 2 },
+  { k: 'ultra',  name: 'ULTRA CAPACITOR',  desc: 'ULTRA recharge -60s now',        max: 99, cost: 3 },
+];
+const TERM_JOKES = ['Have you tried turning the spores off and on again?', 'No refunds. This is a terminal, not a charity.', 'Upgrades compiled with -O3 and love.',
+  'Warranty void if chopped.', 'Now accepting bytes. Not bites. Please stop biting the terminal.', 'All sales final. Like your last spore.'];
+let shop = null;
+const upCost = u => u.cost + (player.up[u.k] || 0) * 2;
+function openShop(next) {
+  const pool = UPGRADES.filter(u => (player.up[u.k] || 0) < u.max && !(u.k === 'armor' && player.armor >= 75));
+  const offers = []; while (offers.length < 4 && pool.length) offers.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+  offers.push({ k: 'repair', name: 'FULL REPAIR', desc: 'restore HP to max', max: 99, cost: 2 }, { k: 'done', name: 'CONTINUE  >>', desc: 'leave the terminal', cost: 0 });
+  shop = { offers, idx: 0, next, t: 0, msg: player.bytes ? pick(TERM_JOKES) : 'Insufficient funds. Have you tried chopping more?', bought: [] };
+  state = 'shop'; musicSet('theme'); SFX.door();
+}
+function buyUpgrade(u) {
+  const p = player, c = upCost(u);
+  if (u.k === 'done') return leaveShop();
+  if (u.k === 'repair' && p.hp >= p.maxhp) { shop.msg = 'You are already at full HP. The terminal is judging you.'; SFX.block(); return; }
+  if (p.bytes < c) { shop.msg = `Need ${c} bytes, you have ${p.bytes}. Chop more spores, jump more trails.`; SFX.block(); return; }
+  p.bytes -= c; p.up[u.k] = (p.up[u.k] || 0) + 1; shop.bought.push(u.k); (dta.upgrades = dta.upgrades || []).push({ k: u.k, stage: stage.id, cost: c });
+  if (u.k === 'hp') { p.maxhp += 10; p.hp = Math.min(p.maxhp, p.hp + 10); }
+  else if (u.k === 'air') p.airJumps++;
+  else if (u.k === 'axe') p.gear.axe++;
+  else if (u.k === 'armor') p.armor = Math.min(75, p.armor + 25);
+  else if (u.k === 'ultra') p.ultraCd = Math.max(0, p.ultraCd - 60);
+  else if (u.k === 'repair') { p.hp = p.maxhp; p.up.repair = 0; }
+  SFX.loot(); shop.msg = pick(['Installed. Reboot not required.', 'Patch applied. Side effects: awesomeness.', 'Thank you for your purchase. Please chop again.', 'Upgrade successful. You are now 3% more hero.']);
+  if (u.k !== 'repair' && u.k !== 'armor' && u.k !== 'ultra' && (p.up[u.k] || 0) >= u.max) shop.offers = shop.offers.filter(o => o !== u);
+  shop.idx = Math.min(shop.idx, shop.offers.length - 1);
+}
+function leaveShop() { const n = shop.next; shop = null; startMap(n); }
+function updateShop(dt) {
+  shop.t += dt; const n = shop.offers.length;
+  if (hit('ArrowUp') || hit('KeyW')) { shop.idx = (shop.idx - 1 + n) % n; SFX.hit(); }
+  if (hit('ArrowDown') || hit('KeyS')) { shop.idx = (shop.idx + 1) % n; SFX.hit(); }
+  if (hit('Enter') || hit('KeyJ') || hit('Space')) buyUpgrade(shop.offers[shop.idx]);
+  else if (hit('Escape') || hit('KeyC')) leaveShop();
+}
+function drawShop() {
+  const p = player;
+  drawStars(shop.t, 26); topBars('UPGRADE TERMINAL  ·  AEDI SOURCE COMPILER');
+  const x0 = 6, x1 = 62, y0 = 4, y1 = 6 + shop.offers.length * 2 + 2;
+  panel(x0, y0, x1, y1, 'SPEND BYTES', C.GREEN, true);
+  shop.offers.forEach((u, i) => {
+    const y = y0 + 2 + i * 2, sel = i === shop.idx, c = u.k === 'done' ? 0 : upCost(u), lvl = p.up[u.k] || 0;
+    const afford = p.bytes >= c;
+    if (sel) text(x0 + 2, y, '>>', ((shop.t * 4) | 0) % 2 ? C.GREEN : C.WHITE);
+    text(x0 + 5, y, u.name, sel ? C.WHITE : u.k === 'done' ? C.CYAN : C.GRAY);
+    if (u.k !== 'done') { textR(y, `${c} BYTE${c === 1 ? '' : 'S'}`, afford ? C.YELLOW : C.RED, x1 - 2); if (u.max < 99) text(x0 + 24, y, '■'.repeat(lvl) + '□'.repeat(u.max - lvl), C.GREEN); }
+    text(x0 + 5, y + 1, u.desc, C.DIM);
+  });
+  const sx0 = 66, sx1 = 106;
+  panel(sx0, 4, sx1, 17, 'IO-MAN BUILD', C.CYAN, false);
+  const L = [[`BYTES`, `${p.bytes}   (+${p.bits}/8 bits)`, C.YELLOW], ['HP', `${p.hp} / ${p.maxhp}`, C.GREEN], ['ARMOR', `${p.armor}`, C.BLUE], ['AXE', `+${p.gear.axe}`, C.CYAN],
+    ['JUMPS', `${1 + p.airJumps}  (double${p.airJumps > 1 ? ' + triple' : ''})`, C.WHITE], ['CLEAVE', `${(7 - (p.up.cleave || 0) * 1.5).toFixed(1)}s`, C.CYAN], ['SLOW', `${3 + (p.up.slow || 0)}s`, C.BLUE],
+    ['MAGNET', `${magnetR().toFixed(1)}`, C.RED], ['SOURCE', p.src.map((v, j) => v ? SRC[j] : '·').join(' '), C.PINK]];
+  L.forEach(([k, v, col], i) => { text(sx0 + 2, 5 + i + (i ? 0 : 0) + 1, k.padEnd(8), C.DIM); text(sx0 + 11, 6 + i, v, col); });
+  panel(sx0, 19, sx1, 23, 'TERMINAL SAYS', C.GREEN, false);
+  const msg = shop.msg; text(sx0 + 2, 21, ('> ' + msg).slice(0, sx1 - sx0 - 3), C.GREEN); if (msg.length > sx1 - sx0 - 5) text(sx0 + 4, 22, msg.slice(sx1 - sx0 - 5, (sx1 - sx0 - 5) * 2), C.GREEN);
+  textC(26, isTouch ? 'STICK select  ·  OK buy  ·  CONT leave' : 'W/S select  ·  ENTER buy  ·  C / ESC leave', C.DIM);
+  footer();
+}
+
+/* ---------- HUD row: items · source fragments · bytes ---------- */
+function drawBitsRow() {
+  const p = player, I = p.items, y = FRONT + 2; if (y >= ROWS - 1) return;
+  const it = [];
+  if (I.coffee > 0) it.push([`JAVA ${Math.ceil(I.coffee)}s`, C.ORANGE]); if (I.duck > 0) it.push([`DUCK x${I.duck}`, C.YELLOW]);
+  if (I.magnet > 0) it.push([`MAG ${Math.ceil(I.magnet)}s`, C.RED]); if (I.bubble) it.push(['BUBBLE', C.CYAN]); if (I.floppy) it.push(['SAVE', C.BLUE]);
+  let x = 2; if (!it.length) text(x, y, 'ITEMS -', C.DIM); else it.forEach(([s, c]) => { text(x, y, s, c); x += s.length + 2; });
+  const src = 'SOURCE [' + p.src.map((v, j) => v ? SRC[j] : '·').join(' ') + ']', sx = Math.floor((COLS - src.length) / 2);
+  text(sx, y, 'SOURCE [', C.DIM); p.src.forEach((v, j) => put(sx + 8 + j * 2, y, v ? SRC[j] : '·', v ? C.PINK : C.DIM)); put(sx + src.length - 1, y, ']', C.DIM);
+  const bt = `BYTES ${pad(p.bytes, 3)}  BITS ${p.bits}/8`; textR(y, bt, C.GREEN, COLS - 2);
+  meter(COLS - 2 - bt.length - 10, y, p.bits, 8, 8, C.GREEN);
+}
 /* =====================================================================================
    v4.1 UI layer: ANSI block logo, vector box/block glyph renderer, framed panels,
    title menu, aligned HUD + status bar, hall of fame screen
@@ -1871,9 +2381,9 @@ function drawTitle() {
   const cx0 = 51, cx1 = 106;
   panel(cx0, py0, cx1, py1, isTouch ? 'TOUCH CONTROLS' : 'CONTROLS', C.CYAN, false);
   const rows = isTouch ? [
-    ['MOVE', 'drag the IO stick  ·  up/down = depth'], ['CHOP', 'CHOP ==>  ·  3rd hit = FINISHER'], ['JUMP', 'JUMP  ·  JUMP then CHOP = SLAM'],
+    ['MOVE', 'drag the IO stick  ·  up/down = depth'], ['CHOP', 'CHOP ==>  ·  3rd hit = FINISHER'], ['JUMP', 'JUMP x2 double · land on = STOMP'],
     ['POWER', 'SLOW  ·  CLEAVE  ·  ULTRA'], ['DASH', 'keyboard / gamepad only'], ['MENU', '||  pause  ·  ≡ options  ·  ♪ mute'], ] : [
-    ['MOVE', 'WASD / ARROWS  ·  W S = DEPTH'], ['JUMP', 'SPACE  ·  SPACE then J = SLAM'], ['CHOP', 'J  ·  3rd hit in a row = FINISHER'],
+    ['MOVE', 'WASD / ARROWS  ·  W S = DEPTH'], ['JUMP', 'SPACE x2 = DOUBLE · land on spores = STOMP'], ['CHOP', 'J  ·  3rd hit in a row = FINISHER'],
     ['DASH', 'double-tap A or D  ·  + J = STRIKE'], ['POWER', 'K SLOW  ·  L CLEAVE  ·  U ULTRA'], ['SYSTEM', 'P pause · O options · M mute · N track'],
   ];
   rows.forEach(([k, v], i) => { text(cx0 + 2, 13 + i, k.padEnd(7), C.CYAN); text(cx0 + 10, 13 + i, v, C.GRAY); });
@@ -1933,12 +2443,15 @@ function drawHUD() {
 /* ---------- ground line + status bar (bottom) ---------- */
 function groundLine(hp, armor, title) {
   hline(FRONT, 0, COLS - 1, '=', C.CYAN2); hline(FRONT, 86, COLS - 1, '+', C.ORANGE);
-  const hpCol = hp > 50 ? C.GREEN : (hp > 25 ? C.ORANGE : ((runT * 6 | 0) % 2 ? C.RED : C.WHITE));
+  const hpf = 100 * hp / ((player && !title && player.maxhp) || 100);
+  const hpCol = hpf > 50 ? C.GREEN : (hpf > 25 ? C.ORANGE : ((runT * 6 | 0) % 2 ? C.RED : C.WHITE));
   let x = 30;
   fillRect(x - 1, FRONT, x + 42, FRONT);
-  text(x, FRONT, '|', C.DIM); text(x + 2, FRONT, `HP ${String(hp).padStart(3)}%`, hpCol); meter(x + 11, FRONT, hp, 100, 12, hpCol);
+  const max = (player && !title && player.maxhp) || 100, pct = Math.round(100 * hp / max);
+  text(x, FRONT, '|', C.DIM); text(x + 2, FRONT, `HP ${String(pct).padStart(3)}%`, hpCol); meter(x + 11, FRONT, hp, max, 12, hpCol);
   text(x + 24, FRONT, '|', C.DIM); text(x + 26, FRONT, `ARM ${pad(armor, 3)}`, armor > 0 ? C.BLUE : C.DIM); meter(x + 34, FRONT, armor, 75, 6, C.BLUE);
   text(x + 41, FRONT, '|', C.DIM);
+  if (player && !title) { const g = ` AX+${player.gear.axe} BT${player.gear.boots} J${1 + player.airJumps} `; fillRect(x + 43, FRONT, x + 43 + g.length - 1, FRONT); text(x + 43, FRONT, g, C.YELLOW); }
 }
 function abilityCell(x, key, name, frac, label, col, active) {
   text(x, FRONT + 1, key, active ? C.WHITE : col); text(x + 2, FRONT + 1, name.padEnd(6), frac >= 1 || active ? C.WHITE : C.GRAY);
@@ -1949,17 +2462,18 @@ function drawStatus() {
   const p = player;
   groundLine(p.hp, p.armor);
   const y = FRONT + 1;
-  const gear = `BOOTS x${p.gear.boots}  AXE +${p.gear.axe}${p.spreadT > 0 ? `  SPREAD ${Math.ceil(p.spreadT)}s` : ''}${p.mount ? `  BEAST ${'#'.repeat(p.mount.hp)}` : ''}`;
+  const gear = `${p.spreadT > 0 ? `SPREAD ${Math.ceil(p.spreadT)}s  ` : ''}${p.mount ? `BEAST ${'#'.repeat(p.mount.hp)}  ` : ''}${p.spreadT > 0 || p.mount ? '' : 'J JUMP x' + (1 + p.airJumps) + ' · STOMP'}`;
   if (isTouch) { textC(y, gear, C.YELLOW); }
   else {
-    abilityCell(2, 'K', 'SLOW', p.slowT > 0 ? p.slowT / 3 : 1 - p.slowCd / 18, p.slowT > 0 ? 'ACTIVE' : p.slowCd > 0 ? Math.ceil(p.slowCd) + 's' : 'READY', C.BLUE, p.slowT > 0);
+    abilityCell(2, 'K', 'SLOW', p.slowT > 0 ? p.slowT / (3 + (p.up.slow || 0)) : 1 - p.slowCd / 18, p.slowT > 0 ? 'ACTIVE' : p.slowCd > 0 ? Math.ceil(p.slowCd) + 's' : 'READY', C.BLUE, p.slowT > 0);
     put(27, y, '│', C.DIM2);
-    abilityCell(29, 'L', 'CLEAVE', 1 - p.cleaveCd / 7, p.cleaveCd > 0 ? Math.ceil(p.cleaveCd) + 's' : 'READY', C.CYAN, p.cleaveAnim > 0);
+    abilityCell(29, 'L', 'CLEAVE', 1 - p.cleaveCd / (7 - (p.up.cleave || 0) * 1.5), p.cleaveCd > 0 ? Math.ceil(p.cleaveCd) + 's' : 'READY', C.CYAN, p.cleaveAnim > 0);
     put(54, y, '│', C.DIM2);
     abilityCell(56, 'U', 'ULTRA', 1 - p.ultraCd / 240, p.ultraCd > 0 ? mmss(p.ultraCd) : 'READY', C.PINK, !!ultra);
     put(81, y, '│', C.DIM2);
     text(83, y, gear.slice(0, 28), C.YELLOW);
   }
+  drawBitsRow();
   footer();
 }
 
@@ -1967,9 +2481,9 @@ function drawStatus() {
 function drawOptions() {
   drawStars(titleT, 26); topBars('OPTIONS  ·  SAVED ON THIS DEVICE');
   const x0 = 22, x1 = 89;
-  panel(x0, 4, x1, 25, 'SETTINGS', C.CYAN, true);
+  panel(x0, 3, x1, 25, 'SETTINGS', C.CYAN, true);
   OPTS.forEach((o, i) => {
-    const sel = i === optIdx, y = 6 + i * 2;
+    const sel = i === optIdx, y = 5 + i * 2;
     if (sel) text(x0 + 2, y, '>>', C.GREEN);
     text(x0 + 5, y, o.label.padEnd(26, '.'), sel ? C.WHITE : C.GRAY);
     if (o.k === 'music' || o.k === 'sfx') { meter(x0 + 33, y, SET[o.k], 10, 10, sel ? C.YELLOW : C.CYAN); text(x0 + 45, y, String(SET[o.k]).padStart(2), sel ? C.YELLOW : C.CYAN); }
@@ -2192,6 +2706,211 @@ function makeCard(W, H, r, kind) {
   return c;
 }
 const cardBlob = (w, h, r, kind) => new Promise(res => { try { makeCard(w, h, r, kind).toBlob(b => res(b), 'image/png'); } catch (e) { res(null); } });
+
+/* =====================================================================================
+   v4.4 IONITY CLOUD: Firebase project io-man, Spark (free) plan.
+   - Anonymous Auth: one stable id per phone / browser (no account, no personal data).
+   - Firestore (africa-south1), lite SDK loaded on demand:
+       devices/{uid}  per-device save: settings, checkpoint, local hall of fame, lifetime totals
+       scores/{id}    global leaderboard (append-only, rule-checked)
+       runs/{id}      run logs (the DTA JSON), readable only by the device that wrote them
+   - Google Analytics 4 events (level_start / level_end / post_score / unlock_achievement / share ...).
+   The game never waits on the cloud: everything is fire-and-forget and the game runs offline.
+   Disable per device in OPTIONS, or with ?cloud=0. file:// copies stay local unless ?cloud=1.
+   ===================================================================================== */
+const FB_CONFIG = {
+  apiKey: 'AIzaSyBDWHaRVFf1tmC7T3fbyk2MpIBeuyoyoIc', authDomain: 'io-man.firebaseapp.com', projectId: 'io-man',
+  storageBucket: 'io-man.firebasestorage.app', messagingSenderId: '737401934489', appId: '1:737401934489:web:bfe305eba0bdc4416c9e08', measurementId: 'G-8ZLB4NK7K9',
+};
+const FB_CDN = 'https://www.gstatic.com/firebasejs/12.19.0/';
+const cloud = { state: 'off', uid: null, err: '', world: [], worldT: 0, lastPush: 0, m: null, events: [], hadDoc: false, rank: 0 };
+let TOTALS = { runs: 0, wins: 0, kills: 0, bits: 0, bytes: 0, stomps: 0, minis: 0, frags: 0, playSec: 0, best: 0 };
+try { Object.assign(TOTALS, JSON.parse(localStorage.getItem('ioman_totals') || '{}')); } catch (e) { }
+const saveTotals = () => { try { localStorage.setItem('ioman_totals', JSON.stringify(TOTALS)); } catch (e) { } };
+function cloudAllowed() {
+  let q = ''; try { q = new URLSearchParams(location.search).get('cloud'); } catch (e) { }
+  if (q === '0' || SET.cloud === false) return false;
+  if (location.protocol === 'file:' && q !== '1') return false;
+  return typeof navigator === 'undefined' || navigator.onLine !== false;
+}
+function cloudLabel() {
+  return { off: 'ON · idle', loading: 'ON · connecting', on: `ON · synced (${(cloud.uid || '').slice(0, 6)})`, error: 'ON · offline (retry later)', local: 'LOCAL FILE' }[cloud.state] || 'ON';
+}
+async function cloudInit() {
+  if (cloud.state === 'loading' || cloud.state === 'on') return;
+  if (!cloudAllowed()) { cloud.state = location.protocol === 'file:' ? 'local' : 'off'; return; }
+  cloud.state = 'loading';
+  try {
+    const [A, U, F, G] = await Promise.all([import(FB_CDN + 'firebase-app.js'), import(FB_CDN + 'firebase-auth.js'), import(FB_CDN + 'firebase-firestore-lite.js'), import(FB_CDN + 'firebase-analytics.js').catch(() => null)]);
+    const app = A.initializeApp(FB_CONFIG), auth = U.getAuth(app), db = F.getFirestore(app);
+    let an = null; try { if (G && await G.isSupported()) an = G.getAnalytics(app); } catch (e) { }
+    cloud.m = { A, U, F, G, app, auth, db, an };
+    if (typeof auth.authStateReady === 'function') await auth.authStateReady();
+    const user = auth.currentUser || (await U.signInAnonymously(auth)).user;
+    cloud.uid = user.uid; cloud.state = 'on';
+    if (an) { G.setUserProperties(an, { game_version: BUILD.version, platform: isTouch ? 'touch' : 'desktop' }); }
+    cloud.events.splice(0).forEach(([n, p]) => cloudEvent(n, p));
+    await cloudPull();
+    cloudPush('session', true); cloudWorld();
+  } catch (e) { cloud.state = 'error'; cloud.err = String(e && e.message || e).slice(0, 120); console.warn('IONITY CLOUD offline:', cloud.err); }
+}
+function cloudEvent(name, params) {
+  if (cloud.state !== 'on') { if (cloud.events.length < 40) cloud.events.push([name, params]); return; }
+  try { if (cloud.m.an) cloud.m.G.logEvent(cloud.m.an, name, Object.assign({ game_version: BUILD.version }, params || {})); } catch (e) { }
+}
+/* first visit after a storage wipe? bring the device save back down */
+async function cloudPull() {
+  const { F, db } = cloud.m;
+  try {
+    const snap = await F.getDoc(F.doc(db, 'devices', cloud.uid)); if (!snap.exists()) return; cloud.hadDoc = true;
+    const d = snap.data();
+    if (d.progress && (d.progress.maxIdx | 0) > (progress.maxIdx | 0)) { progress.maxIdx = d.progress.maxIdx | 0; progress.v = 44; saveProgress(); }
+    if (Array.isArray(d.hof) && d.hof.length) {
+      const all = scores.concat(d.hof.filter(h => h && typeof h.score === 'number'));
+      const seen = new Set(); scores = all.filter(s => { const k = s.name + s.score + s.date; if (seen.has(k)) return false; seen.add(k); return true; }).sort((a, b) => b.score - a.score).slice(0, 5);
+      try { localStorage.setItem('ioman_scores', JSON.stringify(scores)); } catch (e) { }
+    }
+    if (d.totals) for (const k in TOTALS) TOTALS[k] = Math.max(TOTALS[k] || 0, d.totals[k] || 0);
+    saveTotals();
+  } catch (e) { }
+}
+function cloudPush(reason, force) {
+  if (cloud.state !== 'on') return;
+  const now = Date.now(); if (!force && now - cloud.lastPush < 15000) return; cloud.lastPush = now;
+  const { F, db } = cloud.m;
+  const doc = {
+    v: BUILD.version, seen: F.serverTimestamp(), platform: isTouch ? 'touch' : 'desktop', lang: (navigator.language || '').slice(0, 12),
+    tz: (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone.slice(0, 40); } catch (e) { return ''; } })(),
+    settings: Object.assign({}, SET), progress: { maxIdx: progress.maxIdx | 0, v: 44 }, hof: scores.slice(0, 5), best: TOTALS.best, totals: TOTALS,
+    source: player && player.src ? player.src.filter(Boolean).length : 0, runs: TOTALS.runs, name: lastName(),
+  };
+  if (!cloud.hadDoc) { doc.created = F.serverTimestamp(); cloud.hadDoc = true; }
+  F.setDoc(F.doc(db, 'devices', cloud.uid), doc, { merge: true }).catch(e => { cloud.err = String(e.message || e).slice(0, 120); });
+}
+async function cloudWorld() {
+  if (cloud.state !== 'on') return; cloud.worldT = Date.now();
+  const { F, db } = cloud.m;
+  try {
+    const qs = await F.getDocs(F.query(F.collection(db, 'scores'), F.orderBy('score', 'desc'), F.limit(10)));
+    cloud.world = qs.docs.map(d => d.data()).map(s => ({ name: s.name, score: s.score, stage: s.stage, loop: s.loop || 0, diff: s.diff, src: s.src || 0, mine: s.uid === cloud.uid }));
+  } catch (e) { }
+}
+/* one call per finished run (after initials, or straight away) */
+function cloudRunEnd() {
+  if (!dta || dta.cloudSent) return; dta.cloudSent = true;
+  const win = /ROOT/.test(dta.result || ''), nsrc = player ? player.src.filter(Boolean).length : 0;
+  TOTALS.runs++; if (win) TOTALS.wins++; TOTALS.kills += kills || 0; TOTALS.bits += dta.bits || 0; TOTALS.bytes += dta.bytes || 0; TOTALS.stomps += dta.stomps || 0;
+  TOTALS.minis += (dta.minis || []).length; TOTALS.frags = Math.max(TOTALS.frags, nsrc); TOTALS.playSec += Math.round(runT); TOTALS.best = Math.max(TOTALS.best, score); saveTotals();
+  cloudEvent('post_score', { score, level: dta.stagesReached || 0, character: 'IO-MAN' });
+  cloudEvent('level_end', { level_name: stage ? stage.name : '', success: win });
+  if (cloud.state !== 'on') return;
+  const { F, db } = cloud.m;
+  let name = (dta.hallOfFame && dta.hallOfFame.name) || lastName(); if (!nameIsClean(cleanName(name))) name = 'IOMAN';
+  if (score > 0) F.addDoc(F.collection(db, 'scores'), { uid: cloud.uid, name: cleanName(name) || 'IOMAN', score: Math.min(5000000, Math.round(score)), stage: clamp(dta.stagesReached | 0, 0, 9), loop: loop | 0,
+    diff: diffNow().name.slice(0, 8), result: String(dta.result || '').slice(0, 40), src: nsrc, time: Math.round(runT), at: F.serverTimestamp(), v: BUILD.version })
+    .then(() => cloudWorld()).catch(e => { cloud.err = String(e.message || e).slice(0, 120); });
+  let json = ''; try { json = JSON.stringify(dta); } catch (e) { }
+  F.addDoc(F.collection(db, 'runs'), { uid: cloud.uid, v: BUILD.version, at: F.serverTimestamp(), result: String(dta.result || ''), score: Math.round(score), stage: dta.stagesReached | 0, dta: json.slice(0, 200000) }).catch(() => { });
+  cloudPush('run', true);
+}
+/* ---------- hooks into the game (wrap, don't rewrite) ---------- */
+{
+  const _loadStage = loadStage; loadStage = function (i) { const r = _loadStage(i); cloudEvent('level_start', { level_name: stage.name, level: stage.id || 0, bonus: stage.bonus || '' }); return r; };
+  const _stageClear = stageClear; stageClear = function () { cloudEvent('level_end', { level_name: stage.name, success: true, time_sec: Math.round(stageT) }); const r = _stageClear(); cloudPush('stage'); return r; };
+  const _showDTA = showDTA; showDTA = function () { const r = _showDTA(); cloudRunEnd(); return r; };
+  const _buy = buyUpgrade; buyUpgrade = function (u) { const b = player.bytes; const r = _buy(u); if (player.bytes < b) cloudEvent('spend_virtual_currency', { virtual_currency_name: 'bytes', value: b - player.bytes, item_name: u.k }); return r; };
+  const _frag = applyLoot44; applyLoot44 = function (l) { if (l.kind === 'frag') cloudEvent('unlock_achievement', { achievement_id: 'source_' + SRC[l.frag] + '_' + l.frag }); return _frag(l); };
+  const _dm = damageMini; damageMini = function (d, how) { const was = mb && !mb.dead; const r = _dm(d, how); if (was && mb && mb.dead) cloudEvent('unlock_achievement', { achievement_id: 'mini_' + mb.D.name.toLowerCase().replace(/\W+/g, '_') }); return r; };
+  const _ds = dtaShare; dtaShare = function (ch) { cloudEvent('share', { method: ch, content_type: 'game', item_id: 'io-man' }); return _ds(ch); };
+  const _hurtState = saveSettings; saveSettings = function () { const r = _hurtState(); cloudPush('settings'); return r; };
+}
+/* ---------- OPTIONS: cloud toggle ---------- */
+if (SET.cloud === undefined) SET.cloud = true;
+OPTS.splice(OPTS.findIndex(o => o.k === 'reset'), 0, { k: 'cloud', label: 'CLOUD SAVE + WORLD BOARD', get: () => SET.cloud === false ? 'OFF · this device only' : cloudLabel(),
+  adj: () => { SET.cloud = SET.cloud === false; if (SET.cloud) cloudInit(); else cloud.state = 'off'; } });
+/* ---------- HALL OF FAME: this device + the world ---------- */
+drawHof = function () {
+  if (cloud.state === 'on' && Date.now() - cloud.worldT > 30000) cloudWorld();
+  drawStars(titleT, 26); topBars('HALL OF FAME');
+  const hx = Math.floor((COLS - LOGO_IOMAN[0].length) / 2); fillRect(hx - 2, 2, hx + LOGO_IOMAN[0].length + 2, 9);
+  drawLogo(LOGO_IOMAN, hx, 3, undefined, null);
+  const row = (s, i) => `${String(i + 1).padStart(2)} ${String(s.name).padEnd(9)} ${pad(s.score, 7)} ${String(s.stage).padStart(2)}${s.loop ? '+' + s.loop : '  '} ${(s.diff || '').slice(0, 6).padEnd(6)}`;
+  const a0 = 4, a1 = 53, b0 = 57, b1 = 107;
+  panel(a0, 11, a1, 24, 'THIS DEVICE  ·  TOP 5', C.YELLOW, true);
+  text(a0 + 3, 13, ' # NAME        SCORE STG   DIFF   DATE', C.DIM); hline(14, a0 + 3, a1 - 3, '─', C.DIM2);
+  for (let i = 0; i < 5; i++) { const s = scores[i], y = 15 + i; if (!s) { text(a0 + 3, y, `${String(i + 1).padStart(2)} ---       -------  -    -      -----`, C.DIM); continue; } text(a0 + 3, y, row(s, i) + ' ' + (s.date || '').slice(5), i === 0 ? C.YELLOW : C.WHITE); }
+  text(a0 + 3, 21, `RUNS ${TOTALS.runs}  WINS ${TOTALS.wins}  KILLS ${TOTALS.kills}`, C.DIM); text(a0 + 3, 22, `BITS ${TOTALS.bits}  STOMPS ${TOTALS.stomps}  MINI-BOSSES ${TOTALS.minis}`, C.DIM);
+  panel(b0, 11, b1, 24, 'WORLD  ·  IONITY CLOUD', C.CYAN, true);
+  text(b0 + 3, 13, ' # NAME        SCORE STG   DIFF   SRC', C.DIM); hline(14, b0 + 3, b1 - 3, '─', C.DIM2);
+  if (cloud.state === 'on' && cloud.world.length) cloud.world.slice(0, 8).forEach((s, i) => text(b0 + 3, 15 + i, row(s, i) + ` ${s.src}/6` + (s.mine ? ' <' : ''), s.mine ? C.GREEN : i === 0 ? C.YELLOW : C.WHITE));
+  else text(b0 + 3, 16, cloud.state === 'on' ? 'no world scores yet - be the first' : cloud.state === 'loading' ? 'connecting to IONITY CLOUD...' : cloud.state === 'local' ? 'local file - play at ionity.fun for the world board' : 'offline / cloud off (OPTIONS)', C.DIM);
+  textC(26, 'ENTER / ESC back', C.DIM);
+  footer();
+};
+/* boot the cloud quietly once the page is idle (never blocks the splash or the intro) */
+setTimeout(() => { if (cloudAllowed()) cloudInit(); else if (location.protocol === 'file:') cloud.state = 'local'; }, 2500);
+addEventListener('online', () => { if (cloud.state === 'error' || cloud.state === 'off') cloudInit(); });
+
+/* =====================================================================================
+   v4.4 PLAYER NAME (up to 9 characters, A-Z 0-9 -), clean-language filter.
+   Real text input (phone keyboard / desktop typing) over the canvas; the last name is remembered.
+   ===================================================================================== */
+const NAME_MAX = 9;
+const BAD_ANY = ['fuck', 'fuk', 'fck', 'phuk', 'shit', 'cunt', 'bitch', 'biatch', 'dick', 'cock', 'pussy', 'puss', 'asshole', 'arsehole', 'bastard', 'slut', 'whore', 'hoer',
+  'nigg', 'nigr', 'niga', 'fag', 'retard', 'rape', 'rapist', 'twat', 'wank', 'porn', 'nazi', 'hitler', 'penis', 'vagina', 'dildo', 'jizz', 'kaffir', 'kafir', 'kaffer',
+  'poes', 'naai', 'fokk', 'doos', 'bliksem', 'testikel', 'bollock', 'boner', 'horny', 'milf', 'orgy', 'semen', 'scrotum', 'blowjob', 'handjob', 'motherf', 'sukkel', 'klootzak'];
+const BAD_EDGE = ['ass', 'arse', 'cum', 'sex', 'tit', 'tits', 'kak', 'fok', 'gat', 'piss', 'crap', 'kkk', 'hoe', 'boob', 'anal', 'moer', 'poep', 'suck', 'nut', 'gay', 'homo', 'pee', 'poo', 'wtf', 'stfu', 'fu', 'kys'];
+function cleanName(raw) { return String(raw || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, NAME_MAX); }
+function nameIsClean(n) {
+  const leet = { '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't', '8': 'b', '9': 'g', '$': 's', '@': 'a', '!': 'i' };
+  const base = n.toLowerCase().replace(/[0-9$@!]/g, c => leet[c] || c).replace(/[^a-z]/g, '');
+  const squash = base.replace(/(.)\1+/g, '$1');
+  for (const s of [base, squash]) {
+    if (BAD_ANY.some(w => s.includes(w))) return false;
+    if (BAD_EDGE.some(w => s === w || s.startsWith(w) || s.endsWith(w))) return false;
+  }
+  return true;
+}
+function lastName() { try { return cleanName(localStorage.getItem('ioman_last_ini') || 'IOMAN') || 'IOMAN'; } catch (e) { return 'IOMAN'; } }
+const nameBox = document.createElement('div');
+nameBox.id = 'namebox'; nameBox.hidden = true;
+nameBox.innerHTML = `<form id="nb-form" autocomplete="off"><label for="nb-in">ENTER YOUR NAME</label>
+  <input id="nb-in" spellcheck="false" autocapitalize="characters" enterkeyhint="done" inputmode="text" aria-describedby="nb-msg">
+  <div class="nb-row"><button type="submit" class="nb-ok">SAVE ★</button><button type="button" id="nb-skip">SKIP</button></div>
+  <small id="nb-msg">A-Z · 0-9 · - · max ${NAME_MAX} · keep it clean</small></form>`;
+document.body.appendChild(nameBox);
+const nbIn = document.getElementById('nb-in'), nbMsg = document.getElementById('nb-msg');
+nbIn.addEventListener('input', () => { const c = cleanName(nbIn.value); if (c !== nbIn.value) nbIn.value = c; nbMsg.textContent = `${c.length}/${NAME_MAX}  ·  A-Z 0-9 -  ·  keep it clean`; nbMsg.className = ''; });
+nbIn.addEventListener('keydown', e => e.stopPropagation());   // typing never reaches the game
+function commitName(name) {
+  scores.push({ name, score, stage: dta.stagesReached, loop, diff: diffNow().name, date: new Date().toISOString().slice(0, 10) });
+  scores.sort((a, b) => b.score - a.score); scores = scores.slice(0, 5);
+  try { localStorage.setItem('ioman_scores', JSON.stringify(scores)); localStorage.setItem('ioman_last_ini', name); } catch (e) { }
+  dta.hallOfFame = { name, rank: scores.findIndex(s => s.name === name && s.score === score) + 1 };
+  nameBox.hidden = true; nbIn.blur(); pressed.length = 0; for (const k in keys) keys[k] = false;
+  SFX.loot(); state = ini.after; showDTA();
+}
+document.getElementById('nb-form').addEventListener('submit', e => {
+  e.preventDefault(); const n = cleanName(nbIn.value);
+  if (!n) { nbMsg.textContent = 'type at least one character'; nbMsg.className = 'bad'; SFX.block(); return; }
+  if (!nameIsClean(n)) { nbMsg.textContent = 'NOPE. That name is not allowed - keep it clean.'; nbMsg.className = 'bad'; SFX.block(); nbIn.select(); dta.nameRejected = (dta.nameRejected || 0) + 1; return; }
+  commitName(n);
+});
+document.getElementById('nb-skip').addEventListener('click', () => { const n = lastName(); commitName(nameIsClean(n) ? n : 'IOMAN'); });
+enterInitials = function (after) {
+  ini = { letters: [], pos: 0, after }; state = 'initials';
+  nbIn.value = lastName(); nbMsg.textContent = `A-Z · 0-9 · - · max ${NAME_MAX} · keep it clean`; nbMsg.className = '';
+  nameBox.hidden = false; setTimeout(() => { try { nbIn.focus({ preventScroll: true }); nbIn.select(); } catch (e) { } }, 60);
+};
+updateInitials = function () { };
+drawInitials = function () {
+  drawStars(runT, 26);
+  hline(0, 0, COLS - 1, '-', C.DIM); hline(1, 0, COLS - 1, '-', C.DIM);
+  textC(4, 'H A L L   O F   F A M E', C.YELLOW);
+  textC(6, `NEW HIGH SCORE  ·  ${pad(score, 7)}  ·  STAGE ${dta.stagesReached}${loop ? '  ·  LOOP ' + (loop + 1) : ''}  ·  ${diffNow().name}`, C.WHITE);
+  textC(22, isTouch ? 'tap the box, type your name, SAVE' : 'type your name  ·  ENTER save  ·  max 9  ·  keep it clean', C.DIM);
+  scoreLines().forEach((l, i) => textC(23 + i, l, C.GRAY));
+};
 /* =====================================================================================
    drawing
    ===================================================================================== */
@@ -2297,13 +3016,16 @@ function drawPlayer() {
   sprite(p.x + ox, r, art, col);
   if (p.armor > 0 && p.hp > 0) { put(p.x - 1, r - 1, '[', shade(C.BLUE, 0.9)); put(p.x + 3, r - 1, ']', shade(C.BLUE, 0.9)); }
   if (p.atk > 0 && p.cleaveAnim <= 0) { if (p.facing > 0) text(p.x + 2, r - 1, '==>', C.CYAN); else text(p.x - 2, r - 1, '<==', C.CYAN); }
+  if (!p.onGround && p.airJumps > 0 && p.hp > 0) for (let k = 0; k < p.airJumps; k++) put(p.x + k, r - 3, k < p.airLeft ? '°' : '.', k < p.airLeft ? C.CYAN : C.DIM);
+  if (p.items.coffee > 0 && p.moving && Math.random() < 0.3) parts.push({ x: p.x - p.facing * 2, z: p.z, h: p.h + 1, vx: -p.facing * 4, vh: 3, life: 0.3, ch: '~', color: C.ORANGE });
+  if (p.items.bubble) { put(p.x - 1, r - 2, '(', C.CYAN); put(p.x + 3, r - 2, ')', C.CYAN); }
   if (p.spreadT > 0) put(p.x + 1, r - 3, 'S', ((runT * 6) | 0) % 2 ? C.ORANGE : C.YELLOW);
   if (p.cleaveAnim > 0) { const rad = Math.round((0.4 - p.cleaveAnim) * 26); for (let a = 0; a < 12; a++) { const ang = a / 12 * Math.PI * 2; put(p.x + 1.5 + Math.cos(ang) * rad, r - 1 + Math.sin(ang) * rad * 0.35, pick(['*', '~', 'o']), C.CYAN); } }
 }
 function drawFX() {
-  for (const s of shots) { if (s.h > 0.5) put(s.x, rowOf(s.z, 0), '.', shade(C.PURPLE, 0.5)); put(s.x, rowOf(s.z, s.h), ((s.h * 3) | 0) % 2 ? 'o' : 'O', C.PURPLE); }
+  for (const s of shots) { if (s.h > 0.5) put(s.x, rowOf(s.z, 0), s.mail ? 'x' : '.', shade(s.mail ? C.PINK : C.PURPLE, 0.5)); put(s.x, rowOf(s.z, s.h), s.mail ? '@' : ((s.h * 3) | 0) % 2 ? 'o' : 'O', s.mail ? C.PINK : C.PURPLE); }
   for (const b of bullets) text(b.x - 1, rowOf(b.z, b.h), b.vx > 0 ? '==' : '==', C.ORANGE);
-  for (const l of loot) { const blinkOut = l.t < 3 && ((l.t * 6) | 0) % 2; if (blinkOut) continue; const r = rowOf(l.z, l.h + (l.h <= 0 ? Math.abs(Math.sin(l.bob * 3)) * 0.6 : 0)); if (l.h > 0.5) shadow(l.x, l.z, 1); put(l.x, r, l.L.ch, l.L.color); if (l.h <= 0) { put(l.x - 1, r, '<', shade(l.L.color, 0.5)); put(l.x + 1, r, '>', shade(l.L.color, 0.5)); } }
+  for (const l of loot) { const blinkOut = l.t < 3 && ((l.t * 6) | 0) % 2; if (blinkOut) continue; const r = rowOf(l.z, l.h + (l.h <= 0 ? Math.abs(Math.sin(l.bob * 3)) * 0.6 : 0)); if (l.h > 0.5) shadow(l.x, l.z, 1); if (l.kind === 'frag') { const c = ((runT * 6) | 0) % 2 ? C.PINK : C.WHITE; put(l.x - 1, r, '<', c); put(l.x + 1, r, '>', c); put(l.x, r - 1, ((runT * 4) | 0) % 2 ? '*' : '+', C.PINK); } put(l.x, r, l.ch || l.L.ch, l.L.color); if (l.h <= 0 && !l.float) { put(l.x - 1, r, '<', shade(l.L.color, 0.5)); put(l.x + 1, r, '>', shade(l.L.color, 0.5)); } }
   for (const p of parts) { const r = rowOf(p.z, p.h); if (p.txt) text(p.x, r, p.ch, p.color); else put(p.x, r, p.ch, p.color); }
 }
 function drawUltra() {
@@ -2334,13 +3056,14 @@ function drawEnd(win) {
   if (win) {
     TROPHY.slice(0, 4).forEach((l, i) => { text(4, 1 + i, l, C.YELLOW); text(COLS - 21, 1 + i, l, C.YELLOW); });
     textC(2, `ROOT ACCESS GRANTED  ·  IO-MAN GOT OVER IT${loop ? '  ·  LOOP ' + (loop + 1) : ''}`, C.GREEN);
-    textC(3, 'THE GREAT FUNGUS HAS BEEN CHOPPED. GOVERNANCE RESTORED.', C.WHITE);
+    textC(3, player.src.every(Boolean) ? 'TRUE ENDING  ·  IONITY SOURCE RESTORED  ·  ALL SIX FRAGMENTS. BUILDING TOMORROW, TODAY.' : `THE GREAT FUNGUS HAS BEEN CHOPPED. SOURCE ${player.src.filter(Boolean).length}/6 - find all six for the true ending.`, player.src.every(Boolean) ? C.PINK : C.WHITE);
     textC(4, ((runT * 2) | 0) % 2 ? `>> PRESS G FOR NEW GAME+  ·  LOOP ${loop + 2}  ·  GEAR KEPT, SPORES HARDER <<` : '', C.ORANGE);
   } else {
     textC(2, 'SYSTEM HALTED  ·  HP 0%  ·  THE SPORES WIN THIS ROUND', C.RED);
     textC(3, `YOU REACHED STAGE ${dta.stagesReached} / ${MAIN_STAGE_COUNT}  ·  ${stage ? stage.name : ''}  ·  CHECKPOINT KEPT (press C)`, C.WHITE);
   }
-  const lines = ['RUN DATA  ·  DTA  ·  INTERNAL', ...dtaLines(), '', `HALL OF FAME  ·  ${diffNow().name}`, ...scoreLines(), '',
+  const srcN = player.src.filter(Boolean).length;
+  const lines = ['RUN DATA  ·  DTA  ·  INTERNAL', ...dtaLines(), `SOURCE [${player.src.map((v, j) => v ? SRC[j] : '·').join(' ')}] ${srcN}/6   BITS ${dta.bits || 0}   BYTES ${dta.bytes || 0}   MINI-BOSSES ${(dta.minis || []).length}   STOMPS ${dta.stomps || 0}`, '', `HALL OF FAME  ·  ${diffNow().name}`, ...scoreLines(), '',
     `SCORE ${pad(score, 7)}${dta.hallOfFame ? `   ★ RANK #${dta.hallOfFame.rank} · ${dta.hallOfFame.name}` : ''}`,
     `R / ENTER new run  ·  C continue${win ? '  ·  G NEW GAME+' : ''}  ·  B SHARE SCORE  ·  DTA BELOW`];
   drawBox(lines, win ? C.GREEN : C.RED, 6);
@@ -2369,14 +3092,18 @@ function draw() {
   if (state === 'hof') { drawHof(); render(); return; }
   if (state === 'map') { drawMap(); drawToast(); render(); return; }
   if (state === 'initials') { drawInitials(); render(); return; }
+  if (state === 'shop') { drawShop(); drawToast(); render(); return; }
   if (state === 'over' || state === 'win') { drawEnd(state === 'win'); render(); return; }
   drawWorld();
   drawWeather();
+  drawObstacles();
   // depth-sorted drawables (far first)
   const items = [];
   for (const e of enemies) items.push({ z: e.z, f: () => drawEnemy(e) });
   if (mid && !mid.dead) items.push({ z: mid.z, f: drawMid });
   if (boss && !boss.dead) items.push({ z: boss.z, f: drawBoss });
+  if (mb && !mb.dead) items.push({ z: mb.z, f: drawMini });
+  for (const r of rolls) items.push({ z: r.z, f: () => drawRoll(r) });
   for (const b of beasts) items.push({ z: b.z, f: () => drawBeast(b) });
   items.push({ z: player.z - (player.mount ? 0.001 : 0), f: drawPlayer });
   worldMode = true;
@@ -2387,7 +3114,7 @@ function draw() {
   drawGo();
   drawNoise();
   drawHUD();
-  drawBanner(); drawToast();
+  drawDialog(); drawBanner(); drawToast();
   if (state === 'card' && card) drawBox(card.lines, card.color);
   if (state === 'pause') drawBox(['PAUSED  ·  P / ESC TO RESUME', '', ...dtaLines(), '', `STAGE ${stage.id || 'BONUS'} · ${stage.name} · ${mmss(stageT)} · ♪ ${TRACKS[music.track].name}`, `M mute (${muted ? 'ON' : 'OFF'}) · N next track · O options · ${diffNow().name}${loop ? ' · LOOP ' + (loop + 1) : ''}`], C.CYAN);
   render();

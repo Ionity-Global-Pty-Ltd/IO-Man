@@ -2,7 +2,7 @@
 
 > ASCII / ANSI side-scrolling beat-em-up in a single HTML file. Chop the spores, push forward, open the door, get over it.
 
-**Document ID:** GME-2026-10-007 · **Version:** 4.3.0 · **Classification:** INTERNAL (source published for reference)
+**Document ID:** GME-2026-10-008 · **Version:** 4.4.0 · **Classification:** INTERNAL (source published for reference)
 **Author:** Johan Wilhelm van Antwerp · Ionity (Pty) Ltd · AEDI (Antwerp Ecosystems Designs Ionity) · ORCID [0009-0005-7181-0347](https://orcid.org/0009-0005-7181-0347)
 **Governance:** Policy 986 AED · **License:** AED 900 · CC BY-NC-SA 4.0 where stated
 **Play:** https://ionity.fun · **Web:** https://www.ionity.today · https://www.ionity.world · Ref: https://www.ionity.co.za · Contact: ai@ionity.today
@@ -17,7 +17,7 @@ Phones and tablets: play in **landscape** (portrait shows a rotate screen and pa
 | Action | Keyboard | Touch |
 |---|---|---|
 | Move (W/S = depth lane) | `WASD` / arrows | drag joystick |
-| Jump · Jump-slam | `Space` · `Space` then `J` | JUMP · JUMP then CHOP |
+| Jump · Double jump · Stomp · Slam (MEGA from high) | `Space` · `Space` in the air · land on a spore · `Space` then `J` | JUMP · JUMP again · land on · JUMP then CHOP |
 | Chop · 3-hit chain (3rd = FINISHER) | `J` (`X`/`F` in play) | CHOP ==> |
 | Dash · Dash strike | double-tap `A`/`D` · chop mid-dash | — |
 | Hop off IO-BEAST | `Space` while riding | JUMP |
@@ -29,6 +29,95 @@ Phones and tablets: play in **landscape** (portrait shows a rotate screen and pa
 | NEW GAME+ (after beating ROOT) | `G` | — |
 | Start / skip · Continue from checkpoint | `Enter` · `C` | START / OK · CONT |
 | Share / follow panel (menus, end screen) | `B` | ⤴ |
+
+## v4.4.0 — "BITS & BYTES": what's new
+
+**There's now a goal for the whole run.** The Great Fungus shredded the IONITY source code, and you collect it back.
+- **BITS (`0` / `1`)** drop from spores, crates and mini-bosses, and trail over every obstacle. 8 bits compile into 1 **BYTE**.
+- **The UPGRADE TERMINAL** opens after every main stage. Spend bytes on:
+  - HP PATCH (+10 max HP)
+  - AIR JUMP (triple jump)
+  - AXE FIRMWARE (beyond AXE+2)
+  - CLEAVE OVERCLOCK
+  - SLOW EXTENDER
+  - BIT MAGNET
+  - ARMOR PLATING
+  - ULTRA CAPACITOR
+  - FULL REPAIR
+
+  Prices rise per level, and the terminal tells bad jokes.
+- **6 SOURCE FRAGMENTS (I · O · N · I · T · Y)** float high above an obstacle in stages 2, 3, 5, 6, 7 and 8. A normal jump can't reach them; you need the double jump. Collect all six for the **TRUE ENDING**.
+
+**Mini-bosses.** Each one arrives after a stage's last wave and has its own attacks and lines. The door opens only when it's down.
+
+| Stage | Mini-boss | Attacks |
+|---|---|---|
+| 1 | SUDO SHROOM | summons + charge |
+| 2 | CAPTCHA CAP | blocks frontal hits, so stomp it or hit it from behind |
+| 3 | BLAZE PORT 443 | lobbed fire + charge |
+| 5 | ROOTKIT ROSIE | burrows and erupts under you (`^^^`) |
+| 6 | HASH BROWN | ground-pound shockwaves you must jump; splits into spores at half HP |
+| 7 | LAG SPIKE | teleports in, then quakes |
+| 8 | SPAM KING | rains `@` mail and summons bombers |
+
+Every mini-boss has a phase 2. Each drops two `%` bitpacks plus an item, often a revive floppy. ULTRA halves them.
+
+**Dialogue and humour.**
+- IO-MAN and the AEDI assistant talk at the start of each stage.
+- Mini-bosses taunt you, and IO-MAN answers back.
+- Spores shout things as they spawn: "spore-ry!", "morel support!", "we are fungi!".
+- There are quips for finishers, 10-hit combos, stomps, items and fragments.
+
+**Items:**
+
+| Item | Effect |
+|---|---|
+| `c` JAVA (coffee) | speed and chop rate up for 8 s |
+| `d` RUBBER DUCK | your next 5 chops are double-damage crits |
+| `o` BUBBLE | blocks the next hit |
+| `f` SAVE STATE floppy | revives you once at 50% HP |
+| `M` MAGNET | pulls all loot in for 12 s |
+| `%` BITPACK | +8 bits |
+
+**Obstacles** (they hit spores too):
+
+| Obstacle | Counter |
+|---|---|
+| Spike patches | jump them, or change lane |
+| Pulsing laser gates | `:` warns before they fire; time it or double-jump them |
+| Barrels rolling across lanes | jump them for +2 bits, "NICE HOP"; they bowl over spores |
+| Mines | chop to defuse for +5 bits; spores set them off |
+
+**Two DODGE bonus stages**, FIREWALL RUN and PACKET STORM: no enemies, just 22 seconds of barrels, laser gates and falling `[404]` blocks, with bits to grab. Finish without a hit for **FLAWLESS +2000**.
+
+**Stronger jump.**
+- Jump power is up from 14 to 17.
+- **Double jump**, or triple with the upgrade.
+- Better air control.
+- **STOMP:** landing on a spore damages it and bounces you up.
+- **Slam** is snappier with a bigger radius.
+- Chopping from high up after a double jump does a **MEGA SLAM**, which sends a shockwave that knocks back and damages spores.
+
+**Longer stages.** Stages 1 to 8 each gained a screen and a wave (3 to 5 screens now). Old checkpoints are carried over by stage name.
+
+**Touch.**
+- The joystick and button deck sit higher (about 48 px clear of the bottom edge), so they no longer collide with Chrome's or Android's bottom-edge popups.
+- The side buttons moved up as well.
+
+**Player name.** Names can now be up to **9 characters** (A–Z, 0–9, `-`), typed into a real text box with the phone keyboard. A clean-language filter applies:
+- English and Afrikaans swear words and slurs are blocked, including leet spellings (`SH1T`) and stretched spellings (`FUUUCK`).
+- The Firestore rules repeat the check on the server.
+
+**IONITY CLOUD** (Firebase project `io-man`, **Spark / free plan**, Firestore in `africa-south1`):
+- **Anonymous sign-in:** one stable id per phone or browser, with no account and no personal data.
+- **`devices/{uid}`, the per-device save:** settings, checkpoint, local Hall of Fame, lifetime totals, fragment count and name. If the browser storage is wiped, it's restored on the next visit.
+- **`scores`, the global leaderboard:** append-only. The rules check the uid, name format and cleanliness, and score/stage ranges. The Hall of Fame now shows **THIS DEVICE** next to **WORLD · IONITY CLOUD**, with your own entries marked.
+- **`runs`, run logs:** the full DTA JSON per run, readable only by the device that wrote it.
+- **Google Analytics 4 events:** `level_start`, `level_end`, `post_score`, `unlock_achievement` (fragments, mini-bosses), `spend_virtual_currency` (bytes), `share`.
+- **SDK loading:** Firebase JS SDK 12.19.0 from the official gstatic CDN, fetched lazily 2.5 s after load. It uses Firestore *lite* to keep it small, and the game never waits on it.
+- **Turning it off:** OPTIONS → CLOUD SAVE, or `?cloud=0`. Local `file://` copies stay offline unless you add `?cloud=1`.
+- **Config:** lives in `firebase/` (`firebase.json`, `firestore.rules`, `firestore.indexes.json`). Deploy with `firebase deploy --only firestore,auth --project io-man`.
+- **Live checks run:** sign-in; a device-doc write; a score and run log that showed up on the world board; and denied writes for a profane name, a 10-character name, a fake uid, an out-of-range score, another device's save, and listing all runs. The test documents were deleted afterwards.
 
 ## v4.3.0 — what's new
 
@@ -147,9 +236,28 @@ The arena has 11 depth lanes with perspective, depth-sorted rendering, depth sha
 | B | HP SHRINE | 1 | 15 s | `+` `A` `*` | courthouse | IO-MAN THEME |
 | 9 | ROOT | 3 | 2 + boss | THE GREAT FUNGUS | root cavern | ROOT SYSTEM |
 
+v4.4 changes to the table above:
+- stages 1–8 are one screen and one wave longer, with a mini-boss in every stage except 4 (THE AUDITOR) and 9 (THE GREAT FUNGUS);
+- bonus order: COIN RAIN → **FIREWALL RUN** (dodge) → CHOP FRENZY → **PACKET STORM** (dodge) → HP SHRINE.
+
 ## Build
 
 The game is vanilla JS in one file (~1,500 lines, ~100 KB). It draws a 112×30 character grid onto a canvas, using the Ionity palette (cyan `#00c6ff` on `#0d1b2a`) plus the ANSI LGREEN / ORANGE / RED / PURPLE colours from the AEDI shell scripts.
+
+v4.4 was verified headless in Chromium (`test4.js` regression updated for the name box, `t44.js` features, `t43.js` splash/share, `rot.js` rotate). Checks:
+- double jump (peak about 5 rows) and stomp bounce;
+- mega slam clearing a group;
+- spike damage;
+- the SUDO SHROOM intro dialogue, phase 2, kill, drops and door;
+- bubble and floppy;
+- stage clear to the terminal: purchase, then leave to the world map;
+- the HANDSHAKE fragment pickup at height 6.2;
+- EDGE NODE lasers, barrels and mines;
+- a FIREWALL RUN flawless clear;
+- the lifted touch deck on a Pixel 7;
+- the swear filter (4/4 bad names rejected), with `JOHAN-986` accepted.
+
+Zero console errors. A cloud end-to-end run against the live `io-man` project passed.
 
 v4.3 was verified headless in Chromium. Checks:
 - all three splash cards, and auto-dismissal at 3 s;
@@ -167,7 +275,8 @@ v4 was verified headless in Chromium (Playwright) with an injected standard game
 v3 was verified headless in Chromium (Playwright). The desktop run covered boot, intro, title, a scrolling wave lock and release, the door at the end of the level, the themed long stages, a thief loot drop, THE AUDITOR, the ROOT boss zone, ULTRA halving the boss (44→22), victory and the bonus stage. The Pixel 7 portrait run confirmed the rotate screen. The landscape run confirmed the canvas fit (791×410 in an 839×412 viewport) and joystick input. Zero console errors.
 
 ```
-sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   14a7ee6d0d8ab3494b486ba0d0a2ee0e94268df4d3cfb7c31b79c3dd637eb176   v4.3.0
+sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   3e778335608177cfbac1321a1a26fe984bbf84994fdab04f3dffb3a6630906f6   v4.4.0
+sha256  (v4.3.0)                                             14a7ee6d0d8ab3494b486ba0d0a2ee0e94268df4d3cfb7c31b79c3dd637eb176
 sha256  (v4.2.0)                                             2798487587b53df2e2671db7e17e7dbb3af84afb7cbfdb47d30c7ec1af639f51
 sha256  (v4.1.0)                                             9593264b56904f35148e4d83b857b3b043fc7f264283c06b44bceee2323dc08e
 sha256  (v4.0.0)                                             4584fdeeaf36bf4fd8f61789721fc38ba41d8a36b9b7801afb9f107ca6818daa
@@ -179,8 +288,9 @@ v2.0.0 (9eff69c1…) is kept in git history.
 ## Repository layout
 
 ```
-index.html                            v4.3.0 — served at ionity.fun
-IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.3.0 (same file, descriptive name)
+index.html                            v4.4.0 — served at ionity.fun
+IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.4.0 (same file, descriptive name)
+firebase/                             IONITY CLOUD config: firebase.json, firestore.rules, firestore.indexes.json (project io-man)
 banners/                              social banners (OG 1200x630, square, story, X header)
 assets/logo/                          official IONITY logo originals + vector traces (IONITY, IO-MAN)
 v1/                                   GET OVER IT DOOR v1.0.0 (GME-2026-09-001)

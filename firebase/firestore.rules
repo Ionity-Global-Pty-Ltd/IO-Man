@@ -1,0 +1,47 @@
+rules_version = '2';
+// IONITY IO-MAN · Cloud Firestore rules · project io-man (Spark / free tier)
+// Author: Johan Wilhelm van Antwerp · Ionity (Pty) Ltd · Policy 986 AED
+// Every phone / browser signs in anonymously; it can only read and write its own device save and logs.
+// Scores are public to read (global leaderboard) and append-only, with shape + range checks.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function own(uid) { return signedIn() && request.auth.uid == uid; }
+    function smallStr(v, n) { return v is string && v.size() <= n; }
+
+    // one document per device: settings, progress, local hall of fame, lifetime totals
+    match /devices/{uid} {
+      allow read: if own(uid);
+      allow create, update: if own(uid)
+        && request.resource.data.keys().hasOnly(['v', 'created', 'seen', 'platform', 'lang', 'tz', 'settings', 'progress', 'hof', 'best', 'totals', 'source', 'runs', 'name'])
+        && request.resource.data.v is string
+        && (!('hof' in request.resource.data) || request.resource.data.hof.size() <= 10)
+        && (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() <= 9));
+      allow delete: if own(uid);
+    }
+
+    // global leaderboard: append-only
+    match /scores/{id} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'score', 'stage', 'loop', 'diff', 'result', 'src', 'time', 'at', 'v'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string && request.resource.data.name.matches('^[A-Z0-9-]{1,9}$')
+        && !request.resource.data.name.lower().matches('.*(fuck|fuk|shit|cunt|bitch|dick|cock|puss|nigg|fag|rape|whore|slut|twat|wank|porn|nazi|hitler|kaffir|kafir|poes|naai|fokk).*')
+        && request.resource.data.score is int && request.resource.data.score >= 0 && request.resource.data.score <= 5000000
+        && request.resource.data.stage is int && request.resource.data.stage >= 0 && request.resource.data.stage <= 9
+        && smallStr(request.resource.data.diff, 8)
+        && smallStr(request.resource.data.result, 40);
+      allow update, delete: if false;
+    }
+
+    // run logs (DTA): write-once, readable only by the device that wrote them
+    match /runs/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid && request.resource.data.v is string;
+      allow read: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
