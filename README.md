@@ -1,82 +1,116 @@
 # IONITY IO-MAN — GET OVER IT DOOR
 
-> ASCII / ANSI depth-lane beat-em-up in a single HTML file. Chop the spores, open the door, get over it.
+> ASCII / ANSI side-scrolling beat-em-up in a single HTML file. Chop the spores, push forward, open the door, get over it.
 
-**Document ID:** GME-2026-09-002 · **Version:** 2.0.0 · **Classification:** INTERNAL (source published for reference)
+**Document ID:** GME-2026-10-004 · **Version:** 4.0.0 · **Classification:** INTERNAL (source published for reference)
 **Author:** Johan Wilhelm van Antwerp · Ionity (Pty) Ltd · AEDI (Antwerp Ecosystems Designs Ionity) · ORCID [0009-0005-7181-0347](https://orcid.org/0009-0005-7181-0347)
 **Governance:** Policy 986 AED · **License:** AED 900 · CC BY-NC-SA 4.0 where stated
-**Web:** https://www.ionity.today · https://www.ionity.world · Ref: https://www.ionity.co.za · Contact: ai@ionity.today
+**Play:** https://ionity.fun · **Web:** https://www.ionity.today · https://www.ionity.world · Ref: https://www.ionity.co.za · Contact: ai@ionity.today
 
 ---
 
 ## Play
 
-Open `IONITY_IO-MAN_GET_OVER_IT_DOOR.html` in any modern browser. No install, no assets, no network. Works on touch devices (on-screen pad).
+Open `index.html` (identical to `IONITY_IO-MAN_GET_OVER_IT_DOOR.html`) in any modern browser, or play at https://ionity.fun. No install, no assets, no network.
+Phones and tablets: play in **landscape** (portrait shows a rotate screen and pauses). Tap `[ ]` for fullscreen with landscape lock where the browser allows it.
 
-The original 2D build is kept as `v1/IONITY_GET_OVER_IT_DOOR.html` (GME-2026-09-001).
+| Action | Keyboard | Touch |
+|---|---|---|
+| Move (W/S = depth lane) | `WASD` / arrows | drag joystick |
+| Jump · Jump-slam | `Space` · `Space` then `J` | JUMP · JUMP then CHOP |
+| Chop · 3-hit chain (3rd = FINISHER) | `J` (`X`/`F` in play) | CHOP ==> |
+| Dash · Dash strike | double-tap `A`/`D` · chop mid-dash | — |
+| Hop off IO-BEAST | `Space` while riding | JUMP |
+| **SLOW** — 3 s time dilation, 18 s recharge | `K` | SLOW |
+| **CLEAVE** — 360° AoE, breaks guards, 7 s recharge | `L` | CLEAVE |
+| **ULTRA** — screen wipe, halves any boss, 4 min cooldown | `U` | ULTRA |
+| Pause · Options · Mute · Next track · Fullscreen | `P` · `O` · `M` · `N` · `F` (menus) | `||` · `≡` · `♪` · `[ ]` |
+| NEW GAME+ (after beating ROOT) | `G` | — |
+| Start / skip · Continue from checkpoint | `Enter` · `C` | START / OK · CONT |
 
-| Action | Keys |
-|---|---|
-| Move (W/S = depth lane) | `WASD` / arrows |
-| Jump · Jump-slam | `Space` · `Space` then `J` |
-| Chop | `J` (`X`/`F`) |
-| **SLOW** — 3 s time dilation, 18 s recharge | `K` |
-| **CLEAVE** — 360° AoE, breaks guards, 7 s recharge | `L` |
-| **ULTRA** — screen wipe, halves any boss, 4 min cooldown | `U` |
-| Pause · Mute · Next track | `P` · `M` · `N` |
-| Start / skip · Continue from checkpoint | `Enter` · `C` |
+## v4.0.0 — what's new
 
-## What's inside
+**Combat depth.** The third chop in a chain is a **FINISHER**: double damage, launches the spore, and adds a short hit-stop. Double-tap left or right to **dash** (brief invulnerability). Chopping mid-dash is a **DASH STRIKE** that shatters shield guards.
 
-**7-second ANSI intro** — a seed sprouts into a procedurally grown tree (deterministic L-system, seed 986) while the IONITY banner resolves and a loading bar runs. `Enter` skips.
+**IO-BEAST mount** (original design). RIDERs bring one in at wave 2 of FIREWALL, EDGE NODE and UPLINK. Knock the rider off, then walk into the beast to ride it. While riding you move 35% faster and CHOP breathes a piercing ion stream. The beast soaks 70% of incoming damage, and three hits throws you off. `Space` hops off.
 
-**Depth-lane arena** — 11 lanes of semi-3D movement on a perspective floor, depth-sorted rendering, depth shading, shadows under airborne sprites. The door sits on the back wall: when it opens you fight your way to it.
+**Two-phase bosses.** At 50% HP, THE AUDITOR enters **ZERO TOLERANCE**: faster, longer dashes that scatter spores, and two extra shields. THE GREAT FUNGUS **ENRAGES**: it moves faster, volleys faster, and drops **SPORE RAIN** on your position. A banner warns when either phase starts.
 
-**Ten spore types** — walker, fast, tank (3 HP), flyer, spitter (kites and lobs), shield (blocks two frontal hits), bomber (fuses and blows — hurts spores too), splitter (spawns minis), mini, sprout (bonus).
-**THE AUDITOR** — stage-4 midboss, lane dash attack, calls shields. **THE GREAT FUNGUS** — root boss, 3D spore volleys, minions; ULTRA halves it.
+**World map.** Between stages, an ASCII route map shows IO walking to the next node, with the next stage's brief.
 
-**Loot & gear** — `+` HP · `A` Ion Armor (absorbs 60% until depleted, cap 75) · `B` Ion Boots (speed, x2) · `X` Axe+ (chop damage, x2) · `S` Spread Shot (Contra-style three-lane ion bolts, 12 s) · `U` Ultra charge (−60 s) · `$ @ *` score. Drop tables per enemy type; bosses shower loot.
+**Difficulty and replay.** EASY / NORMAL / IRON scale spore damage, speed, HP and the Director's ceiling. **NEW GAME+** loops the run with your gear kept, and spores get +15% damage, +10% speed and +1 HP each loop. The **Hall of Fame** keeps a local top 5 with 3-letter initials, rank, stage, loop and difficulty.
 
-**AI Director** — every 5 s reads HP, kill rate and damage taken; scales spawn pressure 0.65×–1.6× and biases drops toward HP when you're struggling. Enemy roles: rushers, flankers (path around you), kiters. Pack separation spreads spores across lanes.
+**Weather per stage.** Data bits in the server row, embers in FIREWALL, falling leaves in DATA FOREST, glyph dust in ENCRYPTION, sparks on the antennas, rain over the UPLINK sea, and rising spores in ROOT.
 
-**AEDI Coach** — one-line callouts driven by live run data (first tank, first shield, HP < 30, ULTRA ready, combo x5, boss intros, door open). Each fires once per run.
+**Platform.**
+- **Gamepad**, standard mapping: stick or d-pad to move, A jump, X chop, Y cleave, B/LB slow, RB/RT ultra, Start pause, Back mute.
+- **Options** (`O`): music and SFX volume, difficulty, screen shake, CRT scanlines, reduced flashing, phone haptics, and reset. Settings persist on the device.
+- **Haptics** on hits and finishers.
+- An inline **IO** icon for the browser tab and home screen.
+- DTA now also logs finishers, dashes, mounts, NG+ loop and Hall of Fame rank. Accuracy counts swings that connected.
 
-**Checkpoints** — furthest stage reached is saved; `C` continues from it with fresh gear.
+## v3.0.0
 
-**Backtracks** — three original chiptune loops sequenced live in WebAudio: *RUN-N-GUN* (fast run-and-gun feel), *AXE OF IONS* (dark heroic fantasy), *ROOT SYSTEM* (boss pulse). Composed for this build; no third-party soundtracks are reproduced.
+**Golden Axe-style scrolling.** Main stages are 2–4 screens long. The camera only moves forward. Each area locks the screen for a wave, then `GO >>>` flashes and you push on, and the door waits at the far end. The HUD map tracks your run: `WAVE 2/4 [===+====>----|----|----D]`.
 
-**DTA (run data)** — chops, hits, blocks, accuracy, jumps, slams, kills per type, abilities used, damage / armor absorbed / healed, loot picked, gear, per-stage time/kills/damage/score with Director mood, build block. On pause, game-over and victory screens; COPY / DOWNLOAD as JSON.
+**Nine scrolling stages + three bonus**, each with its own animated ASCII parallax backdrop. The two new stages are **DATA FOREST** and **UPLINK** (a bridge over a data sea). ROOT is three zones deep, and THE GREAT FUNGUS rises in the last one.
+
+**PACKET THIEF.** It sprints across after a cleared area, and every hit shakes loot loose. Catch it before it leaves the screen. **DATA CRATES** sit along the route and always drop loot.
+
+**Boot + intro + music.** A BIOS-style `PRESS ANY KEY / TAP TO BOOT` screen unlocks audio (browsers block sound until you interact). The 7-second tree intro plays with its own theme, *SEED*, and the title gets *IO-MAN THEME*. There are six original chiptune loops in all: SEED, IO-MAN THEME, RUN-N-GUN, AXE OF IONS, EDGE RUNNER, ROOT SYSTEM. They are composed for this build, and no third-party soundtracks are reproduced.
+
+**Mobile.** The canvas resizes to fit any screen and re-renders its font at the device pixel ratio, so glyphs stay sharp from phone to 4K. Touch devices get a drag joystick and a see-through terminal-style button deck with live cooldowns (SLOW 12s / READY). Page chrome is hidden on short landscape screens, and safe-area insets are respected.
+
+## Core systems (from v2)
+
+The arena has 11 depth lanes with perspective, depth-sorted rendering, depth shading and shadows.
+
+**Thirteen types** (rider added in v4). Walker, fast, tank (3 HP), flyer, spitter (kites and lobs), shield (blocks two frontal hits), bomber (fuses and blows, and hurts spores too), splitter (spawns minis), mini, sprout (bonus), packet thief, data crate. **THE AUDITOR** is the GOVERNANCE midboss (lane dash, calls shields). **THE GREAT FUNGUS** is the ROOT boss (3D spore volleys, minions), and ULTRA halves it.
+
+**Loot and gear:** `+` HP, `A` Ion Armor (absorbs 60%, cap 75), `B` Ion Boots (x2), `X` Axe+ (x2), `S` Spread Shot (three-lane ion bolts, 12 s), `U` Ultra charge (−60 s), and `$ @ *` for score.
+
+**AI Director.** It scales spawn pressure 0.65×–1.6× based on your HP, kill rate and damage taken, and shifts drops toward HP when you're struggling. Enemy roles are rusher, flanker and kiter.
+
+**AEDI Coach** gives one-line callouts driven by the live run. **Checkpoints** save your progress, and `C` continues from the furthest stage. **DTA** records full run telemetry that you can COPY or DOWNLOAD as JSON.
 
 ## Stages
 
-| # | Name | Quota | New | Track |
-|---|---|---|---|---|
-| 1 | INIT | 8 | walkers | RUN-N-GUN |
-| 2 | HANDSHAKE | 12 | fast | RUN-N-GUN |
-| B | SPORE COIN RAIN | 20 s | `$` `@` from the sky | RUN-N-GUN |
-| 3 | FIREWALL | 15 | tank, spitter, ground pops | RUN-N-GUN |
-| 4 | GOVERNANCE | 16 + Auditor | flyer, shield, **THE AUDITOR** | AXE OF IONS |
-| B | CHOP FRENZY | 15 s | sprouts, combo points | RUN-N-GUN |
-| 5 | ENCRYPTION | 20 | bomber, splitter | AXE OF IONS |
-| 6 | EDGE NODE | 26 | everything | AXE OF IONS |
-| B | HP SHRINE | 15 s | `+` `A` `*` | AXE OF IONS |
-| 7 | ROOT | boss | **THE GREAT FUNGUS** | ROOT SYSTEM |
+| # | Name | Screens | Waves | New | Theme | Track |
+|---|---|---|---|---|---|---|
+| 1 | INIT | 2 | 2 | walkers | city | RUN-N-GUN |
+| 2 | HANDSHAKE | 3 | 3 | fast | server racks | RUN-N-GUN |
+| B | SPORE COIN RAIN | 1 | 20 s | `$` `@` | city | IO-MAN THEME |
+| 3 | FIREWALL | 3 | 3 | tank, spitter | firewall flames | EDGE RUNNER |
+| 4 | GOVERNANCE | 3 | 3 + Auditor | flyer, shield, THE AUDITOR | courthouse | AXE OF IONS |
+| 5 | DATA FOREST | 4 | 4 | splitter swarms | forest | AXE OF IONS |
+| B | CHOP FRENZY | 1 | 15 s | sprouts | forest | RUN-N-GUN |
+| 6 | ENCRYPTION | 4 | 4 | bomber, splitter | cipher ruins | EDGE RUNNER |
+| 7 | EDGE NODE | 4 | 4 | everything | antenna field | EDGE RUNNER |
+| 8 | UPLINK | 4 | 4 | bomber-heavy | bridge / data sea | RUN-N-GUN |
+| B | HP SHRINE | 1 | 15 s | `+` `A` `*` | courthouse | IO-MAN THEME |
+| 9 | ROOT | 3 | 2 + boss | THE GREAT FUNGUS | root cavern | ROOT SYSTEM |
 
 ## Build
 
-Vanilla JS, strict mode, ~1200 lines, 112×30 character grid painted to canvas. Palette: Ionity cyan `#00c6ff` on `#0d1b2a`, ANSI LGREEN / ORANGE / RED / PURPLE from the AEDI shell scripts.
-Verified headless in Chromium (Playwright): intro → title → depth combat → SLOW / CLEAVE / slam → ULTRA wipe → loot → Auditor → door → bonus → boss (ULTRA halves 44→22) → victory → game-over → continue → pause, zero console errors.
+The game is vanilla JS in one file (~1,500 lines, ~100 KB). It draws a 112×30 character grid onto a canvas, using the Ionity palette (cyan `#00c6ff` on `#0d1b2a`) plus the ANSI LGREEN / ORANGE / RED / PURPLE colours from the AEDI shell scripts.
+
+v4 was verified headless in Chromium (Playwright) with an injected standard gamepad: options persistence, gamepad start and movement, finisher chain, dash strike breaking a shield, rider to beast to mount to thrown, UPLINK weather, world map transition, Auditor and Fungus phase 2 (spore rain), win to initials to Hall of Fame to NEW GAME+ (gear kept, damage x1.15), game over to initials, and hit-stop freezing game time. A Pixel 7 landscape pass rendered the touch deck. Zero console errors. The v3 checks below still apply.
+
+v3 was verified headless in Chromium (Playwright). The desktop run covered boot, intro, title, a scrolling wave lock and release, the door at the end of the level, the themed long stages, a thief loot drop, THE AUDITOR, the ROOT boss zone, ULTRA halving the boss (44→22), victory and the bonus stage. The Pixel 7 portrait run confirmed the rotate screen. The landscape run confirmed the canvas fit (791×410 in an 839×412 viewport) and joystick input. Zero console errors.
 
 ```
-sha256  IONITY_IO-MAN_GET_OVER_IT_DOOR.html  9eff69c13e647b6279f06b6cacdec37015c6ab35057d0c704edbd8131d058a98
-sha256  v1/IONITY_GET_OVER_IT_DOOR.html       3a46b422853e8d61012c99a808cf25c2c3e3c71dff6af47f0d79b3f92f9580d7
+sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   4584fdeeaf36bf4fd8f61789721fc38ba41d8a36b9b7801afb9f107ca6818daa   v4.0.0
+sha256  (v3.0.0)                                             ba4618e83bb9f22be75d25f1e2491b8201caa3a6a16e99c9a9777037cc09ae54
+sha256  v1/IONITY_GET_OVER_IT_DOOR.html                     3a46b422853e8d61012c99a808cf25c2c3e3c71dff6af47f0d79b3f92f9580d7   v1.0.0
+v2.0.0 (9eff69c1…) is kept in git history.
 ```
 
 ## Repository layout
 
 ```
-IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v2.0.0 (GME-2026-09-002)
-v1/IONITY_GET_OVER_IT_DOOR.html       v1.0.0 (GME-2026-09-001)
+index.html                            v4.0.0 — served at ionity.fun
+IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.0.0 (same file, descriptive name)
+v1/                                   GET OVER IT DOOR v1.0.0 (GME-2026-09-001)
 previews/                             headless screenshots
 README.md                             this file
 ```
@@ -84,6 +118,6 @@ README.md                             this file
 ---
 
 © 2018–2026 Antwerp Designs | Ionity (Pty) Ltd · All rights reserved · Policy 986 AED · AED 900
-Ionity refers exclusively to www.ionity.today / www.ionity.world and is not affiliated with www.ionity.com.
+Ionity refers exclusively to www.ionity.today / www.ionity.world / ionity.fun and is not affiliated with www.ionity.com.
 
 **BUILDING TOMORROW, TODAY**
