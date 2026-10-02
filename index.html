@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 =====================================================================================
- IONITY IO-MAN - GET OVER IT DOOR  |  Document ID: GME-2026-10-004  |  Version: 4.0.0
+ IONITY IO-MAN - GET OVER IT DOOR  |  Document ID: GME-2026-10-005  |  Version: 4.1.0
  ASCII / ANSI side-scrolling beat-em-up - single-file HTML5 canvas build - INTERNAL USE
 -------------------------------------------------------------------------------------
  Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI (Antwerp Ecosystems Designs Ionity)
@@ -10,7 +10,7 @@
  (c) 2018-2026 Antwerp Designs | Ionity (Pty) Ltd - All Rights Reserved
  Web: https://www.ionity.today | https://www.ionity.world | Ref: https://www.ionity.co.za | Play: https://ionity.fun
  Contact: ai@ionity.today | info@ionity.today
- Classification: INTERNAL | Generated: 2026-10-01 SAST | Generator: AEDI GME pipeline (Claude Cowork)
+ Classification: INTERNAL | Generated: 2026-10-02 SAST | Generator: AEDI GME pipeline (Claude Cowork)
 -------------------------------------------------------------------------------------
  Music: six ORIGINAL chiptune loops composed for this build (SEED, IO-MAN THEME, RUN-N-GUN,
  AXE OF IONS, EDGE RUNNER, ROOT SYSTEM). No third-party soundtracks are reproduced.
@@ -35,7 +35,7 @@
 <meta name="theme-color" content="#0d1b2a">
 <meta name="generator" content="AEDI GME pipeline (Claude Cowork)">
 <meta name="copyright" content="© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd. All rights reserved.">
-<meta name="dc.identifier" content="GME-2026-10-004">
+<meta name="dc.identifier" content="GME-2026-10-005">
 <meta name="dc.creator" content="Johan Wilhelm van Antwerp">
 <meta name="dc.publisher" content="Ionity (Pty) Ltd">
 <meta name="dc.rights" content="Policy 986 AED | AED 900">
@@ -115,7 +115,7 @@
 <body>
 <div class="bar" id="bar-top">
   <span><b>AEDI</b> · IONITY GLOBAL · <b>IO-MAN</b> · GET OVER IT DOOR</span>
-  <span>DOC <b>GME-2026-10-004</b> · V<b>4.0.0</b> · <b>INTERNAL</b></span>
+  <span>DOC <b>GME-2026-10-005</b> · V<b>4.1.0</b> · <b>INTERNAL</b></span>
 </div>
 <div id="wrap">
   <canvas id="cv" width="1075" height="552" aria-label="IONITY IO-MAN game canvas"></canvas>
@@ -172,7 +172,7 @@
    IONITY IO-MAN - engine core
    Terminal-grid renderer + depth-lane (semi-3D) arena. Everything is a glyph.
    ===================================================================================== */
-const BUILD = { id: 'GME-2026-10-004', version: '4.0.0', title: 'IONITY IO-MAN - GET OVER IT DOOR', classification: 'INTERNAL',
+const BUILD = { id: 'GME-2026-10-005', version: '4.1.0', title: 'IONITY IO-MAN - GET OVER IT DOOR', classification: 'INTERNAL',
                 org: 'Ionity (Pty) Ltd | AEDI', author: 'Johan Wilhelm van Antwerp', governance: 'Policy 986 AED' };
 
 const COLS = 112, ROWS = 30;
@@ -252,23 +252,6 @@ function sprite(x, yFeet, lines, color) {
   }
 }
 let shake = 0;
-function render() {
-  ctx.save();
-  if (shake > 0 && SET.shake) ctx.translate((Math.random() * 2 - 1) * shake * 8, (Math.random() * 2 - 1) * shake * 6);
-  ctx.fillStyle = C.BG; ctx.fillRect(-20, -20, cv.width + 40, cv.height + 40);
-  for (let y = 0; y < ROWS; y++) {
-    let start = 0, color = grid.col[y * COLS], run = '';
-    for (let x = 0; x <= COLS; x++) {
-      const i = y * COLS + x;
-      const ch = x < COLS ? grid.ch[i] : null, cc = x < COLS ? grid.col[i] : null;
-      if (x === COLS || (cc !== color && ch !== ' ')) {
-        if (run.trim().length) { ctx.fillStyle = color; ctx.fillText(run, start * CW, y * CH + 1); }
-        start = x; color = cc; run = ch === null ? '' : ch;
-      } else run += ch;
-    }
-  }
-  ctx.restore();
-}
 
 /* ---------- input ---------- */
 const keys = {}, pressed = [];
@@ -1237,11 +1220,10 @@ function update(dt) {
   }
   if (state === 'title') {
     titleT += dt;
-    if (hit('Enter') || hit('KeyJ')) newRun(0);
-    if (hit('KeyC') && progress.maxIdx > 0) newRun(progress.maxIdx);
-    if (hit('KeyO')) openOptions('title');
+    updateTitleMenu();
     return;
   }
+  if (state === 'hof') { titleT += dt; if (hit('Enter') || hit('Escape') || hit('KeyJ') || hit('KeyH') || hit('Space')) state = 'title'; return; }
   if (state === 'options') { titleT += dt; updateOptions(); return; }
   if (state === 'map') { runT += dt; updateMap(dt); return; }
   if (state === 'initials') { updateInitials(); return; }
@@ -1521,22 +1503,6 @@ function drawBeast(b) {
 STAGES.forEach(s => { if (['FIREWALL', 'EDGE NODE', 'UPLINK'].includes(s.name)) s.beast = true; });
 
 /* ---------- v4 screens ---------- */
-function drawOptions() {
-  drawStars(titleT, 26);
-  hline(0, 0, COLS - 1, '-', C.DIM); hline(1, 0, COLS - 1, '-', C.DIM);
-  textC(0, ' OPTIONS ', C.WHITE);
-  const x0 = 30;
-  text(x0, 4, 'IO-MAN  ·  SETTINGS  (saved on this device)', C.CYAN);
-  OPTS.forEach((o, i) => {
-    const sel = i === optIdx, y = 7 + i * 2;
-    text(x0 - 3, y, sel ? '>>' : '  ', C.GREEN);
-    text(x0, y, o.label.padEnd(26, '.'), sel ? C.WHITE : C.GRAY);
-    text(x0 + 27, y, o.get(), o.k === 'reset' && optConfirm ? C.RED : sel ? C.YELLOW : C.CYAN);
-  });
-  const d = diffNow();
-  text(x0, 26, `${d.name}: spores hit ${Math.round(d.dmg * 100)}% · speed ${Math.round(d.spd * 100)}% · +${d.hp} HP · director up to x${d.dirMax}`, C.DIM);
-  textC(27, 'W/S select  ·  A/D change  ·  ENTER toggle  ·  O / ESC back', C.DIM);
-}
 function drawInitials() {
   drawStars(runT, 26);
   hline(0, 0, COLS - 1, '-', C.DIM); hline(1, 0, COLS - 1, '-', C.DIM);
@@ -1549,6 +1515,355 @@ function drawInitials() {
   scoreLines().forEach((l, i) => textC(18 + i, l, C.GRAY));
 }
 applySettings();
+/* =====================================================================================
+   v4.1 UI layer: ANSI block logo, vector box/block glyph renderer, framed panels,
+   title menu, aligned HUD + status bar, hall of fame screen
+   ===================================================================================== */
+
+/* ---------- ANSI Shadow wordmark ---------- */
+const GLYPH = {
+  I: ['██╗', '██║', '██║', '██║', '██║', '╚═╝'],
+  O: [' ██████╗ ', '██╔═══██╗', '██║   ██║', '██║   ██║', '╚██████╔╝', ' ╚═════╝ '],
+  N: ['███╗   ██╗', '████╗  ██║', '██╔██╗ ██║', '██║╚██╗██║', '██║ ╚████║', '╚═╝  ╚═══╝'],
+  T: ['████████╗', '╚══██╔══╝', '   ██║   ', '   ██║   ', '   ██║   ', '   ╚═╝   '],
+  Y: ['██╗   ██╗', '╚██╗ ██╔╝', ' ╚████╔╝ ', '  ╚██╔╝  ', '   ██║   ', '   ╚═╝   '],
+  M: ['███╗   ███╗', '████╗ ████║', '██╔████╔██║', '██║╚██╔╝██║', '██║ ╚═╝ ██║', '╚═╝     ╚═╝'],
+  A: [' █████╗ ', '██╔══██╗', '███████║', '██╔══██║', '██║  ██║', '╚═╝  ╚═╝'],
+  '-': ['      ', '      ', '█████╗', '╚════╝', '      ', '      '],
+};
+const wordArt = w => [0, 1, 2, 3, 4, 5].map(r => w.split('').map(ch => GLYPH[ch][r]).join(''));
+const LOGO_IONITY = wordArt('IONITY'), LOGO_IOMAN = wordArt('IO-MAN');
+const LOGO_GRAD = ['#b4f3ff', '#6fe3ff', '#2fd2ff', '#00c6ff', '#00a6e6', '#0086c4'];
+const LOGO_SHADOW = '#1f6a99';
+function drawLogo(lines, x, y, reveal, sweep) {
+  const W = lines[0].length; if (reveal === undefined) reveal = W;
+  for (let r = 0; r < lines.length; r++) for (let c = 0; c < W && c < reveal; c++) {
+    const ch = lines[r][c]; if (ch === ' ') continue;
+    let col = ch === '█' ? LOGO_GRAD[r] : LOGO_SHADOW;
+    if (ch === '█' && sweep !== null && sweep !== undefined && Math.abs(c - sweep + r * 0.6) < 1.6) col = C.WHITE;
+    if (c === reveal - 1 && reveal < W) col = C.WHITE;
+    put(x + c, y + r, ch, col);
+  }
+}
+
+/* ---------- vector renderer for box-drawing + block glyphs ----------
+   Terminals draw these as geometry, not font glyphs - so do we. Perfect joins, any font, any DPR. */
+const ARMS = {   // [up, down, left, right]  1 = single, 2 = double
+  '─': [0, 0, 1, 1], '│': [1, 1, 0, 0], '┌': [0, 1, 0, 1], '┐': [0, 1, 1, 0], '└': [1, 0, 0, 1], '┘': [1, 0, 1, 0],
+  '├': [1, 1, 0, 1], '┤': [1, 1, 1, 0], '┬': [0, 1, 1, 1], '┴': [1, 0, 1, 1], '┼': [1, 1, 1, 1],
+  '═': [0, 0, 2, 2], '║': [2, 2, 0, 0], '╔': [0, 2, 0, 2], '╗': [0, 2, 2, 0], '╚': [2, 0, 0, 2], '╝': [2, 0, 2, 0],
+  '╠': [2, 2, 0, 2], '╣': [2, 2, 2, 0], '╦': [0, 2, 2, 2], '╩': [2, 0, 2, 2], '╬': [2, 2, 2, 2],
+  '╟': [2, 2, 0, 1], '╢': [2, 2, 1, 0], '╤': [0, 1, 2, 2], '╧': [1, 0, 2, 2],
+};
+const BLOCKS = { '█': 1, '▀': 1, '▄': 1, '▌': 1, '▐': 1, '░': 1, '▒': 1, '▓': 1 };
+function drawSpecial(ch, x, y, col) {
+  const px = x * CW, py = y * CH, w = CW, h = CH;
+  ctx.fillStyle = col;
+  if (BLOCKS[ch]) {
+    if (ch === '█') ctx.fillRect(px, py, w + 0.6, h + 0.6);
+    else if (ch === '▀') ctx.fillRect(px, py, w + 0.6, h / 2);
+    else if (ch === '▄') ctx.fillRect(px, py + h / 2, w + 0.6, h / 2 + 0.6);
+    else if (ch === '▌') ctx.fillRect(px, py, w / 2, h + 0.6);
+    else if (ch === '▐') ctx.fillRect(px + w / 2, py, w / 2 + 0.6, h + 0.6);
+    else { ctx.globalAlpha = ch === '░' ? 0.28 : ch === '▒' ? 0.5 : 0.75; ctx.fillRect(px + 0.5, py + 1, w - 1, h - 2); ctx.globalAlpha = 1; }
+    return;
+  }
+  const a = ARMS[ch]; if (!a) return;
+  const t = Math.max(1, Math.round(CW * 0.12)), g = Math.max(t + 1, Math.round(CW * 0.2));
+  const cx = Math.round(px + w / 2), cy = Math.round(py + h / 2), x1 = px + w + 0.5, y1 = py + h + 0.5, x0 = px - 0.5, y0 = py - 0.5;
+  const H = (xa, xb, yy) => ctx.fillRect(Math.min(xa, xb), yy - t / 2, Math.abs(xb - xa), t);
+  const V = (ya, yb, xx) => ctx.fillRect(xx - t / 2, Math.min(ya, yb), t, Math.abs(yb - ya));
+  const [u, d, l, r] = a;
+  const dbl = [u, d, l, r].filter(v => v === 2).length, sgl = [u, d, l, r].filter(v => v === 1).length;
+  if (dbl === 2 && sgl === 0 && (u === 2 || d === 2) && (l === 2 || r === 2)) {     // true double corner
+    const hx = r ? 1 : -1, vy = d ? 1 : -1, ex = hx > 0 ? x1 : x0, ey = vy > 0 ? y1 : y0;
+    H(cx - hx * g - hx * t / 2, ex, cy - vy * g); V(cy - vy * g - vy * t / 2, ey, cx - hx * g);   // outer
+    H(cx + hx * g - hx * t / 2, ex, cy + vy * g); V(cy + vy * g - vy * t / 2, ey, cx + hx * g);   // inner
+    return;
+  }
+  const vD = u === 2 || d === 2, hD = l === 2 || r === 2;
+  if (u === 1) V(cy + t / 2, y0, cx); if (d === 1) V(cy - t / 2, y1, cx);
+  if (l === 1) H((vD ? cx - g : cx) + t / 2, x0, cy); if (r === 1) H((vD ? cx + g : cx) - t / 2, x1, cy);
+  if (u === 2) { V(cy + (hD ? -g : g), y0, cx - g); V(cy + (hD ? -g : g), y0, cx + g); }
+  if (d === 2) { V(cy - (hD ? -g : g), y1, cx - g); V(cy - (hD ? -g : g), y1, cx + g); }
+  if (l === 2) { H(cx + g, x0, cy - g); H(cx + g, x0, cy + g); }
+  if (r === 2) { H(cx - g, x1, cy - g); H(cx - g, x1, cy + g); }
+}
+const isSpecial = ch => ch !== null && (BLOCKS[ch] || ARMS[ch]);
+function render() {
+  ctx.save();
+  if (shake > 0 && SET.shake) ctx.translate((Math.random() * 2 - 1) * shake * 8, (Math.random() * 2 - 1) * shake * 6);
+  ctx.fillStyle = C.BG; ctx.fillRect(-20, -20, cv.width + 40, cv.height + 40);
+  for (let y = 0; y < ROWS; y++) {
+    let start = 0, color = null, run = '';
+    for (let x = 0; x <= COLS; x++) {
+      const i = y * COLS + x;
+      const ch = x < COLS ? grid.ch[i] : null, cc = x < COLS ? grid.col[i] : null;
+      const sp = isSpecial(ch);
+      if (x === COLS || sp || (cc !== color && ch !== ' ')) {
+        if (run.trim().length) { ctx.fillStyle = color; ctx.fillText(run, start * CW, y * CH + 1); }
+        if (sp) { drawSpecial(ch, x, y, cc); start = x + 1; color = null; run = ''; }
+        else { start = x; color = cc; run = ch === null ? '' : ch; }
+      } else run += ch;
+    }
+  }
+  ctx.restore();
+}
+
+/* ---------- panels ---------- */
+const SHADOW_COL = '#050c15';
+function panel(x0, y0, x1, y1, title, color, dbl) {
+  for (let y = y0 + 1; y <= y1 + 1; y++) put(x1 + 1, y, '█', SHADOW_COL);
+  for (let x = x0 + 1; x <= x1 + 1; x++) put(x, y1 + 1, '█', SHADOW_COL);
+  fillRect(x0, y0, x1, y1);
+  const [tl, tr, bl, br, hz, vt] = dbl ? ['╔', '╗', '╚', '╝', '═', '║'] : ['┌', '┐', '└', '┘', '─', '│'];
+  hline(y0, x0 + 1, x1 - 1, hz, color); hline(y1, x0 + 1, x1 - 1, hz, color);
+  for (let y = y0 + 1; y < y1; y++) { put(x0, y, vt, color); put(x1, y, vt, color); }
+  put(x0, y0, tl, color); put(x1, y0, tr, color); put(x0, y1, bl, color); put(x1, y1, br, color);
+  if (title) text(x0 + 2, y0, ` ${title} `, C.WHITE);
+}
+function meter(x, y, v, max, w, col) { const n = clamp(Math.round(w * v / max), 0, w); for (let i = 0; i < w; i++) put(x + i, y, i < n ? '█' : '░', i < n ? col : C.DIM); }
+function drawBox(lines, color, yTop) {
+  const inner = Math.min(COLS - 10, Math.max(...lines.map(l => l.length)) + 6), w = inner + 2, h = lines.length + 3;
+  const x0 = Math.max(2, Math.floor((COLS - w) / 2)), y0 = yTop !== undefined ? yTop : Math.max(3, Math.floor((ROWS - h) / 2) - 1), x1 = x0 + w - 1, y1 = y0 + h - 1;
+  panel(x0, y0, x1, y1, null, color, true);
+  put(x0, y0 + 2, '╟', color); put(x1, y0 + 2, '╢', color); hline(y0 + 2, x0 + 1, x1 - 1, '─', shade(color, 0.6));
+  text(x0 + Math.floor((w - lines[0].length) / 2), y0 + 1, lines[0], color);
+  lines.slice(1).forEach((l, i) => { const s = l.slice(0, w - 4); text(x0 + Math.floor((w - s.length) / 2), y0 + 3 + i, s, C.WHITE); });
+}
+
+/* ---------- headers / footers ---------- */
+function topBars(center, centerCol) {
+  hline(0, 0, COLS - 1, '-', C.DIM2); hline(1, 0, COLS - 1, '-', C.DIM2);
+  if (center) textC(0, ` ${center} `, centerCol || C.CYAN);
+}
+function footer() {
+  text(1, ROWS - 1, `GOVERNANCE : POLICY 986 AED  ·  ${BUILD.id}  ·  v${BUILD.version}`, C.DIM);
+  textR(ROWS - 1, '© 2018-2026 Antwerp Designs | Ionity (Pty) Ltd', C.DIM, COLS - 1);
+}
+
+/* ---------- boot ---------- */
+function drawBoot() {
+  topBars('IONITY  ·  SYSTEM BOOT');
+  const rv = Math.floor(clamp(bootT / 0.7, 0, 1) * LOGO_IONITY[0].length);
+  drawLogo(LOGO_IONITY, Math.floor((COLS - LOGO_IONITY[0].length) / 2), 3, rv, bootT > 0.9 ? ((bootT - 0.9) * 30) % 80 - 15 : null);
+  textC(10, 'B U I L D I N G   T O M O R R O W ,   T O D A Y', C.GRAY);
+  const L = [
+    ['IONITY BIOS v' + BUILD.version, C.CYAN, ''],
+    ['CPU', C.WHITE, 'AEDI EDGE CORE ............ OK'],
+    ['KERNEL', C.WHITE, 'AEDI ...................... OK'],
+    ['GOVERNANCE', C.WHITE, 'POLICY 986 AED ....... MOUNTED'],
+    ['DISPLAY', C.WHITE, `112x30 ANSI  ${FSZ}px  x${(window.devicePixelRatio || 1).toFixed(1)}`],
+    ['INPUT', C.WHITE, isTouch ? 'TOUCH (joystick + deck)' : 'KEYBOARD' + (padSeen ? ' + GAMEPAD' : '')],
+    ['AUDIO', C.ORANGE, '6 ORIGINAL LOOPS · WAITING FOR YOU'],
+    ['STAGES', C.WHITE, '9 SCROLLING + 3 BONUS + 2 BOSSES'],
+  ];
+  const x0 = 28, x1 = 83;
+  panel(x0, 12, x1, 22, 'POST', C.DIM, false);
+  const n = Math.min(L.length, Math.floor(bootT * 10));
+  for (let i = 0; i < n; i++) { text(x0 + 3, 13 + i + (i ? 1 : 0), L[i][0].padEnd(12), L[i][1]); text(x0 + 16, 13 + i + (i ? 1 : 0), L[i][2], L[i][1] === C.ORANGE ? C.ORANGE : C.GRAY); }
+  if (n >= L.length) {
+    const cur = ((bootT * 2) | 0) % 2 ? '_' : ' ';
+    textC(24, `>  PRESS ANY KEY / TAP TO BOOT IO-MAN${cur}`, C.GREEN);
+    textC(26, isTouch ? 'best played in landscape  ·  tap [ ] for fullscreen' : 'F fullscreen  ·  M mute  ·  headphones recommended', C.DIM);
+  }
+  footer();
+}
+
+/* ---------- intro: seed -> tree -> IONITY ---------- */
+function drawIntro() {
+  const t = introT;
+  for (const s of stars) { const a = clamp((t - 1) / 3, 0, 1); if (Math.random() < a) { const tw = (t * 1.7 + s.seed * 9) % 1; put(s.x, s.y, tw > 0.55 ? '*' : '.', tw > 0.55 ? C.STAR : C.DIM); } }
+  topBars('AEDI  ·  IONITY GLOBAL');
+  const gw = Math.floor(clamp(t / 0.8, 0, 1) * 52);
+  hline(26, 56 - gw, 56 + gw, '=', C.CYAN2);
+  if (t > 0.5) hline(27, 56 - Math.min(gw, 40), 56 + Math.min(gw, 40), '.', C.DIM);
+  if (t < 0.7) { put(56, 25, ((t * 8) | 0) % 2 ? 'o' : '.', C.YELLOW); if (t > 0.25) { put(54, 25, '(', C.DIM); put(58, 25, ')', C.DIM); } }
+  for (const s of TREE) {
+    if (s.birth > t) continue;
+    const fresh = t - s.birth < 0.25;
+    if (s.leaf) { const glow = t > 5.6 && ((t * 3 + s.x) | 0) % 3 === 0; put(s.x, s.y, s.ch, fresh ? C.WHITE : glow ? C.CYAN : C.LEAF); }
+    else put(s.x, s.y, s.ch, fresh ? C.WHITE : shade(C.WOOD, s.depth === 0 ? 1 : 0.8 - s.depth * 0.08));
+  }
+  const LW = LOGO_IONITY[0].length, lx = Math.floor((COLS - LW) / 2);
+  if (t > 2.2) {
+    fillRect(lx - 3, 2, lx + LW + 2, 10);
+    const rv = Math.floor(clamp((t - 2.3) / 2.4, 0, 1) * LW);
+    drawLogo(LOGO_IONITY, lx, 3, rv, t > 4.8 ? (t - 4.8) * 26 - 6 : null);
+    if (t > 5.2) { const s = 'I O - M A N'; hline(9, lx, lx + LW - 1, '─', shade(C.CYAN, 0.5)); text(Math.floor((COLS - s.length - 4) / 2), 9, `  ${s}  `, C.WHITE); }
+  }
+  if (t > 6.0) textC(10, 'AEDI  ·  IONITY GLOBAL  ·  Building Tomorrow, Today.', C.DIM);
+  const p = clamp(t / 7, 0, 1), stepIdx = Math.min(LOAD_STEPS.length - 1, Math.floor(p * LOAD_STEPS.length));
+  text(6, 28, LOAD_STEPS[stepIdx].padEnd(24), C.WHITE);
+  meter(31, 28, p, 1, 60, C.CYAN); text(92, 28, `${pad(Math.round(p * 100), 3)}%`, C.CYAN);
+  textR(27, 'ENTER to skip', C.DIM, COLS - 2);
+  footer();
+}
+
+/* ---------- title + menu ---------- */
+let menuIdx = 0;
+function titleItems() {
+  const s = STAGES[progress.maxIdx];
+  return [
+    { k: 'new', label: 'NEW RUN', info: diffNow().name },
+    { k: 'cont', label: 'CONTINUE', info: progress.maxIdx > 0 ? (s.id ? `STAGE ${s.id} · ${s.name}` : s.name) : 'NO CHECKPOINT', off: progress.maxIdx <= 0 },
+    { k: 'opt', label: 'OPTIONS', info: `${muted ? 'MUTED' : '♪ ' + SET.music + '/10'} · ${SET.crt ? 'CRT' : 'FLAT'}` },
+    { k: 'hof', label: 'HALL OF FAME', info: scores.length ? `#1 ${scores[0].name} ${scores[0].score}` : 'EMPTY' },
+    { k: 'full', label: 'FULLSCREEN', info: document.fullscreenElement ? 'ON' : 'F' },
+  ];
+}
+function updateTitleMenu() {
+  const items = titleItems(), n = items.length;
+  const step = d => { let i = menuIdx; do { i = (i + d + n) % n; } while (items[i].off); menuIdx = i; SFX.hit(); };
+  if (hit('ArrowUp') || hit('KeyW')) step(-1);
+  if (hit('ArrowDown') || hit('KeyS')) step(1);
+  if (items[menuIdx].off) step(1);
+  const go = k => {
+    if (k === 'new') newRun(0);
+    else if (k === 'cont' && progress.maxIdx > 0) newRun(progress.maxIdx);
+    else if (k === 'opt') openOptions('title');
+    else if (k === 'hof') state = 'hof';
+    else if (k === 'full') goFull();
+  };
+  if (hit('Enter') || hit('KeyJ')) go(items[menuIdx].k);
+  if (hit('KeyC') && progress.maxIdx > 0) go('cont');
+  if (hit('KeyO')) go('opt');
+  if (hit('KeyH')) go('hof');
+}
+function drawTitle() {
+  drawStars(titleT, 22);
+  topBars('IONITY GLOBAL  ·  PRESENTS');
+  textR(1, ` ${BUILD.id} · v${BUILD.version} `, C.DIM, COLS - 2);
+  const LW = LOGO_IOMAN[0].length, lx = Math.floor((COLS - LW) / 2);
+  fillRect(lx - 2, 2, lx + LW + 2, 10);
+  drawLogo(LOGO_IOMAN, lx, 3, LW, ((titleT * 22) % 120) - 30);
+  const sub = '  G E T   O V E R   I T   D O O R  ', sx = Math.floor((COLS - sub.length) / 2);
+  hline(9, sx - 18, sx + sub.length + 17, '═', shade(C.CYAN2, 0.55)); text(sx, 9, sub, C.WHITE);
+  textC(10, 'SIDE-SCROLLING DEPTH-LANE BEAT-EM-UP  ·  9 STAGES + 3 BONUS  ·  2 BOSSES  ·  ORIGINAL CHIPTUNE', C.DIM);
+  // menu panel
+  const mx0 = 5, mx1 = 47, py0 = 12, py1 = 19;
+  panel(mx0, py0, mx1, py1, 'MENU', C.CYAN, false);
+  titleItems().forEach((it, i) => {
+    const y = 13 + i + (i ? 0 : 0), sel = i === menuIdx;
+    const lab = it.label.padEnd(14), info = it.info.slice(0, 20);
+    if (sel) { text(mx0 + 2, y, '>>', ((titleT * 4) | 0) % 2 ? C.GREEN : C.WHITE); }
+    text(mx0 + 5, y, lab, it.off ? C.DIM : sel ? C.WHITE : C.GRAY);
+    textR(y, info, it.off ? C.DIM : sel ? C.YELLOW : C.DIM, mx1 - 1);
+  });
+  text(mx0 + 2, 18, isTouch ? 'STICK select  ·  OK / tap play' : 'W/S select  ·  ENTER  ·  C O H hotkeys', C.DIM);
+  // controls panel
+  const cx0 = 51, cx1 = 106;
+  panel(cx0, py0, cx1, py1, isTouch ? 'TOUCH CONTROLS' : 'CONTROLS', C.CYAN, false);
+  const rows = isTouch ? [
+    ['MOVE', 'drag the IO stick  ·  up/down = depth'], ['CHOP', 'CHOP ==>  ·  3rd hit = FINISHER'], ['JUMP', 'JUMP  ·  JUMP then CHOP = SLAM'],
+    ['POWER', 'SLOW  ·  CLEAVE  ·  ULTRA'], ['DASH', 'keyboard / gamepad only'], ['MENU', '||  pause  ·  ≡ options  ·  ♪ mute'], ] : [
+    ['MOVE', 'WASD / ARROWS  ·  W S = DEPTH'], ['JUMP', 'SPACE  ·  SPACE then J = SLAM'], ['CHOP', 'J  ·  3rd hit in a row = FINISHER'],
+    ['DASH', 'double-tap A or D  ·  + J = STRIKE'], ['POWER', 'K SLOW  ·  L CLEAVE  ·  U ULTRA'], ['SYSTEM', 'P pause · O options · M mute · N track'],
+  ];
+  rows.forEach(([k, v], i) => { text(cx0 + 2, 13 + i, k.padEnd(7), C.CYAN); text(cx0 + 10, 13 + i, v, C.GRAY); });
+  if (!isTouch) textR(py1, padSeen ? ' GAMEPAD READY ' : ' GAMEPAD: plug in + press A ', padSeen ? C.GREEN : C.DIM, cx1 - 1);
+  textC(21, 'LOOT   + HP   A ARMOR   B BOOTS   X AXE+   S SPREAD   U ULTRA   $ @ * SCORE', C.DIM);
+  // parade + ground
+  const names = Object.keys(TYPES).filter(n => n !== 'crate' && n !== 'rider');
+  names.forEach((n, i) => { const T = TYPES[n]; const x = Math.floor((30 + i * 10.5 + titleT * 6) % (COLS - 8)) + 2; const feet = T.fly ? FRONT - 2 : FRONT - 1; sprite(x, feet, ((titleT * 4 + i) | 0) % 2 ? T.art : T.alt, T.color); });
+  sprite(54, FRONT - 1, ((titleT * 3) | 0) % 2 ? PLAYER.idle : PLAYER.atkR, C.WHITE);
+  groundLine(100, 0, true);
+  if (scores.length) textC(27, 'HALL OF FAME   ' + scores.slice(0, 3).map((s, i) => `${i + 1}. ${s.name} ${pad(s.score, 7)}`).join('     '), C.YELLOW);
+  else textC(27, 'HALL OF FAME   empty  ·  be the first', C.DIM);
+  footer();
+}
+function drawHof() {
+  drawStars(titleT, 26); topBars('HALL OF FAME');
+  const hx = Math.floor((COLS - LOGO_IOMAN[0].length) / 2); fillRect(hx - 2, 2, hx + LOGO_IOMAN[0].length + 2, 9);
+  drawLogo(LOGO_IOMAN, hx, 3, undefined, null);
+  const x0 = 24, x1 = 87;
+  panel(x0, 11, x1, 22, 'TOP 5  ·  THIS DEVICE', C.YELLOW, true);
+  text(x0 + 3, 13, '#  NAME   SCORE     STAGE  LOOP  DIFF     DATE', C.DIM);
+  hline(14, x0 + 3, x1 - 3, '─', C.DIM2);
+  for (let i = 0; i < 5; i++) {
+    const s = scores[i], y = 15 + i;
+    if (!s) { text(x0 + 3, y, `${i + 1}  ---    -------   -      -     -        ----------`, C.DIM); continue; }
+    text(x0 + 3, y, `${i + 1}  ${s.name.padEnd(5)}  ${pad(s.score, 7)}   ${String(s.stage).padEnd(5)}  ${String((s.loop || 0) + 1).padEnd(4)}  ${(s.diff || '').padEnd(7)}  ${s.date}`, i === 0 ? C.YELLOW : C.WHITE);
+  }
+  textC(21, 'ENTER / ESC back', C.DIM);
+  footer();
+}
+
+/* ---------- in-game HUD (top) ---------- */
+function drawHUD() {
+  topBars(null);
+  const lbl = stage.bonus ? `[ BONUS · ${stage.name} ]` : `[ STAGE ${stage.id}/${MAIN_STAGE_COUNT} · ${stage.name} ]`;
+  text(2, 0, lbl, C.WHITE);
+  textC(0, muted ? ' [MUTE] ' : ` ♪ ${TRACKS[music.track].name} `, C.DIM);
+  textR(0, `[ SCORE ${pad(score, 7)} ]`, C.YELLOW, COLS - 2);
+  text(2, 1, `[ TIME ${mmss(runT)} ]`, C.CYAN);
+  text(17, 1, `[ ${diffNow().name}${loop ? ' +' + loop : ''} ]`, C.DIM);
+  let mid1 = '', midCol = C.GREEN;
+  if (stage.bonus) { mid1 = ` TIMER ${mmss(bonusT)}  ·  BONUS +${pad(bonusScore, 5)} `; midCol = (bonusT < 5 && (bonusT * 4 | 0) % 2) ? C.RED : C.YELLOW; }
+  else if (boss) { const hp = Math.max(0, boss.hp); mid1 = ` FUNGUS${boss.phase2 ? ' !!' : ''} [${bar(hp, 44, 22)}] ${pad(hp, 2)}/44 `; midCol = boss.dead ? C.GREEN : boss.phase2 ? C.PURPLE : C.RED; }
+  else if (mid && !mid.dead) { const hp = Math.max(0, mid.hp); mid1 = ` AUDITOR${mid.phase2 ? ' !!' : ''} [${bar(hp, mid.maxhp, 20)}] ${pad(hp, 2)}/${mid.maxhp} `; midCol = C.RED; }
+  else {
+    const n = wavesNeeded(), cur = Math.min(n, wave.done + (wave.active ? 1 : 0));
+    const tag = door && door.open ? 'DOOR OPEN' : wave.active ? `${pad(Math.max(0, stage.wave - wave.spawned + fighters()), 2)} LEFT` : allWavesDone() ? (stage.boss ? 'GO DEEPER' : 'AUDIT') : 'GO >>>';
+    mid1 = ` WAVE ${cur}/${n} ${levelMap(30)} ${tag.padEnd(9)} `; midCol = door && door.open ? C.CYAN : wave.active ? C.GREEN : C.YELLOW;
+  }
+  textC(1, mid1, midCol);
+  const right = combo > 1 ? `[ COMBO x${combo} ]` : `[ AI ${director.mood} ]`;
+  textR(1, right, combo > 1 ? C.ORANGE : director.mood === 'HOT' ? C.RED : director.mood === 'CALM' ? C.GREEN : C.DIM, COLS - 2);
+  if (ts < 1) textC(2, ' S L O W ', C.CYAN);
+  if (coachMsg) { const s = ` ${coachMsg.text} `.slice(0, COLS - 4); fillRect(Math.floor((COLS - s.length) / 2), 2, Math.floor((COLS - s.length) / 2) + s.length, 2); textC(2, s, C.CYAN); }
+}
+
+/* ---------- ground line + status bar (bottom) ---------- */
+function groundLine(hp, armor, title) {
+  hline(FRONT, 0, COLS - 1, '=', C.CYAN2); hline(FRONT, 86, COLS - 1, '+', C.ORANGE);
+  const hpCol = hp > 50 ? C.GREEN : (hp > 25 ? C.ORANGE : ((runT * 6 | 0) % 2 ? C.RED : C.WHITE));
+  let x = 30;
+  fillRect(x - 1, FRONT, x + 42, FRONT);
+  text(x, FRONT, '|', C.DIM); text(x + 2, FRONT, `HP ${String(hp).padStart(3)}%`, hpCol); meter(x + 11, FRONT, hp, 100, 12, hpCol);
+  text(x + 24, FRONT, '|', C.DIM); text(x + 26, FRONT, `ARM ${pad(armor, 3)}`, armor > 0 ? C.BLUE : C.DIM); meter(x + 34, FRONT, armor, 75, 6, C.BLUE);
+  text(x + 41, FRONT, '|', C.DIM);
+}
+function abilityCell(x, key, name, frac, label, col, active) {
+  text(x, FRONT + 1, key, active ? C.WHITE : col); text(x + 2, FRONT + 1, name.padEnd(6), frac >= 1 || active ? C.WHITE : C.GRAY);
+  meter(x + 9, FRONT + 1, clamp(frac, 0, 1), 1, 8, active ? C.WHITE : col);
+  text(x + 18, FRONT + 1, label.padStart(6), frac >= 1 && !active ? col : C.DIM);
+}
+function drawStatus() {
+  const p = player;
+  groundLine(p.hp, p.armor);
+  const y = FRONT + 1;
+  const gear = `BOOTS x${p.gear.boots}  AXE +${p.gear.axe}${p.spreadT > 0 ? `  SPREAD ${Math.ceil(p.spreadT)}s` : ''}${p.mount ? `  BEAST ${'#'.repeat(p.mount.hp)}` : ''}`;
+  if (isTouch) { textC(y, gear, C.YELLOW); }
+  else {
+    abilityCell(2, 'K', 'SLOW', p.slowT > 0 ? p.slowT / 3 : 1 - p.slowCd / 18, p.slowT > 0 ? 'ACTIVE' : p.slowCd > 0 ? Math.ceil(p.slowCd) + 's' : 'READY', C.BLUE, p.slowT > 0);
+    put(27, y, '│', C.DIM2);
+    abilityCell(29, 'L', 'CLEAVE', 1 - p.cleaveCd / 7, p.cleaveCd > 0 ? Math.ceil(p.cleaveCd) + 's' : 'READY', C.CYAN, p.cleaveAnim > 0);
+    put(54, y, '│', C.DIM2);
+    abilityCell(56, 'U', 'ULTRA', 1 - p.ultraCd / 240, p.ultraCd > 0 ? mmss(p.ultraCd) : 'READY', C.PINK, !!ultra);
+    put(81, y, '│', C.DIM2);
+    text(83, y, gear.slice(0, 28), C.YELLOW);
+  }
+  footer();
+}
+
+/* ---------- options (framed) ---------- */
+function drawOptions() {
+  drawStars(titleT, 26); topBars('OPTIONS  ·  SAVED ON THIS DEVICE');
+  const x0 = 22, x1 = 89;
+  panel(x0, 4, x1, 25, 'SETTINGS', C.CYAN, true);
+  OPTS.forEach((o, i) => {
+    const sel = i === optIdx, y = 6 + i * 2;
+    if (sel) text(x0 + 2, y, '>>', C.GREEN);
+    text(x0 + 5, y, o.label.padEnd(26, '.'), sel ? C.WHITE : C.GRAY);
+    if (o.k === 'music' || o.k === 'sfx') { meter(x0 + 33, y, SET[o.k], 10, 10, sel ? C.YELLOW : C.CYAN); text(x0 + 45, y, String(SET[o.k]).padStart(2), sel ? C.YELLOW : C.CYAN); }
+    else text(x0 + 33, y, o.get(), o.k === 'reset' && optConfirm ? C.RED : sel ? C.YELLOW : C.CYAN);
+  });
+  const d = diffNow();
+  text(x0 + 5, 24, `${d.name}: spores hit ${Math.round(d.dmg * 100)}% · speed ${Math.round(d.spd * 100)}% · +${d.hp} HP · AI up to x${d.dirMax}`, C.DIM);
+  textC(27, isTouch ? 'stick up/down select  ·  left/right change  ·  OK toggle  ·  ≡ back' : 'W/S select  ·  A/D change  ·  ENTER toggle  ·  O / ESC back', C.DIM);
+  footer();
+}
 /* =====================================================================================
    drawing
    ===================================================================================== */
@@ -1563,67 +1878,8 @@ function drawStars(t, rows) {
 }
 
 /* ---- intro: seed -> tree -> IONITY ---- */
-function drawIntro() {
-  const t = introT;
-  for (const s of stars) { const a = clamp((t - 1) / 3, 0, 1); if (Math.random() < a) { const tw = (t * 1.7 + s.seed * 9) % 1; put(s.x, s.y, tw > 0.55 ? '*' : '.', tw > 0.55 ? C.STAR : C.DIM); } }
-  hline(0, 0, COLS - 1, '-', C.DIM); hline(1, 0, COLS - 1, '-', C.DIM);
-  text(9, 0, ' TIME ', C.CYAN); text(6, 1, ' GOVERNANCE : POLICY 986 AED ', C.CYAN);
-  textR(0, ` ${BUILD.id} · v${BUILD.version} · ${BUILD.classification} `, C.DIM, COLS - 6);
-  // soil
-  const gw = Math.floor(clamp(t / 0.8, 0, 1) * 52);
-  hline(26, 56 - gw, 56 + gw, '=', C.CYAN2);
-  if (t > 0.5) hline(27, 56 - Math.min(gw, 40), 56 + Math.min(gw, 40), '.', C.DIM);
-  // seed
-  if (t < 0.7) { put(56, 25, ((t * 8) | 0) % 2 ? 'o' : '.', C.YELLOW); if (t > 0.25) { put(54, 25, '(', C.DIM); put(58, 25, ')', C.DIM); } }
-  // tree
-  for (const s of TREE) {
-    if (s.birth > t) continue;
-    const fresh = t - s.birth < 0.25;
-    if (s.leaf) { const glow = t > 5.6 && ((t * 3 + s.x) | 0) % 3 === 0; put(s.x, s.y, s.ch, fresh ? C.WHITE : glow ? C.CYAN : C.LEAF); }
-    else put(s.x, s.y, s.ch, fresh ? C.WHITE : shade(C.WOOD, s.depth === 0 ? 1 : 0.8 - s.depth * 0.08));
-  }
-  // banner reveal
-  const cols = Math.floor(clamp((t - 2.4) / 3.0, 0, 1) * 32);
-  fillRect(30, 2, 82, 7);
-  IONITY_BANNER.forEach((l, i) => text(Math.floor((COLS - 32) / 2), 2 + i, l.slice(0, cols), C.CYAN));
-  if (t > 5.4) textC(6, 'I O - M A N', C.WHITE);
-  if (t > 6.0) textC(7, 'AEDI  ·  IONITY GLOBAL  ·  Building Tomorrow, Today.', C.DIM);
-  // loading bar
-  const p = clamp(t / 7, 0, 1), stepIdx = Math.min(LOAD_STEPS.length - 1, Math.floor(p * LOAD_STEPS.length));
-  text(6, 28, `[${bar(p, 1, 60)}] ${pad(Math.round(p * 100), 3)}%`, C.CYAN);
-  text(74, 28, LOAD_STEPS[stepIdx].padEnd(30), C.WHITE);
-  textR(27, 'ENTER to skip', C.DIM, COLS - 2);
-  text(1, ROWS - 1, 'Author: Johan Wilhelm van Antwerp · ORCID 0009-0005-7181-0347', C.DIM);
-  textR(ROWS - 1, '© 2018-2026 Antwerp Designs | Ionity (Pty) Ltd', C.DIM, COLS - 1);
-}
 
 /* ---- title ---- */
-function drawTitle() {
-  drawStars(titleT, 26);
-  hline(0, 0, COLS - 1, '-', C.DIM); hline(1, 0, COLS - 1, '-', C.DIM);
-  text(9, 0, ' TIME ', C.CYAN); text(6, 1, ' GOVERNANCE : POLICY 986 AED ', C.CYAN); textR(0, ` ${BUILD.id} · v${BUILD.version} · ${BUILD.classification} `, C.DIM, COLS - 6);
-  for (let y = 2; y < FRONT; y++) { put(0, y, '|', C.DIM); put(COLS - 1, y, '|', C.DIM); }
-  fillRect(1, 3, COLS - 2, 14); fillRect(1, 17, COLS - 2, 23);
-  BANNER.forEach((l, i) => textC(3 + i, l, C.CYAN));
-  textC(9, 'I O N I T Y   ·   G E T   O V E R   I T   D O O R', C.WHITE);
-  textC(11, 'AEDI · SIDE-SCROLLING DEPTH-LANE BEAT-EM-UP · 9 STAGES + 3 BONUS · THE AUDITOR · THE GREAT FUNGUS', C.DIM);
-  const blink = ((titleT * 2) | 0) % 2;
-  textC(13, blink ? '>>  PRESS ENTER  ·  NEW RUN  <<' : '    PRESS ENTER  ·  NEW RUN    ', blink ? C.GREEN : C.WHITE);
-  if (progress.maxIdx > 0) { const s = STAGES[progress.maxIdx]; textC(14, `PRESS C  ·  CONTINUE FROM CHECKPOINT  ·  STAGE ${s.id} ${s.name}`, C.YELLOW); }
-  textC(17, 'MOVE WASD/ARROWS (W/S = DEPTH)   JUMP SPACE   CHOP J   JUMP+CHOP = SLAM   SLOW K   CLEAVE L   ULTRA U', C.GRAY);
-  textC(18, 'CLEAR EACH WAVE  >>  GO >>>  >>  DOOR AT THE END  >>  WALK TO THE BACK WALL  >>  NEXT STAGE  (checkpoints save)', C.GRAY);
-  textC(19, 'LOOT: + HP   A ARMOR (absorbs 60%)   B ION BOOTS   X AXE+   S SPREAD SHOT   U ULTRA CHARGE   $ @ * SCORE', C.GRAY);
-  textC(20, 'AI DIRECTOR scales pressure to your form · AEDI COACH calls your run · P pause · M mute · N next track', C.GRAY);
-  textC(21, `MUSIC (original): ${TRACK_ORDER.map(k => TRACKS[k].name).join(' · ')}`, C.DIM);
-  textC(15, `O  OPTIONS  ·  DIFFICULTY ${diffNow().name}  ·  ${padSeen ? 'GAMEPAD READY' : 'GAMEPAD: plug in + press a button'}`, C.GRAY);
-  if (scores.length) textC(23, 'HALL OF FAME  ' + scores.slice(0, 3).map((s, i) => `${i + 1}.${s.name} ${pad(s.score, 7)}`).join('   '), C.YELLOW);
-  // parade
-  const names = Object.keys(TYPES).filter(n => n !== 'crate');
-  names.forEach((n, i) => { const T = TYPES[n]; const x = Math.floor((30 + i * 9.5 + titleT * 6) % (COLS - 8)) + 2; const feet = T.fly ? FRONT - 2 : FRONT - 1; sprite(x, feet, ((titleT * 4 + i) | 0) % 2 ? T.art : T.alt, T.color); });
-  sprite(54, FRONT - 1, ((titleT * 3) | 0) % 2 ? PLAYER.idle : PLAYER.atkR, C.WHITE);
-  hline(FRONT, 0, COLS - 1, '=', C.CYAN2); text(44, FRONT, '| HP 100% [##########] | ARM 000 |', C.GREEN);
-  drawFooter('Author: Johan Wilhelm van Antwerp · ORCID 0009-0005-7181-0347');
-}
 
 /* ---- world ---- */
 function drawTheme() {
@@ -1667,26 +1923,7 @@ function drawWorld() {
     text(door.x - 2, WALL, '/', C.CYAN2); text(door.x + DOOR_W + 1, WALL, '\\', C.CYAN2);
   }
   worldMode = false;
-  // front edge + HP / armor
-  hline(FRONT, 0, COLS - 1, '=', C.CYAN2);
-  const hpc = player.hp, hpCol = hpc > 50 ? C.GREEN : (hpc > 25 ? C.ORANGE : ((runT * 6 | 0) % 2 ? C.RED : C.WHITE));
-  text(44, FRONT, `| HP ${String(hpc).padStart(3, ' ')}% [${bar(hpc, 100, 10)}] |`, hpCol);
-  text(68, FRONT, ` ARM ${pad(player.armor, 3)} |`, player.armor > 0 ? C.BLUE : C.DIM);
-  // abilities + gear row
-  const p = player;
-  const slowTxt = p.slowT > 0 ? `SLOW [ACTIVE ${p.slowT.toFixed(1)}]` : p.slowCd > 0 ? `SLOW [${bar(18 - p.slowCd, 18, 6)}]` : 'SLOW [READY ]';
-  const clvTxt = p.cleaveCd > 0 ? `CLEAVE [${bar(7 - p.cleaveCd, 7, 6)}]` : 'CLEAVE [READY ]';
-  const ultTxt = p.ultraCd > 0 ? `ULTRA [${mmss(p.ultraCd)}]` : (((runT * 3) | 0) % 2 ? 'ULTRA [READY!]' : 'ULTRA [  U   ]');
-  const gear = ` GEAR: ARMOR ${pad(p.armor, 3)} · BOOTS x${p.gear.boots} · AXE+${p.gear.axe}${p.spreadT > 0 ? ` · SPREAD ${p.spreadT.toFixed(0)}s` : ''}${p.mount ? ` · BEAST ${'#'.repeat(p.mount.hp)}` : ''} `;
-  if (isTouch) { text(22, FRONT + 1, gear, C.YELLOW); }   // touch deck shows the cooldowns
-  else {
-    text(1, FRONT + 1, ` K:${slowTxt} `, p.slowT > 0 ? C.WHITE : p.slowCd > 0 ? C.DIM : C.CYAN);
-    text(26, FRONT + 1, ` L:${clvTxt} `, p.cleaveCd > 0 ? C.DIM : C.CYAN);
-    text(46, FRONT + 1, ` U:${ultTxt} `, p.ultraCd > 0 ? C.DIM : C.PINK);
-    textR(FRONT + 1, gear, C.YELLOW, COLS - 1);
-  }
-  text(1, ROWS - 1, `AEDI · IONITY GLOBAL · ${BUILD.id} · v${BUILD.version} · ${BUILD.classification}`, C.DIM);
-  textR(ROWS - 1, '© 2018-2026 Antwerp Designs | Ionity (Pty) Ltd', C.DIM, COLS - 1);
+  drawStatus();
 }
 function shadow(x, z, w) { hline(rowOf(z, 0), Math.round(x), Math.round(x + w - 1), '_', shade(C.DIM, 0.8)); }
 function drawEnemy(e) {
@@ -1746,35 +1983,6 @@ function drawUltra() {
     for (let y = 2; y <= FRONT; y++) { put(ultra.x, y, pick(['|', '!', ':']), C.WHITE); put(ultra.x - 1, y, pick([':', '.', '\'']), C.PINK); put(ultra.x - 2 - Math.random() * 3, y, pick(['.', ' ', '`']), C.CYAN); }
   }
 }
-function drawHUD() {
-  hline(0, 0, COLS - 1, '-', C.DIM); hline(1, 0, COLS - 1, '-', C.DIM);
-  text(9, 0, ` TIME ${mmss(runT)} `, C.CYAN);
-  text(6, 1, ` POLICY 986 AED `, C.CYAN);
-  textR(0, ` SCORE ${pad(score, 7)} `, C.YELLOW, COLS - 9);
-  const lbl = stage.bonus ? ` BONUS · ${stage.name} ` : ` STAGE ${stage.id}/${MAIN_STAGE_COUNT} · ${stage.name} `;
-  textC(0, lbl, C.WHITE);
-  if (stage.bonus) textC(1, ` TIMER ${mmss(bonusT)} · BONUS +${pad(bonusScore, 5)} `, ((bonusT < 5 && (bonusT * 4 | 0) % 2) ? C.RED : C.YELLOW));
-  else if (boss) { const hp = Math.max(0, boss.hp); textC(1, ` FUNGUS HP [${bar(hp, 44, 20)}] ${pad(hp, 2)}/44 `, boss.dead ? C.GREEN : C.RED); }
-  else if (mid && !mid.dead) textC(1, ` THE AUDITOR [${bar(Math.max(0, mid.hp), mid.maxhp, 18)}] ${pad(Math.max(0, mid.hp), 2)}/${mid.maxhp} `, C.RED);
-  else {
-    const n = wavesNeeded(), cur = Math.min(n, wave.done + (wave.active ? 1 : 0));
-    const tag = door && door.open ? 'DOOR OPEN' : wave.active ? `${pad(Math.max(0, stage.wave - wave.spawned + fighters()), 2)} LEFT` : allWavesDone() ? (stage.boss ? 'GO DEEPER' : 'AUDIT') : 'GO >>>';
-    textC(1, ` WAVE ${cur}/${n} ${levelMap(32)} ${tag} `, door && door.open ? C.CYAN : wave.active ? C.GREEN : C.YELLOW);
-  }
-  const right = combo > 1 ? ` COMBO x${combo} ` : ` DIRECTOR ${director.mood} `;
-  textR(1, right, combo > 1 ? C.ORANGE : director.mood === 'HOT' ? C.RED : director.mood === 'CALM' ? C.GREEN : C.DIM, COLS - 9);
-  text(21, 0, muted ? ' [MUTE] ' : ` ♪ ${TRACKS[music.track].name} `, C.DIM);
-  if (ts < 1) textC(2, ' S L O W ', C.CYAN);
-  if (coachMsg) { const s = ` ${coachMsg.text} `; fillRect(Math.floor((COLS - s.length) / 2), 2, Math.floor((COLS - s.length) / 2) + s.length, 2); textC(2, s, C.CYAN); }
-}
-function drawBox(lines, color, yTop) {
-  const w = Math.min(COLS - 2, Math.max(...lines.map(l => l.length)) + 6), h = lines.length + 2;
-  const x0 = Math.max(1, Math.floor((COLS - w) / 2)), y0 = yTop !== undefined ? yTop : Math.max(2, Math.floor((ROWS - h) / 2) - 1);
-  fillRect(x0, y0, x0 + w - 1, y0 + h - 1);
-  text(x0, y0, '+' + '-'.repeat(w - 2) + '+', color); text(x0, y0 + h - 1, '+' + '-'.repeat(w - 2) + '+', color);
-  for (let y = y0 + 1; y < y0 + h - 1; y++) { put(x0, y, '|', color); put(x0 + w - 1, y, '|', color); }
-  lines.forEach((l, i) => text(x0 + Math.max(2, Math.floor((w - l.length) / 2)), y0 + 1 + i, l.slice(0, w - 4), i === 0 ? color : C.WHITE));
-}
 function drawBanner() {
   if (!bannerMsg) return;
   const s = `  ${bannerMsg.text}  `, x = Math.floor((COLS - s.length) / 2), on = SET.reduce || ((bannerMsg.t * 6) | 0) % 2;
@@ -1824,36 +2032,13 @@ function levelMap(w) {
   m[w - 1] = 'D'; m[px] = '>';
   return '[' + m.join('') + ']';
 }
-function drawBoot() {
-  hline(0, 0, COLS - 1, '-', C.DIM); hline(1, 0, COLS - 1, '-', C.DIM);
-  const L = [
-    ['IONITY BIOS v' + BUILD.version + '  ·  (c) 2018-2026 Antwerp Designs | Ionity (Pty) Ltd', C.CYAN],
-    ['', C.DIM],
-    ['CPU ........................ AEDI EDGE CORE        OK', C.WHITE],
-    ['KERNEL ..................... AEDI                  OK', C.WHITE],
-    ['GOVERNANCE ................. POLICY 986 AED        MOUNTED', C.WHITE],
-    [`DISPLAY .................... 112x30 ANSI  ${FSZ}px  x${(window.devicePixelRatio || 1).toFixed(1)}`, C.WHITE],
-    [`INPUT ...................... ${isTouch ? 'TOUCH  (joystick + deck)' : 'KEYBOARD'}`, C.WHITE],
-    ['AUDIO ...................... 6 ORIGINAL LOOPS      WAITING FOR USER', C.ORANGE],
-    ['STAGES ..................... 9 SCROLLING + 3 BONUS', C.WHITE],
-    ['', C.DIM],
-  ];
-  const n = Math.min(L.length, Math.floor(bootT * 9));
-  for (let i = 0; i < n; i++) text(8, 4 + i * 1.5 | 0, L[i][0], L[i][1]);
-  if (n >= L.length) {
-    const cur = ((bootT * 2) | 0) % 2 ? '_' : ' ';
-    text(8, 21, `> PRESS ANY KEY / TAP TO BOOT IO-MAN${cur}`, C.GREEN);
-    text(8, 23, isTouch ? '  best played in landscape · tap [ ] FULL for fullscreen' : '  F = fullscreen · M = mute · headphones recommended', C.DIM);
-  }
-  text(1, ROWS - 1, 'Author: Johan Wilhelm van Antwerp · ORCID 0009-0005-7181-0347', C.DIM);
-  textR(ROWS - 1, '© 2018-2026 Antwerp Designs | Ionity (Pty) Ltd', C.DIM, COLS - 1);
-}
 function draw() {
   gclear();
   if (state === 'boot') { drawBoot(); render(); return; }
   if (state === 'intro') { drawIntro(); render(); return; }
   if (state === 'title') { drawTitle(); drawToast(); render(); return; }
   if (state === 'options') { drawOptions(); render(); return; }
+  if (state === 'hof') { drawHof(); render(); return; }
   if (state === 'map') { drawMap(); drawToast(); render(); return; }
   if (state === 'initials') { drawInitials(); render(); return; }
   if (state === 'over' || state === 'win') { drawEnd(state === 'win'); render(); return; }
