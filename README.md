@@ -2,7 +2,7 @@
 
 > ASCII / ANSI side-scrolling beat-em-up in a single HTML file. Chop the spores, push forward, open the door, get over it.
 
-**Document ID:** GME-2026-10-008 · **Version:** 4.4.0 · **Classification:** INTERNAL (source published for reference)
+**Document ID:** GME-2026-10-009 · **Version:** 4.5.0 · **Classification:** INTERNAL (source published for reference)
 **Author:** Johan Wilhelm van Antwerp · Ionity (Pty) Ltd · AEDI (Antwerp Ecosystems Designs Ionity) · ORCID [0009-0005-7181-0347](https://orcid.org/0009-0005-7181-0347)
 **Governance:** Policy 986 AED · **License:** AED 900 · CC BY-NC-SA 4.0 where stated
 **Play:** https://ionity.fun · **Web:** https://www.ionity.today · https://www.ionity.world · Ref: https://www.ionity.co.za · Contact: ai@ionity.today
@@ -17,7 +17,11 @@ Phones and tablets: play in **landscape** (portrait shows a rotate screen and pa
 | Action | Keyboard | Touch |
 |---|---|---|
 | Move (W/S = depth lane) | `WASD` / arrows | drag joystick |
-| Jump · Double jump · Stomp · Slam (MEGA from high) | `Space` · `Space` in the air · land on a spore · `Space` then `J` | JUMP · JUMP again · land on · JUMP then CHOP |
+| Jump · Double jump · Stomp | `Space` · `Space` in the air · land on a spore | JUMP · JUMP again · land on |
+| **AIR SPIN** (the jump hit, 2 per jump) · Slam / MEGA SLAM | `J` in the air · `S`+`J` in the air | CHOP in the air · stick down + CHOP |
+| **SKYFALL** special: launch, lock on, dive, shockwave (12 s) | `H` | SKY |
+| Swap weapon | `Q` | WPN |
+| Ride: jump · hop off · REX ROAR | `Space` · `S`+`Space` · `L` | JUMP · down + JUMP · CLEAVE |
 | Chop · 3-hit chain (3rd = FINISHER) | `J` (`X`/`F` in play) | CHOP ==> |
 | Dash · Dash strike | double-tap `A`/`D` · chop mid-dash | — |
 | Hop off IO-BEAST | `Space` while riding | JUMP |
@@ -29,6 +33,56 @@ Phones and tablets: play in **landscape** (portrait shows a rotate screen and pa
 | NEW GAME+ (after beating ROOT) | `G` | — |
 | Start / skip · Continue from checkpoint | `Enter` · `C` | START / OK · CONT |
 | Share / follow panel (menus, end screen) | `B` | ⤴ |
+
+## v4.5.0 — "WEAPONS & DINOS": what's new
+
+**Weapons.** Each has its own reach, damage and swing speed. Weapons drop from mini-bosses (guaranteed, a new one first), from ELITE spores (30%) and from crates (15%).
+- Pick up the same weapon again to level it, up to L3.
+- `Q` (WPN on touch) swaps between the weapons you own.
+- The upgrade terminal sells **WEAPON TUNE**, which levels the weapon in your hand.
+
+| Weapon | In-game look | Feel |
+|---|---|---|
+| DIGITAL AXE | `==>` | balanced; you start with it |
+| ION SWORD | `-\|===>` | reach 7, fast slashes |
+| PLASMA HAMMER | `=[##]` | slow, +2 damage, breaks shields, quake on a finisher |
+| BIT BLASTER | `=[]>` | every swing fires a bolt across the screen |
+| CHAIN WHIP | `~~~~~o` | reach 9, also hits the next lanes over |
+
+**Tougher spores.**
+- Normal and fast spores have 2 HP, flyers 2, spitters 3, shields 4, tanks 5, riders 5, thieves 6.
+- Spores get +1 HP every 3 stages, and more again each NEW GAME+ loop.
+- Every damaged spore shows an HP bar.
+- **ELITE** spores (from stage 2, about 8% and rising) flash gold with an `ELITE` tag. They have double HP plus one, are worth 3× score, and drop 4 bits plus a 30% chance of a weapon.
+
+**Dino riding.**
+- **RAPTOR:** RAPTOR RIDERS appear in DATA FOREST, ENCRYPTION and UPLINK. Knock the rider off and ride it. It's fast, double jumps, and CHOP is a BITE.
+- **IO-REX:** a **DINO EGG** sits in DATA FOREST, EDGE NODE and ROOT. Chop it open to hatch an IO-REX.
+  - It's heavy and takes only 20% damage.
+  - **CHOMP** swallows small spores whole ("GULP") for +2 bits.
+  - **ROAR** (CLEAVE key) stuns and blasts back everything on screen.
+  - Its jumps land as an **earthquake**.
+  - It walks straight through spores.
+- All mounts take a share of the hits and throw you when their HP runs out.
+- `S`+`Space` hops off, with a short pause before you can climb back on.
+
+**The jump hit is now its own move.**
+- **AIR SPIN:** CHOP in the air spins a 360° ring, twice per jump. It hovers you briefly, hits flyers, and knocks back.
+- Hold DOWN + CHOP in the air to SLAM instead. A SLAM from a double-jump height is still a MEGA SLAM.
+- **SKYFALL** (`H` / SKY, 12 s recharge): IO-MAN rockets up, locks onto the biggest cluster or boss, and dives. On impact it does a wide stun, knockback, damage and a shockwave, and you're invulnerable for the whole move. It has its own cooldown bar in the status row.
+
+**FEVER.** Hit a 15-kill combo for 10 s of rainbow IO-MAN, double bits, +1 damage and faster swings.
+
+**Solid bodies.** IO-MAN can't walk through spores, mini-bosses or THE AUDITOR, and spores can't walk through IO-MAN or stack on top of each other.
+- Bodies keep a one-column touch, so hits and chops still land.
+- Tanks, elites, crates and bosses don't budge; lighter spores get shoved.
+- You get past them by jumping over, dashing through, using SKYFALL or riding the REX.
+
+**Touch.**
+- New **SKY** and **WPN** buttons; CHOP spans the full deck width.
+- The deck sits beside the side column, so the two no longer overlap.
+- In menus only CONT and START/OK show.
+- Gamepad: LB swaps weapon, LT is SKYFALL.
 
 ## v4.4.0 — "BITS & BYTES": what's new
 
@@ -244,6 +298,20 @@ v4.4 changes to the table above:
 
 The game is vanilla JS in one file (~1,500 lines, ~100 KB). It draws a 112×30 character grid onto a canvas, using the Ionity palette (cyan `#00c6ff` on `#0d1b2a`) plus the ANSI LGREEN / ORANGE / RED / PURPLE colours from the AEDI shell scripts.
 
+v4.5 was verified headless in Chromium (`t45.js`). Checks:
+- mob HP (normal 2, tank 5);
+- body block (IO-MAN stopped at a tank);
+- sword reach 8, blaster bolt at 22 cols, whip on the next lane over, hammer breaking a shield, weapon swap;
+- an ELITE spawning with 9 HP;
+- AIR SPIN killing a flyer;
+- SKYFALL clearing a pack (12 s cooldown);
+- FEVER at a 15 combo;
+- raptor mount, double jump, bite and hop-off;
+- egg → IO-REX hatch, mount, ROAR stunning 5–6 spores, quake landing and CHOMP;
+- WEAPON TUNE to L2.
+
+The v4.4 and v4.3 suites, the regression suite and the rotate suite all re-ran with zero console errors.
+
 v4.4 was verified headless in Chromium (`test4.js` regression updated for the name box, `t44.js` features, `t43.js` splash/share, `rot.js` rotate). Checks:
 - double jump (peak about 5 rows) and stomp bounce;
 - mega slam clearing a group;
@@ -275,7 +343,8 @@ v4 was verified headless in Chromium (Playwright) with an injected standard game
 v3 was verified headless in Chromium (Playwright). The desktop run covered boot, intro, title, a scrolling wave lock and release, the door at the end of the level, the themed long stages, a thief loot drop, THE AUDITOR, the ROOT boss zone, ULTRA halving the boss (44→22), victory and the bonus stage. The Pixel 7 portrait run confirmed the rotate screen. The landscape run confirmed the canvas fit (791×410 in an 839×412 viewport) and joystick input. Zero console errors.
 
 ```
-sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   3e778335608177cfbac1321a1a26fe984bbf84994fdab04f3dffb3a6630906f6   v4.4.0
+sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   719d9a5069bee1be33ceb8ffa73ae6d0fc2b2b097faf8a5d09b97663c246e320   v4.5.0
+sha256  (v4.4.0)                                             3e778335608177cfbac1321a1a26fe984bbf84994fdab04f3dffb3a6630906f6
 sha256  (v4.3.0)                                             14a7ee6d0d8ab3494b486ba0d0a2ee0e94268df4d3cfb7c31b79c3dd637eb176
 sha256  (v4.2.0)                                             2798487587b53df2e2671db7e17e7dbb3af84afb7cbfdb47d30c7ec1af639f51
 sha256  (v4.1.0)                                             9593264b56904f35148e4d83b857b3b043fc7f264283c06b44bceee2323dc08e
@@ -288,8 +357,8 @@ v2.0.0 (9eff69c1…) is kept in git history.
 ## Repository layout
 
 ```
-index.html                            v4.4.0 — served at ionity.fun
-IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.4.0 (same file, descriptive name)
+index.html                            v4.5.0 — served at ionity.fun
+IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.5.0 (same file, descriptive name)
 firebase/                             IONITY CLOUD config: firebase.json, firestore.rules, firestore.indexes.json (project io-man)
 banners/                              social banners (OG 1200x630, square, story, X header)
 assets/logo/                          official IONITY logo originals + vector traces (IONITY, IO-MAN)
