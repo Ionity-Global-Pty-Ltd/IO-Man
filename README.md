@@ -2,7 +2,7 @@
 
 > ASCII / ANSI side-scrolling beat-em-up in a single HTML file. Chop the spores, push forward, open the door, get over it.
 
-**Document ID:** GME-2026-10-006 · **Version:** 4.2.0 · **Classification:** INTERNAL (source published for reference)
+**Document ID:** GME-2026-10-007 · **Version:** 4.3.0 · **Classification:** INTERNAL (source published for reference)
 **Author:** Johan Wilhelm van Antwerp · Ionity (Pty) Ltd · AEDI (Antwerp Ecosystems Designs Ionity) · ORCID [0009-0005-7181-0347](https://orcid.org/0009-0005-7181-0347)
 **Governance:** Policy 986 AED · **License:** AED 900 · CC BY-NC-SA 4.0 where stated
 **Play:** https://ionity.fun · **Web:** https://www.ionity.today · https://www.ionity.world · Ref: https://www.ionity.co.za · Contact: ai@ionity.today
@@ -28,6 +28,39 @@ Phones and tablets: play in **landscape** (portrait shows a rotate screen and pa
 | Pause · Options · Mute · Next track · Fullscreen | `P` · `O` · `M` · `N` · `F` (menus) | `||` · `≡` · `♪` · `[ ]` |
 | NEW GAME+ (after beating ROOT) | `G` | — |
 | Start / skip · Continue from checkpoint | `Enter` · `C` | START / OK · CONT |
+| Share / follow panel (menus, end screen) | `B` | ⤴ |
+
+## v4.3.0 — what's new
+
+**Real IONITY logo splash (3 s).** Each load opens on one of the official logo cards, matching the logo images in `assets/logo/`:
+- the large **www.IONITY.co.za** card on black;
+- the smaller **www.IONITY.co.za** card on black;
+- the clean **IONITY** wordmark on white.
+
+The logo is a vector trace of the real artwork, coloured brand blue `#1658A4`, with a light sweep across it and a 3-second load line. Tap, click or any key skips it. A tap also unlocks audio and goes straight into the intro. Add `?splash=card`, `?splash=card-sm` or `?splash=clean` to force a card, or `?splash=0` to skip it.
+
+**IO-MAN banner.** The IO-MAN wordmark is now built from the real IONITY letters:
+- The **I** and **O** come straight from the logo.
+- The **M** is made from mirrored halves of the logo's N.
+- The **A** is the O's arch with an outlined crossbar.
+- The dash follows the same outline style.
+
+On the title screen the ANSI wordmark types in, then turns into the vector banner (cyan gradient, glow, light sweep), and they alternate.
+
+**Share + follow panel** (`B`, the **SHARE / FOLLOW** menu item, **SHARE SCORE** in the run-data bar, **⤴** on touch, or the footer link):
+- **Native share** where the phone supports it, attaching the score-card image when possible.
+- **One-tap share links:** X, Facebook, LinkedIn, WhatsApp, Telegram, Bluesky, Reddit and email.
+- **Copy link**, and a **score card PNG** (1200×630) showing your result, score, time and difficulty.
+- **Follow links:** ionity.today, ionity.world, ionity.co.za, the GitHub IO-Man repo, GitHub Sponsors, LinkedIn, X, YouTube, TikTok and Bluesky.
+- Each share is logged in the run data under `dta.shares`.
+
+**Social banners** in `banners/`, made by the same card generator:
+- OG 1200×630 — now the page's `og:image` and Twitter large card;
+- square 1080;
+- story 1080×1920;
+- X header 1500×500.
+
+**Assets.** `assets/logo/` holds the original logo files plus the vector SVGs.
 
 ## v4.2.0 — what's new
 
@@ -118,12 +151,24 @@ The arena has 11 depth lanes with perspective, depth-sorted rendering, depth sha
 
 The game is vanilla JS in one file (~1,500 lines, ~100 KB). It draws a 112×30 character grid onto a canvas, using the Ionity palette (cyan `#00c6ff` on `#0d1b2a`) plus the ANSI LGREEN / ORANGE / RED / PURPLE colours from the AEDI shell scripts.
 
+v4.3 was verified headless in Chromium. Checks:
+- all three splash cards, and auto-dismissal at 3 s;
+- key and tap skipping straight to the intro;
+- game input frozen behind the splash and the share panel;
+- the title switching between ANSI and the vector banner;
+- the share panel opening from the title, the end screen and the touch ⤴ button;
+- score-card download and banner generation;
+- Pixel 7 splash in portrait and landscape.
+
+The v4 regression suite and the rotate-screen suite were re-run with zero console errors.
+
 v4 was verified headless in Chromium (Playwright) with an injected standard gamepad: options persistence, gamepad start and movement, finisher chain, dash strike breaking a shield, rider to beast to mount to thrown, UPLINK weather, world map transition, Auditor and Fungus phase 2 (spore rain), win to initials to Hall of Fame to NEW GAME+ (gear kept, damage x1.15), game over to initials, and hit-stop freezing game time. A Pixel 7 landscape pass rendered the touch deck. Zero console errors. The v3 checks below still apply.
 
 v3 was verified headless in Chromium (Playwright). The desktop run covered boot, intro, title, a scrolling wave lock and release, the door at the end of the level, the themed long stages, a thief loot drop, THE AUDITOR, the ROOT boss zone, ULTRA halving the boss (44→22), victory and the bonus stage. The Pixel 7 portrait run confirmed the rotate screen. The landscape run confirmed the canvas fit (791×410 in an 839×412 viewport) and joystick input. Zero console errors.
 
 ```
-sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   2798487587b53df2e2671db7e17e7dbb3af84afb7cbfdb47d30c7ec1af639f51   v4.2.0
+sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   14a7ee6d0d8ab3494b486ba0d0a2ee0e94268df4d3cfb7c31b79c3dd637eb176   v4.3.0
+sha256  (v4.2.0)                                             2798487587b53df2e2671db7e17e7dbb3af84afb7cbfdb47d30c7ec1af639f51
 sha256  (v4.1.0)                                             9593264b56904f35148e4d83b857b3b043fc7f264283c06b44bceee2323dc08e
 sha256  (v4.0.0)                                             4584fdeeaf36bf4fd8f61789721fc38ba41d8a36b9b7801afb9f107ca6818daa
 sha256  (v3.0.0)                                             ba4618e83bb9f22be75d25f1e2491b8201caa3a6a16e99c9a9777037cc09ae54
@@ -134,8 +179,10 @@ v2.0.0 (9eff69c1…) is kept in git history.
 ## Repository layout
 
 ```
-index.html                            v4.2.0 — served at ionity.fun
-IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.2.0 (same file, descriptive name)
+index.html                            v4.3.0 — served at ionity.fun
+IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.3.0 (same file, descriptive name)
+banners/                              social banners (OG 1200x630, square, story, X header)
+assets/logo/                          official IONITY logo originals + vector traces (IONITY, IO-MAN)
 v1/                                   GET OVER IT DOOR v1.0.0 (GME-2026-09-001)
 previews/                             headless screenshots
 README.md                             this file
