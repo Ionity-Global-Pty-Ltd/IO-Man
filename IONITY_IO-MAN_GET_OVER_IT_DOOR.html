@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <!--
 =====================================================================================
- IONITY IO-MAN - GET OVER IT DOOR  |  Document ID: GME-2026-10-005  |  Version: 4.1.0
+ IONITY IO-MAN - GET OVER IT DOOR  |  Document ID: GME-2026-10-006  |  Version: 4.2.0
  ASCII / ANSI side-scrolling beat-em-up - single-file HTML5 canvas build - INTERNAL USE
 -------------------------------------------------------------------------------------
  Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI (Antwerp Ecosystems Designs Ionity)
@@ -35,7 +35,7 @@
 <meta name="theme-color" content="#0d1b2a">
 <meta name="generator" content="AEDI GME pipeline (Claude Cowork)">
 <meta name="copyright" content="© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd. All rights reserved.">
-<meta name="dc.identifier" content="GME-2026-10-005">
+<meta name="dc.identifier" content="GME-2026-10-006">
 <meta name="dc.creator" content="Johan Wilhelm van Antwerp">
 <meta name="dc.publisher" content="Ionity (Pty) Ltd">
 <meta name="dc.rights" content="Policy 986 AED | AED 900">
@@ -108,6 +108,15 @@
   body.touch.compact .bar, body.touch.compact #hint{display:none}
   body.touch #hint{display:none}
   body.portrait #rotate{display:flex}
+  .rotbtn{font-family:var(--mono);font-size:15px;letter-spacing:.12em;padding:14px 24px;margin-top:8px;border:1px solid var(--cyan);
+     background:rgba(0,198,255,.12);color:var(--cyan);border-radius:6px;animation:rotpulse 1.6s ease-in-out infinite;touch-action:manipulation}
+  .rotbtn:active{background:var(--cyan);color:var(--bg)}
+  @keyframes rotpulse{0%,100%{box-shadow:0 0 0 0 rgba(0,198,255,.0)}50%{box-shadow:0 0 18px 2px rgba(0,198,255,.35)}}
+  @media (prefers-reduced-motion:reduce){.rotbtn{animation:none}}
+  /* forced landscape: the whole page turns 90deg clockwise (size set from JS) */
+  body.forceland{position:fixed;top:0;left:0;transform-origin:top left;transform:rotate(90deg) translateY(-100%)}
+  body.forceland #rotate{display:none!important}
+  #b-unrot{display:none} body.forceland #b-unrot{display:block}
   @media (prefers-reduced-motion:reduce){#wrap::after{display:none}}
   body.nocrt #wrap::after, body.nocrt #wrap::before{display:none}
 </style>
@@ -115,7 +124,7 @@
 <body>
 <div class="bar" id="bar-top">
   <span><b>AEDI</b> · IONITY GLOBAL · <b>IO-MAN</b> · GET OVER IT DOOR</span>
-  <span>DOC <b>GME-2026-10-005</b> · V<b>4.1.0</b> · <b>INTERNAL</b></span>
+  <span>DOC <b>GME-2026-10-006</b> · V<b>4.2.0</b> · <b>INTERNAL</b></span>
 </div>
 <div id="wrap">
   <canvas id="cv" width="1075" height="552" aria-label="IONITY IO-MAN game canvas"></canvas>
@@ -140,7 +149,7 @@
 <div id="touch" aria-hidden="true">
   <div id="stick"><div id="knob">IO</div></div>
   <div id="topdeck">
-    <button data-k="KeyP" title="Pause">||</button><button data-k="KeyM" title="Mute">♪</button><button id="b-full" title="Fullscreen">[ ]</button><button data-k="KeyO" title="Options">≡</button>
+    <button data-k="KeyP" title="Pause">||</button><button data-k="KeyM" title="Mute">♪</button><button id="b-full" title="Fullscreen">[ ]</button><button id="b-unrot" title="Back to portrait">⟲</button><button data-k="KeyO" title="Options">≡</button>
   </div>
   <div id="deck">
     <button class="menu" data-k="KeyC">CONT<small>C</small></button>
@@ -164,7 +173,9 @@
  '------'
 </pre>
   <p>ROTATE TO LANDSCAPE</p>
-  <small>IO-MAN IS PAUSED · AEDI · IONITY GLOBAL</small>
+  <small>auto-rotate off or locked? no problem —</small>
+  <button class="rotbtn" id="b-rotate">⟳&nbsp;&nbsp;ROTATE SCREEN</button>
+  <small>IO-MAN WAITS FOR LANDSCAPE · AEDI · IONITY GLOBAL</small>
 </div>
 <script>
 'use strict';
@@ -172,7 +183,7 @@
    IONITY IO-MAN - engine core
    Terminal-grid renderer + depth-lane (semi-3D) arena. Everything is a glyph.
    ===================================================================================== */
-const BUILD = { id: 'GME-2026-10-005', version: '4.1.0', title: 'IONITY IO-MAN - GET OVER IT DOOR', classification: 'INTERNAL',
+const BUILD = { id: 'GME-2026-10-006', version: '4.2.0', title: 'IONITY IO-MAN - GET OVER IT DOOR', classification: 'INTERNAL',
                 org: 'Ionity (Pty) Ltd | AEDI', author: 'Johan Wilhelm van Antwerp', governance: 'Policy 986 AED' };
 
 const COLS = 112, ROWS = 30;
@@ -207,16 +218,21 @@ let CW = 9.6, CH = Math.round(FS * 1.15), FSZ = FS;
 /* Responsive + crisp: fit the 112x30 grid to the viewport (keeping aspect), then pick the
    font size that fills that CSS box at devicePixelRatio so glyphs stay sharp at any size. */
 const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
-let portrait = false;
+let portrait = false, forceLand = false;
+try { forceLand = localStorage.getItem('ioman_sideways') === '1'; } catch (e) { }
 function layout() {
   const b = document.body;
   b.classList.toggle('touch', isTouch);
-  portrait = isTouch && innerHeight > innerWidth;
+  if (forceLand && (!isTouch || innerWidth > innerHeight)) forceLand = false;   // the device really is landscape now
+  b.classList.toggle('forceland', forceLand);
+  b.style.width = forceLand ? innerHeight + 'px' : ''; b.style.height = forceLand ? innerWidth + 'px' : '';
+  const VW = forceLand ? innerHeight : innerWidth, VH = forceLand ? innerWidth : innerHeight;
+  portrait = isTouch && VH > VW;
   b.classList.toggle('portrait', portrait);
-  b.classList.toggle('compact', isTouch && innerHeight < 700);
+  b.classList.toggle('compact', isTouch && VH < 700);
   const chrome = [...document.querySelectorAll('.bar,#hint,#dta.show')].reduce((s, el) => s + (el.offsetParent ? el.offsetHeight + 6 : 0), 0);
   const padX = isTouch ? 8 : 32, padY = isTouch ? 6 : 16;
-  const availW = Math.max(200, innerWidth - padX), availH = Math.max(120, innerHeight - chrome - padY);
+  const availW = Math.max(200, VW - padX), availH = Math.max(120, VH - chrome - padY);
   const aspect = (COLS * 0.6) / (ROWS * 1.15);                 // monospace cell ratio
   let cssW = Math.min(availW, availH * aspect, 1600), cssH = cssW / aspect;
   const dpr = Math.min(3, window.devicePixelRatio || 1);
@@ -291,7 +307,8 @@ cv.addEventListener('pointerdown', () => { gestured = true; pressed.push('Enter'
   };
   const move = e => {
     if (e.pointerId !== id) return; e.preventDefault();
-    let dx = e.clientX - cx, dy = e.clientY - cy; const m = Math.hypot(dx, dy), max = 46;
+    const rx = e.clientX - cx, ry = e.clientY - cy;
+    let dx = forceLand ? ry : rx, dy = forceLand ? -rx : ry; const m = Math.hypot(dx, dy), max = 46;   // page turned 90deg cw: physical down = game right
     if (m > max) { dx = dx / m * max; dy = dy / m * max; }
     knob.style.transform = `translate(${dx}px,${dy}px)`; setDir(dx, dy);
   };
@@ -309,6 +326,23 @@ function goFull() {
   } catch (e) { }
 }
 document.getElementById('b-full').addEventListener('click', goFull);
+/* ROTATE SCREEN: real orientation lock where the browser allows it (Android, fullscreen),
+   otherwise turn the page itself sideways - works with auto-rotate off and on iPhone. */
+function setForceLand(on) { forceLand = on; try { localStorage.setItem('ioman_sideways', on ? '1' : '0'); } catch (e) { } layout(); setTimeout(layout, 250); }
+function rotateScreen() {
+  gestured = true; unlockAudio();
+  const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+  const fallback = () => { if (innerHeight > innerWidth) setForceLand(true); };
+  try {
+    if (!rq || !(screen.orientation && screen.orientation.lock)) return fallback();
+    Promise.resolve(rq.call(el, { navigationUI: 'hide' }))
+      .then(() => screen.orientation.lock('landscape'))
+      .then(() => setTimeout(() => { layout(); fallback(); }, 700))
+      .catch(fallback);
+  } catch (e) { fallback(); }
+}
+document.getElementById('b-rotate').addEventListener('click', rotateScreen);
+document.getElementById('b-unrot').addEventListener('click', () => setForceLand(false));
 document.addEventListener('contextmenu', e => { if (isTouch) e.preventDefault(); });
 
 /* ---------- audio: WebAudio blips + original chiptune sequencer ---------- */

@@ -2,7 +2,7 @@
 
 > ASCII / ANSI side-scrolling beat-em-up in a single HTML file. Chop the spores, push forward, open the door, get over it.
 
-**Document ID:** GME-2026-10-005 · **Version:** 4.1.0 · **Classification:** INTERNAL (source published for reference)
+**Document ID:** GME-2026-10-006 · **Version:** 4.2.0 · **Classification:** INTERNAL (source published for reference)
 **Author:** Johan Wilhelm van Antwerp · Ionity (Pty) Ltd · AEDI (Antwerp Ecosystems Designs Ionity) · ORCID [0009-0005-7181-0347](https://orcid.org/0009-0005-7181-0347)
 **Governance:** Policy 986 AED · **License:** AED 900 · CC BY-NC-SA 4.0 where stated
 **Play:** https://ionity.fun · **Web:** https://www.ionity.today · https://www.ionity.world · Ref: https://www.ionity.co.za · Contact: ai@ionity.today
@@ -28,6 +28,15 @@ Phones and tablets: play in **landscape** (portrait shows a rotate screen and pa
 | Pause · Options · Mute · Next track · Fullscreen | `P` · `O` · `M` · `N` · `F` (menus) | `||` · `≡` · `♪` · `[ ]` |
 | NEW GAME+ (after beating ROOT) | `G` | — |
 | Start / skip · Continue from checkpoint | `Enter` · `C` | START / OK · CONT |
+
+## v4.2.0 — what's new
+
+**ROTATE SCREEN button.** If a phone loads in portrait (auto-rotate off or locked), the rotate screen shows a **⟳ ROTATE SCREEN** button.
+- **Android / Chrome:** it goes fullscreen and asks the browser to lock to landscape.
+- **iPhone, or wherever the lock is refused:** IO-MAN turns the whole page 90° itself, so it works even with the system rotation lock on. Turn the phone to play.
+- In sideways mode the joystick is remapped, so pushing toward the top of the game still moves into the depth lanes.
+- A **⟲** button in the side buttons returns to portrait.
+- The choice is remembered on the device, and it switches off by itself if the phone really rotates to landscape.
 
 ## v4.1.0 — what's new
 
@@ -114,7 +123,8 @@ v4 was verified headless in Chromium (Playwright) with an injected standard game
 v3 was verified headless in Chromium (Playwright). The desktop run covered boot, intro, title, a scrolling wave lock and release, the door at the end of the level, the themed long stages, a thief loot drop, THE AUDITOR, the ROOT boss zone, ULTRA halving the boss (44→22), victory and the bonus stage. The Pixel 7 portrait run confirmed the rotate screen. The landscape run confirmed the canvas fit (791×410 in an 839×412 viewport) and joystick input. Zero console errors.
 
 ```
-sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   9593264b56904f35148e4d83b857b3b043fc7f264283c06b44bceee2323dc08e   v4.1.0
+sha256  index.html / IONITY_IO-MAN_GET_OVER_IT_DOOR.html   2798487587b53df2e2671db7e17e7dbb3af84afb7cbfdb47d30c7ec1af639f51   v4.2.0
+sha256  (v4.1.0)                                             9593264b56904f35148e4d83b857b3b043fc7f264283c06b44bceee2323dc08e
 sha256  (v4.0.0)                                             4584fdeeaf36bf4fd8f61789721fc38ba41d8a36b9b7801afb9f107ca6818daa
 sha256  (v3.0.0)                                             ba4618e83bb9f22be75d25f1e2491b8201caa3a6a16e99c9a9777037cc09ae54
 sha256  v1/IONITY_GET_OVER_IT_DOOR.html                     3a46b422853e8d61012c99a808cf25c2c3e3c71dff6af47f0d79b3f92f9580d7   v1.0.0
@@ -124,8 +134,8 @@ v2.0.0 (9eff69c1…) is kept in git history.
 ## Repository layout
 
 ```
-index.html                            v4.1.0 — served at ionity.fun
-IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.1.0 (same file, descriptive name)
+index.html                            v4.2.0 — served at ionity.fun
+IONITY_IO-MAN_GET_OVER_IT_DOOR.html   v4.2.0 (same file, descriptive name)
 v1/                                   GET OVER IT DOOR v1.0.0 (GME-2026-09-001)
 previews/                             headless screenshots
 README.md                             this file
