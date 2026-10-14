@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IONITY GLOBAL // VBLOCKS Wizard's Arena - Chess &amp; Checkers</title>
+    <title>Wizard's Arena · IONITY.FUN</title>
     <meta name="description" content="Wizard's Arena on ionity.fun: 3D Wizard's Chess and Wizard's Checkers in a Gothic cathedral, with knock-down shatter physics, vs Automaton AI or 2-player.">
     <meta name="author" content="Johan Wilhelm van Antwerp">
     <meta name="theme-color" content="#0b0d13">
@@ -13,212 +13,277 @@
     <meta property="og:description" content="3D Wizard's Chess and Checkers with physical knock-down captures. Free in the browser.">
     <meta property="og:url" content="https://www.ionity.fun/arena/">
     <meta property="og:image" content="https://www.ionity.fun/banners/ioman_og_1200x630.png">
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <!-- Chess.js for full legal move validation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-    <!-- Google Fonts & Material Symbols -->
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+    <!-- Fonts & icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet" />
 
     <!--
-      IONITY GLOBAL // VBLOCKS Wizard's Arena v1.1.0 (enhanced: segmented fracture, demo knock-down, telemetry, Web Audio)
+      IONITY GLOBAL // VBLOCKS Wizard's Arena v1.2.0 — console edition
       Games: Wizard's Chess + Wizard's Checkers (English draughts)
+      Console HUD, title menu, gamepad + keyboard cursor control, light shafts, selection beam
       Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI
       Governance: Policy 986 AED | License: AED 900
       (c) 2018-2026 Antwerp Designs | Ionity (Pty) Ltd - All Rights Reserved - TM2
-      https://www.ionity.today | Ref: https://www.ionity.co.za
+      https://www.ionity.today | https://www.ionity.fun | Ref: https://www.ionity.co.za
     -->
 
     <style>
-        body, html {
+        :root {
+            --bg: #07090f; --panel: rgba(10, 14, 24, 0.72); --line: rgba(255, 255, 255, 0.09);
+            --gold: #fbbf24; --gold2: #f59e0b; --cyan: #00f0ff; --cyan2: #38bdf8;
+            --violet: #a855f7; --red: #f43f5e; --txt: #e8eef7; --dim: #7d8aa3;
+            --pa: #22c55e; --pb: #ef4444; --px: #3b82f6; --py: #eab308;
+        }
+        * { box-sizing: border-box; }
+        html, body {
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-            background-color: #0b0d13; font-family: 'Inter', sans-serif;
-            user-select: none; -webkit-user-select: none;
+            background: var(--bg); color: var(--txt);
+            font-family: 'Rajdhani', 'Segoe UI', sans-serif; font-weight: 600;
+            user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
         }
-        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        #canvas-container { position: fixed; inset: 0; z-index: 1; }
         canvas { display: block; width: 100%; height: 100%; outline: none; }
-        .font-gothic { font-family: 'Cinzel', serif; }
-        .md-surface {
-            background: rgba(22, 25, 34, 0.82);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        .ms { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; font-size: 22px; line-height: 1; display: inline-block; -webkit-font-smoothing: antialiased; }
+
+        /* Screen FX: vignette + faint scanlines */
+        .fx-vignette { position: fixed; inset: 0; z-index: 2; pointer-events: none;
+            background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%); }
+        .fx-scan { position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0.35;
+            background: repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0,240,255,0.025) 3px 4px); }
+
+        /* ---------- HUD ---------- */
+        #hud { position: fixed; inset: 0; z-index: 10; pointer-events: none; display: flex; flex-direction: column; justify-content: space-between; padding: 14px 16px; transition: opacity .4s; }
+        #hud.off { opacity: 0; }
+        .hud-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .hud-left, .hud-right { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+        .glass { background: var(--panel); border: 1px solid var(--line); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,.45); }
+
+        .logo-chip { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; text-decoration: none;
+            border: 1px solid rgba(251,191,36,.45); background: linear-gradient(145deg, rgba(251,191,36,.18), rgba(7,9,15,.9) 55%, rgba(0,240,255,.16));
+            box-shadow: 0 0 18px rgba(251,191,36,.25); transition: transform .2s; }
+        .logo-chip:hover { transform: scale(1.06); }
+        .logo-chip svg { width: 30px; height: 30px; }
+
+        .seg { display: flex; padding: 4px; border-radius: 16px; gap: 4px; }
+        .seg-btn { all: unset; cursor: pointer; display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; border-radius: 12px;
+            font-size: 22px; color: var(--dim); transition: all .2s; position: relative; }
+        .seg-btn .k { font-family: 'Orbitron'; font-size: 9px; letter-spacing: .08em; padding: 2px 5px; border-radius: 5px; border: 1px solid currentColor; opacity: .7; }
+        .seg-btn.active { color: #fff7dd; background: linear-gradient(135deg, rgba(251,191,36,.35), rgba(0,240,255,.18)); box-shadow: inset 0 0 0 1px rgba(251,191,36,.6), 0 0 16px rgba(251,191,36,.3); }
+        .seg-btn:hover:not(.active) { color: #fff; background: rgba(255,255,255,.06); }
+
+        /* Versus plates */
+        .versus { display: flex; align-items: center; gap: 10px; pointer-events: auto; margin: 0 auto; }
+        .plate { display: flex; align-items: center; gap: 10px; min-width: 150px; height: 56px; padding: 0 14px; border-radius: 18px; transition: all .3s; opacity: .55; transform: scale(.94); }
+        .plate.b { flex-direction: row-reverse; }
+        .plate.active { opacity: 1; transform: scale(1); }
+        .plate.w.active { box-shadow: 0 0 0 1px rgba(255,255,255,.5), 0 0 26px rgba(255,255,255,.18); }
+        .plate.b.active { box-shadow: 0 0 0 1px rgba(168,85,247,.7), 0 0 26px rgba(168,85,247,.3); }
+        .orb { width: 26px; height: 26px; border-radius: 50%; flex: none; }
+        .plate.w .orb { background: radial-gradient(circle at 35% 30%, #fff, #d9d2c3 60%, #8f8778); box-shadow: 0 0 12px rgba(255,255,255,.55); }
+        .plate.b .orb { background: radial-gradient(circle at 35% 30%, #8b5cf6, #1b1430 60%, #07050d); box-shadow: 0 0 12px rgba(168,85,247,.7); }
+        .plate.active .orb { animation: orbPulse 1.6s ease-in-out infinite; }
+        @keyframes orbPulse { 50% { transform: scale(1.15); } }
+        .pinfo { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+        .plate.b .pinfo { align-items: flex-end; }
+        .pname { font-family: 'Orbitron'; font-size: 13px; font-weight: 800; letter-spacing: .14em; }
+        .plate.b .pname { color: #d8b4fe; }
+        .spoils { font-size: 16px; line-height: 1; height: 17px; white-space: nowrap; overflow: hidden; max-width: 140px; letter-spacing: -1px; }
+        .plate.w .spoils { color: #c4b5fd; }
+        .plate.b .spoils { color: #fde68a; }
+        .dots { display: none; gap: 3px; }
+        .plate.thinking .dots { display: inline-flex; }
+        .dots i { width: 5px; height: 5px; border-radius: 50%; background: #d8b4fe; animation: dot 1s infinite; }
+        .dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+        @keyframes dot { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+        .vs-col { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 64px; }
+        .vs-txt { font-family: 'Orbitron'; font-weight: 900; font-size: 15px; color: var(--gold); text-shadow: 0 0 10px rgba(251,191,36,.6); letter-spacing: .1em; }
+        .chip { font-family: 'Orbitron'; font-size: 9px; font-weight: 800; letter-spacing: .12em; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+        .chip.red { color: #fecdd3; background: rgba(244,63,94,.25); box-shadow: 0 0 0 1px rgba(244,63,94,.6), 0 0 14px rgba(244,63,94,.45); animation: chipPulse 1.2s infinite; }
+        .chip.amber { color: #fef3c7; background: rgba(245,158,11,.25); box-shadow: 0 0 0 1px rgba(245,158,11,.6); }
+        .chip.hidden { visibility: hidden; }
+        @keyframes chipPulse { 50% { box-shadow: 0 0 0 1px rgba(244,63,94,.9), 0 0 22px rgba(244,63,94,.8); } }
+
+        /* Round console buttons */
+        .rbtn { all: unset; cursor: pointer; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; color: #cbd5e1; position: relative; transition: all .18s; }
+        .rbtn:hover:not(:disabled) { color: #fff; background: rgba(255,255,255,.1); transform: translateY(-1px); }
+        .rbtn:active:not(:disabled) { transform: scale(.92); }
+        .rbtn:disabled { opacity: .3; cursor: default; }
+        .rbtn.on { color: var(--cyan); }
+        .rbtn.hot { color: #1a1206; background: linear-gradient(135deg, var(--gold), var(--gold2)); box-shadow: 0 0 18px rgba(251,191,36,.55); animation: hot 2.4s infinite; }
+        @keyframes hot { 50% { box-shadow: 0 0 28px rgba(251,191,36,.85); } }
+        .rbtn[data-tip]:hover::after { content: attr(data-tip); position: absolute; top: 48px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+            font-family: 'Orbitron'; font-size: 9px; letter-spacing: .12em; padding: 4px 7px; border-radius: 6px; background: rgba(0,0,0,.85); color: #fff; pointer-events: none; }
+        .btn-row { display: flex; gap: 2px; padding: 4px; border-radius: 26px; }
+
+        /* Bottom legend */
+        .legend { align-self: center; display: flex; align-items: center; gap: 16px; padding: 8px 16px; border-radius: 999px; font-size: 13px; letter-spacing: .12em; color: #b9c4d6; pointer-events: auto; }
+        .legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .pb { width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-family: 'Orbitron'; font-size: 10px; font-weight: 900; color: #0b0d13; }
+        .pb.a { background: var(--pa); } .pb.b { background: var(--pb); } .pb.x { background: var(--px); } .pb.y { background: var(--py); }
+        .kc { font-family: 'Orbitron'; font-size: 9px; font-weight: 800; padding: 3px 6px; border-radius: 5px; border: 1px solid rgba(255,255,255,.35); color: #fff; }
+
+        /* Telemetry: big console callouts */
+        #combat-telemetry { position: fixed; left: 50%; top: 40%; z-index: 20; pointer-events: none; text-align: center; opacity: 0; transform: translate(-50%, -50%) scale(.6); transition: opacity .2s, transform .25s cubic-bezier(.2,1.6,.4,1); }
+        #combat-telemetry.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        #telemetry-title { font-family: 'Orbitron'; font-weight: 900; font-size: clamp(38px, 9vw, 96px); letter-spacing: .06em; color: #fff;
+            -webkit-text-stroke: 2px rgba(251,191,36,.9); text-shadow: 0 0 22px rgba(251,191,36,.75), 0 0 60px rgba(0,240,255,.35); font-style: italic; }
+        #telemetry-subtitle { font-family: 'Orbitron'; font-size: 12px; letter-spacing: .4em; color: var(--cyan); margin-top: 2px; }
+        #combat-telemetry.small #telemetry-title { font-size: 22px; -webkit-text-stroke: 0; font-style: normal; letter-spacing: .3em; text-shadow: 0 0 12px rgba(0,240,255,.8); }
+        #combat-telemetry.small { top: 76%; }
+
+        /* ---------- Title / pause menu ---------- */
+        #title-screen { position: fixed; inset: 0; z-index: 30; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px;
+            background: radial-gradient(ellipse at center, rgba(7,9,15,.35), rgba(7,9,15,.88) 75%); transition: opacity .45s; }
+        #title-screen.off { opacity: 0; pointer-events: none; }
+        .t-logo { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .t-logo svg { width: 74px; height: 74px; filter: drop-shadow(0 0 18px rgba(251,191,36,.6)); }
+        .t-name { font-family: 'Orbitron'; font-weight: 900; font-size: clamp(30px, 7vw, 68px); letter-spacing: .14em; line-height: 1;
+            background: linear-gradient(180deg, #fff 20%, #fde68a 60%, #f59e0b); -webkit-background-clip: text; background-clip: text; color: transparent;
+            filter: drop-shadow(0 0 22px rgba(251,191,36,.45)); }
+        .t-sub { font-family: 'Orbitron'; font-size: 11px; letter-spacing: .6em; color: var(--cyan); }
+        .tiles { display: flex; gap: 18px; }
+        .tile { all: unset; cursor: pointer; width: clamp(130px, 30vw, 190px); aspect-ratio: 4/5; border-radius: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+            background: linear-gradient(160deg, rgba(255,255,255,.07), rgba(255,255,255,.01)); border: 1px solid var(--line); transition: all .25s cubic-bezier(.2,1.2,.4,1); position: relative; }
+        .tile .g { font-size: clamp(64px, 14vw, 96px); line-height: 1; color: #e5e7eb; transition: all .25s; }
+        .tile .n { font-family: 'Orbitron'; font-size: 13px; font-weight: 800; letter-spacing: .3em; color: var(--dim); }
+        .tile.focus { transform: translateY(-8px) scale(1.06); border-color: rgba(251,191,36,.8); background: linear-gradient(160deg, rgba(251,191,36,.22), rgba(0,240,255,.06));
+            box-shadow: 0 0 0 1px rgba(251,191,36,.6), 0 0 40px rgba(251,191,36,.35), 0 30px 60px rgba(0,0,0,.6); }
+        .tile.focus .g { color: #fff; text-shadow: 0 0 24px rgba(251,191,36,.9); }
+        .tile.focus .n { color: #fde68a; }
+        .tile .cur { position: absolute; top: 10px; right: 12px; font-family: 'Orbitron'; font-size: 8px; letter-spacing: .15em; color: var(--cyan); display: none; }
+        .tile.current .cur { display: block; }
+        .t-mode { display: flex; gap: 6px; padding: 4px; border-radius: 999px; }
+        .t-mode button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; font-family: 'Orbitron'; font-size: 11px; font-weight: 800; letter-spacing: .14em; color: var(--dim); }
+        .t-mode button.active { color: #07090f; background: var(--cyan); box-shadow: 0 0 16px rgba(0,240,255,.5); }
+        .press { font-family: 'Orbitron'; font-size: 12px; letter-spacing: .4em; color: #fff; animation: blink 1.4s infinite; display: flex; align-items: center; gap: 10px; }
+        @keyframes blink { 50% { opacity: .25; } }
+        .t-foot { position: absolute; bottom: 16px; font-size: 11px; letter-spacing: .2em; color: #5b6578; text-align: center; }
+        .t-foot a { color: #7dd3fc; text-decoration: none; }
+
+        /* ---------- Modals ---------- */
+        #modal-overlay { position: fixed; inset: 0; z-index: 40; display: none; align-items: center; justify-content: center; background: rgba(3,5,10,.62); backdrop-filter: blur(4px); }
+        #modal-overlay.open { display: flex; }
+        .card { padding: 26px 28px; border-radius: 28px; text-align: center; min-width: min(92vw, 360px); }
+        .card h2 { margin: 0 0 18px; font-family: 'Orbitron'; font-weight: 900; letter-spacing: .2em; font-size: 20px; color: #fde68a; }
+        .promo-row { display: flex; gap: 10px; justify-content: center; }
+        .promo-btn { all: unset; cursor: pointer; width: 64px; height: 72px; border-radius: 18px; display: grid; place-items: center; font-size: 40px; background: rgba(255,255,255,.05); border: 1px solid var(--line); transition: all .2s; }
+        .promo-btn.focus, .promo-btn:hover { background: rgba(251,191,36,.2); border-color: rgba(251,191,36,.8); transform: translateY(-4px); box-shadow: 0 0 20px rgba(251,191,36,.4); }
+        #gameover-card .big { font-family: 'Orbitron'; font-weight: 900; font-style: italic; font-size: clamp(34px, 8vw, 56px); letter-spacing: .06em; color: #fff;
+            -webkit-text-stroke: 1.5px rgba(251,191,36,.9); text-shadow: 0 0 26px rgba(251,191,36,.7); margin: 4px 0 10px; }
+        .winner { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: 'Orbitron'; font-size: 13px; letter-spacing: .3em; color: #cbd5e1; margin-bottom: 22px; }
+        .winner .orb { width: 20px; height: 20px; }
+        .winner .orb.w { background: radial-gradient(circle at 35% 30%, #fff, #d9d2c3 60%, #8f8778); }
+        .winner .orb.b { background: radial-gradient(circle at 35% 30%, #8b5cf6, #1b1430 60%, #07050d); }
+        .winner .orb.d { background: linear-gradient(90deg, #e5e7eb 50%, #4c1d95 50%); }
+        .go-row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .go-btn { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 14px; font-family: 'Orbitron'; font-size: 11px; font-weight: 800; letter-spacing: .14em;
+            border: 1px solid var(--line); background: rgba(255,255,255,.05); color: #e2e8f0; }
+        .go-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #1a1206; border-color: transparent; box-shadow: 0 0 20px rgba(251,191,36,.45); }
+        .go-btn:hover { filter: brightness(1.12); }
+
+        @media (max-width: 760px) {
+            #hud { padding: 10px; }
+            .versus { order: 3; width: 100%; justify-content: center; }
+            .plate { min-width: 0; height: 48px; padding: 0 10px; }
+            .spoils { max-width: 90px; font-size: 14px; }
+            .rbtn { width: 36px; height: 36px; } .rbtn .ms { font-size: 20px; }
+            .legend { font-size: 11px; gap: 10px; }
+            .seg-btn .k { display: none; }
         }
-        .md-btn { transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); }
-        .md-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); transform: translateY(-1px); }
-        .md-btn:active:not(:disabled) { transform: translateY(0px) scale(0.97); }
-        .md-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-        .md-fab {
-            background: linear-gradient(135deg, #c8a258 0%, #9a7432 100%);
-            color: #0f1118; box-shadow: 0 4px 16px rgba(200, 162, 88, 0.35);
-        }
-        .md-fab:hover { box-shadow: 0 6px 22px rgba(200, 162, 88, 0.55); filter: brightness(1.08); }
-        .game-tab { transition: all 0.2s ease; }
-        .game-tab.active {
-            background: linear-gradient(135deg, rgba(251,191,36,0.28), rgba(56,189,248,0.18));
-            color: #fef3c7; border-color: rgba(251,191,36,0.55);
-            box-shadow: 0 0 12px rgba(251,191,36,0.25);
-        }
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
-            50% { box-shadow: 0 0 24px rgba(239, 68, 68, 0.9); }
-        }
-        .check-alert { animation: pulseGlow 1.5s infinite; }
-        @keyframes knockdownPulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55), 0 0 18px rgba(245, 158, 11, 0.35); }
-            50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0), 0 0 26px rgba(245, 158, 11, 0.65); }
-        }
-        .btn-knockdown-demo { animation: knockdownPulse 2.4s infinite; }
-        #combat-telemetry { transition: opacity 0.3s ease, transform 0.3s ease; }
     </style>
 </head>
-<body class="text-slate-100">
-
+<body>
     <div id="canvas-container"></div>
+    <div class="fx-vignette"></div>
+    <div class="fx-scan"></div>
 
-    <div class="relative z-10 pointer-events-none flex flex-col justify-between w-full h-full p-3 sm:p-5">
-
-        <!-- Top Navigation Bar -->
-        <header class="w-full max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 md-surface rounded-2xl px-4 py-2.5 pointer-events-auto border border-amber-500/20">
-
-            <div class="flex items-center gap-3">
-                <a href="https://github.com/Ionity-Global/ionity-assets-ionity-global-jwva" target="_blank" rel="noopener noreferrer" class="group relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500/25 via-slate-900 to-cyan-500/25 border border-amber-400/50 flex items-center justify-center shadow-[0_0_18px_rgba(245,158,11,0.3)] hover:scale-105 transition-transform" title="Ionity-Global / ionity-assets-ionity-global-jwva">
-                    <svg class="w-7 h-7" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <polygon points="32,4 58,18 58,46 32,60 6,46 6,18" stroke="#fbbf24" stroke-width="3" fill="rgba(15,23,42,0.85)" />
-                        <path d="M18 22L32 48L46 22" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path d="M24 22L32 37L40 22" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <circle cx="32" cy="13" r="3" fill="#fbbf24" />
-                    </svg>
+    <!-- ===================== HUD ===================== -->
+    <div id="hud" class="off">
+        <div class="hud-top">
+            <div class="hud-left">
+                <a class="logo-chip" href="/games/" title="ionity.fun">
+                    <svg viewBox="0 0 64 64" fill="none"><polygon points="32,4 58,18 58,46 32,60 6,46 6,18" stroke="#fbbf24" stroke-width="3" fill="rgba(15,23,42,0.85)"/><path d="M18 22L32 48L46 22" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 22L32 37L40 22" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="13" r="3" fill="#fbbf24"/></svg>
                 </a>
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="px-1.5 py-0.5 text-[10px] font-extrabold tracking-widest rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">VBLOCKS</span>
-                        <h1 id="game-title" class="font-gothic text-sm sm:text-base font-bold tracking-wider text-amber-100 leading-tight">IONITY GLOBAL // WIZARD'S CHESS</h1>
-                    </div>
-                    <div class="flex items-center gap-2 mt-0.5">
-                        <a href="/games/" class="text-[10px] font-bold text-amber-300 hover:text-amber-200 font-mono tracking-tight" title="Back to the ionity.fun game selection">&larr; IONITY.FUN</a>
-                        <span class="text-[10px] text-slate-500">&bull;</span>
-                        <a href="https://www.ionity.today" target="_blank" rel="noopener noreferrer" class="text-[10px] text-cyan-300/90 hover:text-cyan-200 underline decoration-cyan-500/40 font-mono tracking-tight">www.ionity.today</a>
-                        <span class="hidden sm:inline text-[10px] text-slate-500">&bull;</span>
-                        <span class="hidden sm:inline text-[10px] text-amber-300/80 uppercase tracking-wider font-semibold">Knock-Down Physics Active</span>
-                    </div>
+                <div class="seg glass" id="game-switch">
+                    <button class="seg-btn game-tab active" data-game="chess" title="Chess"><span class="k">L1</span>♚</button>
+                    <button class="seg-btn game-tab" data-game="checkers" title="Checkers">⛂<span class="k">R1</span></button>
                 </div>
             </div>
 
-            <!-- Game Selector -->
-            <div id="game-switch" class="flex items-center gap-1 bg-slate-900/80 border border-amber-500/25 rounded-xl p-1" role="tablist" aria-label="Choose game">
-                <button data-game="chess" class="game-tab active md-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 border border-transparent" role="tab">
-                    <span class="text-base leading-none">♚</span><span>Chess</span>
-                </button>
-                <button data-game="checkers" class="game-tab md-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 border border-transparent" role="tab">
-                    <span class="text-base leading-none">⛂</span><span>Checkers</span>
-                </button>
-            </div>
-
-            <!-- Turn & Status -->
-            <div id="turn-badge" class="flex items-center gap-3 bg-slate-900/85 border border-slate-700/70 px-4 py-1.5 rounded-full shadow-inner transition-all duration-300">
-                <span id="turn-dot" class="w-3.5 h-3.5 rounded-full bg-stone-100 shadow-[0_0_10px_#fff] transition-all duration-300"></span>
-                <span id="turn-text" class="text-xs sm:text-sm font-semibold tracking-wide text-stone-100">White Marble's Turn</span>
-                <span id="status-chip" class="hidden text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">CHECK</span>
-            </div>
-
-            <!-- Controls -->
-            <div class="flex items-center gap-1 sm:gap-1.5">
-                <button id="btn-demo" class="md-btn btn-knockdown-demo flex items-center gap-1 px-2.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-extrabold text-xs tracking-wide" title="Close-up physical Knock-Down &amp; Structural Shatter demonstration">
-                    <span class="material-symbols-rounded text-lg">bolt</span>
-                    <span class="hidden xl:inline">DEMO KNOCK-DOWN</span>
-                </button>
-                <button id="btn-actioncam" class="md-btn flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium text-cyan-300 bg-cyan-500/15 border border-cyan-500/30" title="Toggle Dynamic Knock-Down Action Camera">
-                    <span class="material-symbols-rounded text-lg" id="actioncam-icon">videocam</span>
-                    <span class="hidden xl:inline" id="actioncam-label">Impact Cam: ON</span>
-                </button>
-                <button id="btn-mode" class="md-btn flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-amber-200 bg-amber-500/10 border border-amber-500/20" title="Toggle vs Wizard Automaton or 2-Player">
-                    <span class="material-symbols-rounded text-lg" id="mode-icon">smart_toy</span>
-                    <span id="mode-label" class="hidden md:inline">vs Automaton</span>
-                </button>
-                <button id="btn-undo" class="md-btn p-2 rounded-xl text-slate-300 hover:text-white" title="Undo Move" disabled>
-                    <span class="material-symbols-rounded text-xl">undo</span>
-                </button>
-                <button id="btn-camera" class="md-btn p-2 rounded-xl text-slate-300 hover:text-white" title="Cycle Camera Angle">
-                    <span class="material-symbols-rounded text-xl">cameraswitch</span>
-                </button>
-                <button id="btn-sound" class="md-btn p-2 rounded-xl text-slate-300 hover:text-white" title="Toggle Cathedral Audio">
-                    <span class="material-symbols-rounded text-xl" id="sound-icon">volume_up</span>
-                </button>
-                <button id="btn-new" class="md-btn md-fab flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide ml-1">
-                    <span class="material-symbols-rounded text-lg">restart_alt</span>
-                    <span class="hidden sm:inline">New Game</span>
-                </button>
-            </div>
-        </header>
-
-        <!-- Bottom HUD -->
-        <footer class="w-full max-w-6xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-3">
-            <div class="md-surface rounded-2xl px-4 py-2.5 flex-1 flex items-center justify-between pointer-events-auto min-h-[54px]">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-3 h-3 rounded-full bg-stone-100 border border-amber-300/60 shadow-sm"></span>
-                    <span class="text-xs font-medium text-slate-300 uppercase tracking-wider">Marble Knock-Downs</span>
+            <div class="versus">
+                <div class="plate w glass active" id="plate-w">
+                    <div class="orb"></div>
+                    <div class="pinfo"><span class="pname">P1</span><div class="spoils" id="captured-by-white"></div></div>
                 </div>
-                <div id="captured-by-white" class="flex items-center gap-1 text-lg text-purple-300/90 font-serif overflow-x-auto max-w-[200px] sm:max-w-xs py-0.5">
-                    <span class="text-xs text-slate-500 italic font-sans">None toppled</span>
+                <div class="vs-col"><span class="vs-txt">VS</span><span id="status-chip" class="chip hidden">CHECK</span></div>
+                <div class="plate b glass" id="plate-b">
+                    <div class="orb"></div>
+                    <div class="pinfo"><span class="pname"><span class="dots"><i></i><i></i><i></i></span> <span id="p2-label">CPU</span></span><div class="spoils" id="captured-by-black"></div></div>
                 </div>
             </div>
 
-            <div class="hidden lg:flex flex-col items-center justify-center md-surface px-4 py-2 rounded-xl text-[11px] text-slate-300 pointer-events-auto border border-amber-400/20">
-                <div class="flex items-center gap-1.5 font-bold text-amber-300 tracking-widest text-[10px]">
-                    <span>◆ VBLOCKS ARENA</span><span class="text-cyan-400">//</span><span>IONITY-GLOBAL-JWVA ◆</span>
+            <div class="hud-right">
+                <div class="btn-row glass">
+                    <button id="btn-demo" class="rbtn hot" data-tip="DEMO"><span class="ms">bolt</span></button>
+                    <button id="btn-actioncam" class="rbtn on" data-tip="IMPACT CAM"><span class="ms" id="actioncam-icon">videocam</span></button>
+                    <button id="btn-camera" class="rbtn" data-tip="CAMERA"><span class="ms">cameraswitch</span></button>
+                    <button id="btn-mode" class="rbtn" data-tip="1P / 2P"><span class="ms" id="mode-icon">smart_toy</span></button>
+                    <button id="btn-undo" class="rbtn" data-tip="UNDO" disabled><span class="ms">undo</span></button>
+                    <button id="btn-sound" class="rbtn" data-tip="SOUND"><span class="ms" id="sound-icon">volume_up</span></button>
+                    <button id="btn-new" class="rbtn" data-tip="RESTART"><span class="ms">restart_alt</span></button>
+                    <button id="btn-menu" class="rbtn" data-tip="MENU"><span class="ms">menu</span></button>
                 </div>
-                <span id="hint-text" class="text-[10px] text-slate-400">Select piece to command &bull; Drag to orbit &bull; Captures trigger physical knock-downs</span>
-            </div>
-
-            <div class="md-surface rounded-2xl px-4 py-2.5 flex-1 flex items-center justify-between pointer-events-auto min-h-[54px]">
-                <div class="flex items-center gap-2.5">
-                    <span class="w-3 h-3 rounded-full bg-indigo-950 border border-purple-400/60 shadow-sm"></span>
-                    <span class="text-xs font-medium text-slate-300 uppercase tracking-wider">Obsidian Knock-Downs</span>
-                </div>
-                <div id="captured-by-black" class="flex items-center gap-1 text-lg text-amber-100/90 font-serif overflow-x-auto max-w-[200px] sm:max-w-xs py-0.5">
-                    <span class="text-xs text-slate-500 italic font-sans">None toppled</span>
-                </div>
-            </div>
-        </footer>
-    </div>
-
-    <!-- Combat telemetry banner (knock-downs, check, crowning) -->
-    <div id="combat-telemetry" class="fixed bottom-24 sm:bottom-28 left-1/2 z-40 pointer-events-none opacity-0" style="transform: translate(-50%, -8px);">
-        <div class="md-surface rounded-2xl px-5 py-2.5 border border-amber-400/60 flex items-center gap-3 shadow-2xl">
-            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
-            <div class="text-center">
-                <div id="telemetry-title" class="font-gothic text-xs sm:text-sm font-bold tracking-widest uppercase text-amber-300">VBLOCKS PHYSICAL KNOCK-DOWN</div>
-                <div id="telemetry-subtitle" class="text-[11px] font-mono text-slate-300">RIGID-BODY TOPPLE &amp; STRUCTURAL FRACTURE</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <div id="modal-overlay" class="fixed inset-0 z-30 hidden items-center justify-center bg-black/65 backdrop-blur-sm p-4">
-        <div id="promotion-card" class="hidden md-surface rounded-3xl p-6 max-w-sm w-full text-center border border-amber-400/30 shadow-2xl">
-            <h2 class="font-gothic text-xl font-bold text-amber-200 mb-1">Ascension Ritual</h2>
-            <p class="text-xs text-slate-300 mb-5">Choose the form your Pawn shall take upon reaching the sanctum's edge:</p>
-            <div class="grid grid-cols-4 gap-2.5">
-                <button data-promo="q" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♛</span><span class="text-[11px] font-medium text-slate-200">Queen</span></button>
-                <button data-promo="r" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♜</span><span class="text-[11px] font-medium text-slate-200">Rook</span></button>
-                <button data-promo="b" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♝</span><span class="text-[11px] font-medium text-slate-200">Bishop</span></button>
-                <button data-promo="n" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♞</span><span class="text-[11px] font-medium text-slate-200">Knight</span></button>
             </div>
         </div>
 
-        <div id="gameover-card" class="hidden md-surface rounded-3xl p-7 max-w-md w-full text-center border border-amber-400/40 shadow-2xl">
-            <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300">
-                <span class="material-symbols-rounded text-3xl">trophy</span>
+        <div class="legend glass" id="legend"></div>
+    </div>
+
+    <!-- Big callouts -->
+    <div id="combat-telemetry"><div id="telemetry-title">K.O.</div><div id="telemetry-subtitle"></div></div>
+
+    <!-- ===================== TITLE / PAUSE MENU ===================== -->
+    <div id="title-screen">
+        <div class="t-logo">
+            <svg viewBox="0 0 64 64" fill="none"><polygon points="32,4 58,18 58,46 32,60 6,46 6,18" stroke="#fbbf24" stroke-width="3" fill="rgba(15,23,42,0.85)"/><path d="M18 22L32 48L46 22" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 22L32 37L40 22" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="13" r="3" fill="#fbbf24"/></svg>
+            <div class="t-name">WIZARD'S ARENA</div>
+            <div class="t-sub">VBLOCKS · IONITY.FUN</div>
+        </div>
+        <div class="tiles">
+            <button class="tile focus" data-game="chess"><span class="cur">● ACTIVE</span><span class="g">♚</span><span class="n">CHESS</span></button>
+            <button class="tile" data-game="checkers"><span class="cur">● ACTIVE</span><span class="g">⛂</span><span class="n">CHECKERS</span></button>
+        </div>
+        <div class="t-mode glass" id="t-mode">
+            <button data-ai="1" class="active"><span class="ms" style="font-size:16px">smart_toy</span>1P · CPU</button>
+            <button data-ai="0"><span class="ms" style="font-size:16px">group</span>2P</button>
+        </div>
+        <div class="press" id="press-hint"><span class="pb a">A</span> / <span class="kc">ENTER</span> START</div>
+        <div class="t-foot">© 2018–2026 Ionity (Pty) Ltd · <a href="/games/">IONITY.FUN</a> · <a href="https://www.ionity.today" target="_blank" rel="noopener">IONITY.TODAY</a></div>
+    </div>
+
+    <!-- ===================== MODALS ===================== -->
+    <div id="modal-overlay">
+        <div id="promotion-card" class="card glass" style="display:none">
+            <h2>PROMOTE</h2>
+            <div class="promo-row">
+                <button data-promo="q" class="promo-btn focus">♛</button>
+                <button data-promo="r" class="promo-btn">♜</button>
+                <button data-promo="b" class="promo-btn">♝</button>
+                <button data-promo="n" class="promo-btn">♞</button>
             </div>
-            <h2 id="gameover-title" class="font-gothic text-2xl font-bold text-amber-100 mb-2">Checkmate</h2>
-            <p id="gameover-subtitle" class="text-sm text-slate-300 mb-6">White Marble triumphs in the Cathedral.</p>
-            <div class="flex items-center justify-center gap-3">
-                <button id="btn-modal-close" class="md-btn px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 border border-slate-700">Inspect Board</button>
-                <button id="btn-modal-new" class="md-btn md-fab px-6 py-2.5 rounded-xl text-xs font-bold">Play Again</button>
+        </div>
+        <div id="gameover-card" class="card glass" style="display:none">
+            <div class="big" id="gameover-title">CHECKMATE</div>
+            <div class="winner"><span class="orb w" id="gameover-orb"></span><span id="gameover-subtitle">P1 WINS</span></div>
+            <div class="go-row">
+                <button id="btn-modal-new" class="go-btn primary"><span class="pb a">A</span>REMATCH</button>
+                <button id="btn-modal-close" class="go-btn"><span class="pb b">B</span>VIEW</button>
+                <button id="btn-modal-menu" class="go-btn"><span class="ms" style="font-size:16px">menu</span>MENU</button>
             </div>
         </div>
     </div>
@@ -510,8 +575,7 @@
                 const p = this.presets[this.presetIndex];
                 this.targetTheta = p.theta; this.targetPhi = p.phi; this.targetRadius = p.radius;
                 this.desiredLookAt.set(0, 0.4, 0);
-                document.getElementById('btn-camera').title = 'Camera: ' + p.name + ' (click to cycle)';
-                showCombatTelemetry('CAMERA // ' + p.name.toUpperCase(), 'DRAG TO ORBIT • SCROLL TO ZOOM', 1100);
+                                showCombatTelemetry('CAM ' + (this.presetIndex + 1) + '/' + this.presets.length, '', 800, true);
             }
         };
 
@@ -682,7 +746,7 @@
             const frameMat = new THREE.MeshStandardMaterial({ color: 0x161923, roughness: 0.55, metalness: 0.35 });
             const outerSpan = TILE_SIZE * 8 + 1.35;
             const frameMesh = new THREE.Mesh(new THREE.BoxGeometry(outerSpan, 0.46, outerSpan), frameMat);
-            frameMesh.position.y = -0.23; frameMesh.receiveShadow = true;
+            frameMesh.position.y = -0.255; frameMesh.receiveShadow = true; // top sits below tiles (no z-fighting)
             boardGroup.add(frameMesh);
 
             const inlayMesh = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * 8 + 0.32, 0.48, TILE_SIZE * 8 + 0.32), goldTrimMaterial);
@@ -1236,6 +1300,7 @@
         let playVsAI = true;
         let pendingPromotionMove = null;
         let gameOverShown = false;
+        let modalState = null; // null | 'promo' | 'over'
         let aiTimer = null;
         const activeAnimations = [];
 
@@ -1344,7 +1409,7 @@
                 impactDir.normalize();
                 const toppleAxis = new THREE.Vector3(0, 1, 0).cross(impactDir).normalize();
                 const restoreCam = focusActionCam(endPos);
-                showCombatTelemetry('PHYSICAL KNOCK-DOWN STRIKE!', 'KINETIC LUNGE • RIGID TOPPLE • GROUND-SLAM FRACTURE');
+                showCombatTelemetry('K.O.');
                 activeAnimations.push({
                     type: 'attack_knockdown', mesh: attackerMesh, victimMesh, victimSq,
                     victimColor: moveObj.color === 'w' ? 'b' : 'w',
@@ -1383,9 +1448,9 @@
                 attackerMesh.rotation.set(0, 0, 0);
             }
             isAnimating = false;
-            if (moveObj.promotion) showCombatTelemetry('ASCENSION RITUAL', 'PAWN ASCENDS TO ' + ({ q: 'QUEEN', r: 'ROOK', b: 'BISHOP', n: 'KNIGHT' })[moveObj.promotion]);
-            if (chess.in_checkmate()) showCombatTelemetry('CHECKMATE', 'VBLOCKS CATHEDRAL GRANDMASTER', 2600);
-            else if (chess.in_check()) { soundFX.playCheck(); showCombatTelemetry('ROYAL CHECK DECLARED', 'DEFEND YOUR SOVEREIGN'); }
+            if (moveObj.promotion) showCombatTelemetry('PROMOTED', ({ q: '♛', r: '♜', b: '♝', n: '♞' })[moveObj.promotion]);
+            if (chess.in_checkmate()) showCombatTelemetry('CHECKMATE', '', 1600);
+            else if (chess.in_check()) { soundFX.playCheck(); showCombatTelemetry('CHECK'); }
             clearHighlights();
             updateUI();
             maybeTriggerAI();
@@ -1419,8 +1484,7 @@
             });
             const restoreCam = focusActionCam(points[points.length - 1]);
             const n = victims.length;
-            showCombatTelemetry(n === 1 ? 'VAULTING KNOCK-DOWN!' : (n === 2 ? 'DOUBLE' : n === 3 ? 'TRIPLE' : n + 'x') + (n > 1 ? ' CHAIN JUMP!' : ''),
-                n + ' PIECE' + (n > 1 ? 'S' : '') + ' TOPPLED • GROUND-SLAM FRACTURE');
+            showCombatTelemetry(n === 1 ? 'K.O.' : 'CHAIN ×' + n);
             activeAnimations.push({
                 type: 'checker_jumps', mesh, points, victims, elapsed: 0,
                 duration: 0.66 * (points.length - 1),
@@ -1454,7 +1518,7 @@
                 spawnImpactPlume(endPos, 0xfbbf24, 26);
                 spawnShockwave(endPos, 0xfbbf24);
                 soundFX.playCrown();
-                showCombatTelemetry('CROWNED!', (mv.color === 'w' ? 'MARBLE' : 'OBSIDIAN') + ' KING MAY NOW MOVE BACKWARD');
+                showCombatTelemetry('CROWNED', '⛁');
             } else {
                 pieceMeshes[mv.to] = mesh;
                 mesh.userData.square = mv.to;
@@ -1468,23 +1532,20 @@
         }
 
         let telemetryTimer = null;
-        function showCombatTelemetry(title, subtitle, ms = 1700) {
+        function showCombatTelemetry(title, subtitle = '', ms = 1300, small = false) {
             const el = document.getElementById('combat-telemetry');
             if (!el) return;
             document.getElementById('telemetry-title').textContent = title;
             document.getElementById('telemetry-subtitle').textContent = subtitle;
-            el.style.opacity = '1';
-            el.style.transform = 'translate(-50%, 0)';
+            el.classList.toggle('small', !!small);
+            el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
             clearTimeout(telemetryTimer);
-            telemetryTimer = setTimeout(() => {
-                el.style.opacity = '0';
-                el.style.transform = 'translate(-50%, -8px)';
-            }, ms);
+            telemetryTimer = setTimeout(() => el.classList.remove('show'), ms);
         }
 
         // One-click showcase duel on the centre VBLOCKS medallion (does not affect the game)
         function triggerDemoKnockDown() {
-            if (isAnimating) return;
+            if (isAnimating || titleOpen || modalState) return;
             isAnimating = true;
             clearTimeout(aiTimer);
             selectedSquare = null; legalMovesForSelected = [];
@@ -1499,12 +1560,12 @@
             attacker.position.copy(fromPos); defender.position.copy(toPos);
             scene.add(attacker, defender);
             const restoreCam = focusActionCam(toPos);
-            showCombatTelemetry('DEMO KNOCK-DOWN // VBLOCKS PHYSICS', 'KINETIC LUNGE • RIGID TOPPLE • GROUND-SLAM FRACTURE', 2200);
+            showCombatTelemetry('DEMO', 'K.O.', 1500);
             const epoch = animEpoch;
             const finish = () => {
                 setTimeout(() => {
-                    if (epoch !== animEpoch) return;
                     scene.remove(attacker);
+                    if (epoch !== animEpoch) return;
                     hidden.forEach(m => { m.visible = true; });
                     restoreCam();
                     isAnimating = false;
@@ -1532,11 +1593,11 @@
 
         function maybeTriggerAI() {
             clearTimeout(aiTimer);
-            if (!isGameOver() && playVsAI && currentTurn() === 'b') aiTimer = setTimeout(triggerAutomatonMove, 420);
+            if (!titleOpen && !isGameOver() && playVsAI && currentTurn() === 'b') aiTimer = setTimeout(triggerAutomatonMove, 420);
         }
 
         function triggerAutomatonMove() {
-            if (isGameOver() || isAnimating || !playVsAI || currentTurn() !== 'b') return;
+            if (titleOpen || isGameOver() || isAnimating || !playVsAI || currentTurn() !== 'b') return;
             if (!isChess()) {
                 const mv = checkers.bestMove(6);
                 if (mv) executeCheckersMove(checkers.move(mv));
@@ -1580,11 +1641,64 @@
         }
 
         /***********************************************************************
-         * 8. INPUT (MOUSE & TOUCH)
+         * 8. INPUT — MOUSE / TOUCH / KEYBOARD / GAMEPAD + CURSOR & FX
          ***********************************************************************/
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
         let pointerDownPos = { x: 0, y: 0 };
+
+        // ---- Console visuals: square cursor, selection beam, rose-window light shafts ----
+        const cursor = { c: 4, r: 6 };
+        const cursorSquare = () => `${FILES[cursor.c]}${8 - cursor.r}`;
+        const cursorMesh = (() => {
+            const g = new THREE.RingGeometry(0.64, 0.78, 4, 1, Math.PI / 4);
+            g.rotateX(-Math.PI / 2);
+            const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false }));
+            m.position.y = 0.035; m.visible = false; scene.add(m);
+            return m;
+        })();
+        const beamMesh = (() => {
+            const m = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.5, 1.8, 32, 1, true), new THREE.MeshBasicMaterial({
+                color: 0xfbbf24, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+            m.visible = false; scene.add(m);
+            return m;
+        })();
+        const lightShafts = [];
+        (() => {
+            const mat = new THREE.MeshBasicMaterial({ color: 0x7c93ff, transparent: true, opacity: 0.04, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide });
+            [-1, 0, 1].forEach(i => {
+                const from = new THREE.Vector3(i * 3.2, 13, -30), to = new THREE.Vector3(i * 1.6, -0.5, i === 0 ? 0.5 : 2.5);
+                const len = from.distanceTo(to);
+                const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 3.4, len, 24, 1, true), mat.clone());
+                m.position.copy(from).add(to).multiplyScalar(0.5);
+                m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), from.clone().sub(to).normalize());
+                scene.add(m);
+                lightShafts.push(m);
+            });
+        })();
+
+        let inputMode = 'mouse';
+        function setInputMode(m) {
+            if (inputMode === m) return;
+            inputMode = m;
+            renderLegend();
+            updateCursorVisual();
+        }
+        function updateCursorVisual() {
+            cursorMesh.visible = inputMode !== 'mouse' && !titleOpen;
+            cursorMesh.position.copy(squareToWorld(cursorSquare())).setY(0.035);
+        }
+        function moveCursor(dir) {
+            const dx = dir === 'left' ? -1 : dir === 'right' ? 1 : 0;
+            const dy = dir === 'up' ? 1 : dir === 'down' ? -1 : 0;
+            const th = cameraControl.theta;
+            const wx = dx * Math.cos(th) - dy * Math.sin(th);
+            const wz = -dx * Math.sin(th) - dy * Math.cos(th);
+            if (Math.abs(wx) >= Math.abs(wz)) cursor.c = Math.max(0, Math.min(7, cursor.c + Math.sign(wx)));
+            else cursor.r = Math.max(0, Math.min(7, cursor.r + Math.sign(wz)));
+            soundFX.playSelect();
+            updateCursorVisual();
+        }
 
         function onPointerDown(e) {
             const p = e.touches ? e.touches[0] : e;
@@ -1603,27 +1717,32 @@
             if (!cameraControl.isDragging) return;
             cameraControl.isDragging = false;
             const p = e.changedTouches ? e.changedTouches[0] : e;
-            if (Math.hypot(p.clientX - pointerDownPos.x, p.clientY - pointerDownPos.y) < 6) handleBoardClick(p.clientX, p.clientY);
+            if (Math.hypot(p.clientX - pointerDownPos.x, p.clientY - pointerDownPos.y) < 6) {
+                setInputMode(e.changedTouches ? 'touch' : 'mouse');
+                const sq = pickSquare(p.clientX, p.clientY);
+                if (sq) { cursor.c = FILES.indexOf(sq[0]); cursor.r = 8 - parseInt(sq[1], 10); }
+                handleSquare(sq);
+            }
         }
 
-        function handleBoardClick(clientX, clientY) {
-            if (isAnimating || isGameOver()) return;
-            if (playVsAI && currentTurn() === 'b') return;
-
+        function pickSquare(clientX, clientY) {
             const rect = renderer.domElement.getBoundingClientRect();
             pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
             pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(pointer, camera);
-
             const pieceHits = raycaster.intersectObjects(Object.values(pieceMeshes), true);
-            const tileHits = raycaster.intersectObjects(tileMeshes, false);
-            let clickedSquare = null;
             if (pieceHits.length) {
                 let obj = pieceHits[0].object;
                 while (obj && !obj.userData.square && obj.parent) obj = obj.parent;
-                if (obj && obj.userData.square) clickedSquare = obj.userData.square;
+                if (obj && obj.userData.square) return obj.userData.square;
             }
-            if (!clickedSquare && tileHits.length) clickedSquare = tileHits[0].object.userData.square;
+            const tileHits = raycaster.intersectObjects(tileMeshes, false);
+            return tileHits.length ? tileHits[0].object.userData.square : null;
+        }
+
+        function handleSquare(clickedSquare) {
+            if (titleOpen || modalState || isAnimating || isGameOver()) return;
+            if (playVsAI && currentTurn() === 'b') return;
             if (!clickedSquare) { selectedSquare = null; legalMovesForSelected = []; clearHighlights(); return; }
 
             const matchingMove = legalMovesForSelected.find(m => m.to === clickedSquare);
@@ -1668,118 +1787,205 @@
         window.addEventListener('touchend', onPointerUp, { passive: true });
         domElem.addEventListener('wheel', (e) => { e.preventDefault(); cameraControl.targetRadius += e.deltaY * 0.012; }, { passive: false });
 
+        // ---- Unified action dispatcher (keyboard + gamepad) ----
+        function handleAction(a) {
+            if (titleOpen) return titleAction(a);
+            if (modalState === 'promo') return promoAction(a);
+            if (modalState === 'over') return overAction(a);
+            switch (a) {
+                case 'up': case 'down': case 'left': case 'right': moveCursor(a); break;
+                case 'confirm': handleSquare(cursorSquare()); break;
+                case 'back':
+                    if (selectedSquare) { selectedSquare = null; legalMovesForSelected = []; clearHighlights(); }
+                    else openTitle();
+                    break;
+                case 'demo': triggerDemoKnockDown(); break;
+                case 'cam': cameraControl.cyclePreset(); break;
+                case 'rotL': cameraControl.targetTheta += Math.PI / 4; break;
+                case 'rotR': cameraControl.targetTheta -= Math.PI / 4; break;
+                case 'chess': setGameMode('chess'); break;
+                case 'checkers': setGameMode('checkers'); break;
+                case 'swap': setGameMode(isChess() ? 'checkers' : 'chess'); break;
+                case 'undo': doUndo(); break;
+                case 'restart': newGame(); break;
+                case 'menu': openTitle(); break;
+            }
+        }
+
+        const KEYMAP = {
+            ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down',
+            ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right',
+            Enter: 'confirm', ' ': 'confirm', Escape: 'back', Backspace: 'back',
+            x: 'demo', X: 'demo', c: 'cam', C: 'cam', q: 'rotL', Q: 'rotL', e: 'rotR', E: 'rotR',
+            z: 'undo', Z: 'undo', Tab: 'swap', n: 'restart', N: 'restart', m: 'menu', M: 'menu'
+        };
+        window.addEventListener('keydown', (e) => {
+            if (modalState === 'promo' && '1234'.includes(e.key) && e.key.length === 1) { choosePromotion(['q', 'r', 'b', 'n'][+e.key - 1]); return; }
+            const a = KEYMAP[e.key];
+            if (!a) return;
+            e.preventDefault();
+            if (['up', 'down', 'left', 'right', 'confirm'].includes(a) && !titleOpen && !modalState) setInputMode('keys');
+            handleAction(a);
+        });
+
+        // ---- Gamepad (standard mapping) ----
+        const PAD_BTN = { 0: 'confirm', 1: 'back', 2: 'demo', 3: 'cam', 4: 'chess', 5: 'checkers', 8: 'undo', 9: 'menu', 12: 'up', 13: 'down', 14: 'left', 15: 'right' };
+        const padPrev = {};
+        const stickRepeat = { dir: null, t: 0 };
+        window.addEventListener('gamepadconnected', () => { setInputMode('pad'); showCombatTelemetry('CONTROLLER', '', 1000, true); });
+        function pollGamepad(dt) {
+            const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+            const gp = pads && [...pads].find(p => p && p.connected);
+            if (!gp) return;
+            for (const [i, act] of Object.entries(PAD_BTN)) {
+                const pressed = !!(gp.buttons[i] && gp.buttons[i].pressed);
+                if (pressed && !padPrev[i]) {
+                    setInputMode('pad');
+                    if (titleOpen && act === 'cam') toggleAIFromMenu();
+                    else if (titleOpen && act === 'menu') titleAction(gameStarted ? 'back' : 'confirm');
+                    else handleAction(act);
+                }
+                padPrev[i] = pressed;
+            }
+            // Left stick → cursor with auto-repeat
+            const ax = gp.axes[0] || 0, ay = gp.axes[1] || 0;
+            let dir = null;
+            if (Math.abs(ax) > 0.55 || Math.abs(ay) > 0.55) dir = Math.abs(ax) > Math.abs(ay) ? (ax > 0 ? 'right' : 'left') : (ay > 0 ? 'down' : 'up');
+            if (dir) {
+                if (dir !== stickRepeat.dir) { stickRepeat.dir = dir; stickRepeat.t = 0.32; setInputMode('pad'); handleAction(dir); }
+                else if ((stickRepeat.t -= dt) <= 0) { stickRepeat.t = 0.14; handleAction(dir); }
+            } else stickRepeat.dir = null;
+            // Right stick → orbit, triggers → zoom
+            const rx = gp.axes[2] || 0, ry = gp.axes[3] || 0;
+            if (Math.abs(rx) > 0.15) cameraControl.targetTheta -= rx * dt * 2.4;
+            if (Math.abs(ry) > 0.15) cameraControl.targetPhi += ry * dt * 1.6;
+            const lt = gp.buttons[6] ? gp.buttons[6].value : 0, rt = gp.buttons[7] ? gp.buttons[7].value : 0;
+            cameraControl.targetRadius += (lt - rt) * dt * 14;
+        }
+
         /***********************************************************************
-         * 9. UI
+         * 9. UI — HUD, TITLE MENU, MODALS
          ***********************************************************************/
-        const turnDot = document.getElementById('turn-dot');
-        const turnText = document.getElementById('turn-text');
-        const turnBadge = document.getElementById('turn-badge');
-        const statusChip = document.getElementById('status-chip');
         const btnUndo = document.getElementById('btn-undo');
         const capturedByWhiteEl = document.getElementById('captured-by-white');
         const capturedByBlackEl = document.getElementById('captured-by-black');
-        const CHIP_RED = 'text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40';
-        const CHIP_AMBER = 'text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40';
+        const plateW = document.getElementById('plate-w');
+        const plateB = document.getElementById('plate-b');
+        const statusChip = document.getElementById('status-chip');
+        const hudEl = document.getElementById('hud');
+        const titleEl = document.getElementById('title-screen');
+        const legendEl = document.getElementById('legend');
 
         const chessGlyph = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' };
         const checkerGlyph = { w: { c: '⛀', k: '⛁' }, b: { c: '⛂', k: '⛃' } };
+        const sideLabel = (c) => (c === 'w' ? 'P1' : (playVsAI ? 'CPU' : 'P2'));
 
         function setChip(text, cls) {
-            if (!text) { statusChip.classList.add('hidden'); return; }
-            statusChip.className = cls;
+            if (!text) { statusChip.className = 'chip hidden'; return; }
+            statusChip.className = 'chip ' + cls;
             statusChip.textContent = text;
+        }
+
+        function renderLegend() {
+            const L = {
+                mouse: '<span><span class="ms">mouse</span>SELECT</span><span><span class="ms">3d_rotation</span>ORBIT</span><span><span class="ms">zoom_in</span>ZOOM</span><span><span class="kc">←↑↓→</span>KEYS</span>',
+                touch: '<span><span class="ms">touch_app</span>SELECT</span><span><span class="ms">swipe</span>ORBIT</span>',
+                keys: '<span><span class="kc">←↑↓→</span>MOVE</span><span><span class="kc">ENTER</span>SELECT</span><span><span class="kc">ESC</span>BACK</span><span><span class="kc">Q E</span>ORBIT</span><span><span class="kc">TAB</span>GAME</span>',
+                pad: '<span><span class="pb a">A</span>SELECT</span><span><span class="pb b">B</span>BACK</span><span><span class="pb x">X</span>DEMO</span><span><span class="pb y">Y</span>CAM</span><span><span class="kc">LB RB</span>GAME</span>'
+            };
+            legendEl.innerHTML = L[inputMode] || L.mouse;
+            document.getElementById('press-hint').innerHTML = inputMode === 'pad'
+                ? '<span class="pb a">A</span> START &nbsp; <span class="pb y">Y</span> 1P/2P'
+                : '<span class="kc">ENTER</span> START &nbsp; <span class="kc">M</span> 1P/2P';
         }
 
         function updateUI() {
             const turn = currentTurn();
             const history = moveHistory();
+            const over = isGameOver();
             btnUndo.disabled = history.length === 0 || isAnimating;
-
-            if (turn === 'w') {
-                turnDot.className = 'w-3.5 h-3.5 rounded-full bg-stone-100 shadow-[0_0_10px_#fff] transition-all duration-300';
-                turnText.textContent = "White Marble's Turn";
-                turnText.className = 'text-xs sm:text-sm font-semibold tracking-wide text-stone-100';
-            } else {
-                turnDot.className = 'w-3.5 h-3.5 rounded-full bg-purple-500 shadow-[0_0_12px_#a855f7] transition-all duration-300';
-                turnText.textContent = playVsAI ? 'Automaton Thinking...' : "Dark Obsidian's Turn";
-                turnText.className = 'text-xs sm:text-sm font-semibold tracking-wide text-purple-200';
-            }
-            turnBadge.classList.remove('check-alert');
+            plateW.classList.toggle('active', turn === 'w' && !over);
+            plateB.classList.toggle('active', turn === 'b' && !over);
+            plateB.classList.toggle('thinking', playVsAI && turn === 'b' && !over);
+            document.getElementById('p2-label').textContent = playVsAI ? 'CPU' : 'P2';
 
             if (isChess()) {
-                if (chess.in_checkmate()) {
-                    setChip('CHECKMATE', CHIP_RED);
-                    turnBadge.classList.add('check-alert');
-                    showGameOverModal('Checkmate', turn === 'w' ? "Dark Obsidian shatters the Marble King's defenses!" : 'White Marble triumphs in the Gothic Sanctuary!');
-                } else if (chess.game_over()) {
-                    setChip('DRAW', CHIP_AMBER);
-                    showGameOverModal('Sanctuary Stalemate', 'Neither Marble nor Obsidian could claim dominion.');
-                } else if (chess.in_check()) {
-                    setChip('CHECK', CHIP_RED);
-                    turnBadge.classList.add('check-alert');
-                } else {
-                    setChip(null);
-                }
+                if (chess.in_checkmate()) { setChip('MATE', 'red'); showGameOverModal('CHECKMATE', turn === 'w' ? 'b' : 'w'); }
+                else if (chess.game_over()) { setChip('DRAW', 'amber'); showGameOverModal('DRAW', 'd'); }
+                else if (chess.in_check()) setChip('CHECK', 'red');
+                else setChip(null);
             } else {
-                if (!checkers.hasMoves()) {
-                    setChip('VICTORY', CHIP_AMBER);
-                    showGameOverModal('Board Conquered',
-                        turn === 'w' ? 'Dark Obsidian has left the Marble legion without a move!' : 'White Marble sweeps the Obsidian legion from the board!');
-                } else if (checkers.isDraw()) {
-                    setChip('DRAW', CHIP_AMBER);
-                    showGameOverModal('Sanctuary Stalemate', 'Forty moves each without a capture: the duel is drawn.');
-                } else if (checkers.mustCapture()) {
-                    setChip('JUMP REQUIRED', CHIP_RED);
-                } else {
-                    setChip(null);
-                }
+                if (!checkers.hasMoves()) { setChip('WIN', 'amber'); showGameOverModal('VICTORY', turn === 'w' ? 'b' : 'w'); }
+                else if (checkers.isDraw()) { setChip('DRAW', 'amber'); showGameOverModal('DRAW', 'd'); }
+                else if (checkers.mustCapture()) setChip('JUMP!', 'red');
+                else setChip(null);
             }
 
-            // Spoils
             const whiteSpoils = [], blackSpoils = [];
             history.forEach(m => {
                 if (!m.captured) return;
-                const caps = Array.isArray(m.captured) ? m.captured : [m.captured];
-                caps.forEach(t => (m.color === 'w' ? whiteSpoils : blackSpoils).push(t));
+                (Array.isArray(m.captured) ? m.captured : [m.captured]).forEach(t => (m.color === 'w' ? whiteSpoils : blackSpoils).push(t));
             });
             const glyph = (t, victimColor) => (isChess() ? chessGlyph[t] : checkerGlyph[victimColor][t]);
             const order = { q: 1, r: 2, b: 3, n: 4, k: 0, c: 5, p: 5 };
             whiteSpoils.sort((a, b) => order[a] - order[b]);
             blackSpoils.sort((a, b) => order[a] - order[b]);
-            const none = '<span class="text-xs text-slate-500 italic font-sans">None toppled</span>';
-            capturedByWhiteEl.innerHTML = whiteSpoils.length ? whiteSpoils.map(p => `<span class="drop-shadow">${glyph(p, 'b')}</span>`).join('') : none;
-            capturedByBlackEl.innerHTML = blackSpoils.length ? blackSpoils.map(p => `<span class="drop-shadow">${glyph(p, 'w')}</span>`).join('') : none;
+            capturedByWhiteEl.textContent = whiteSpoils.map(p => glyph(p, 'b')).join('');
+            capturedByBlackEl.textContent = blackSpoils.map(p => glyph(p, 'w')).join('');
         }
 
+        // ---- Modals ----
         const modalOverlay = document.getElementById('modal-overlay');
         const promotionCard = document.getElementById('promotion-card');
         const gameoverCard = document.getElementById('gameover-card');
+        const promoBtns = [...document.querySelectorAll('.promo-btn')];
+        let promoIdx = 0;
 
         function openPromotionModal() {
-            modalOverlay.classList.remove('hidden'); modalOverlay.classList.add('flex');
-            promotionCard.classList.remove('hidden'); gameoverCard.classList.add('hidden');
+            modalState = 'promo';
+            promoIdx = 0;
+            promoBtns.forEach((b, i) => b.classList.toggle('focus', i === 0));
+            modalOverlay.classList.add('open');
+            promotionCard.style.display = ''; gameoverCard.style.display = 'none';
         }
-        function showGameOverModal(title, subtitle) {
+        function showGameOverModal(title, winner) {
             if (gameOverShown) return;
             gameOverShown = true;
-            document.getElementById('gameover-title').textContent = title;
-            document.getElementById('gameover-subtitle').textContent = subtitle;
-            modalOverlay.classList.remove('hidden'); modalOverlay.classList.add('flex');
-            promotionCard.classList.add('hidden'); gameoverCard.classList.remove('hidden');
+            setTimeout(() => {
+                if (!gameOverShown) return;
+                modalState = 'over';
+                document.getElementById('gameover-title').textContent = title;
+                document.getElementById('gameover-subtitle').textContent = winner === 'd' ? 'NO WINNER' : sideLabel(winner) + ' WINS';
+                document.getElementById('gameover-orb').className = 'orb ' + winner;
+                modalOverlay.classList.add('open');
+                promotionCard.style.display = 'none'; gameoverCard.style.display = '';
+            }, 900);
         }
-        function closeModal() { modalOverlay.classList.add('hidden'); modalOverlay.classList.remove('flex'); }
+        function closeModal() { modalState = null; modalOverlay.classList.remove('open'); }
 
-        document.querySelectorAll('.promo-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                closeModal();
-                if (!pendingPromotionMove) return;
-                const res = chess.move({ from: pendingPromotionMove.from, to: pendingPromotionMove.to, promotion: btn.getAttribute('data-promo') });
-                pendingPromotionMove = null; selectedSquare = null; legalMovesForSelected = [];
-                if (res) executeAnimatedMove(res);
-            });
-        });
+        function choosePromotion(type) {
+            closeModal();
+            if (!pendingPromotionMove) return;
+            const res = chess.move({ from: pendingPromotionMove.from, to: pendingPromotionMove.to, promotion: type });
+            pendingPromotionMove = null; selectedSquare = null; legalMovesForSelected = [];
+            if (res) executeAnimatedMove(res);
+        }
+        promoBtns.forEach(btn => btn.addEventListener('click', () => choosePromotion(btn.dataset.promo)));
+        function promoAction(a) {
+            if (a === 'left' || a === 'right') {
+                promoIdx = (promoIdx + (a === 'right' ? 1 : 3)) % 4;
+                promoBtns.forEach((b, i) => b.classList.toggle('focus', i === promoIdx));
+                soundFX.playSelect();
+            } else if (a === 'confirm') choosePromotion(promoBtns[promoIdx].dataset.promo);
+            else if (a === 'back') { pendingPromotionMove = null; closeModal(); }
+        }
+        function overAction(a) {
+            if (a === 'confirm' || a === 'restart') newGame();
+            else if (a === 'back') closeModal();
+            else if (a === 'menu') { closeModal(); openTitle(); }
+        }
 
-        // Cancel any in-flight move/knock-down so switching games or restarting is always instant
+        // ---- Game lifecycle ----
         let animEpoch = 0;
         function abortAnimations() {
             animEpoch++;
@@ -1799,39 +2005,23 @@
             checkers.reset();
             selectedSquare = null; legalMovesForSelected = []; pendingPromotionMove = null;
             gameOverShown = false;
+            cursor.c = 4; cursor.r = 6;
             syncBoardFromState();
+            updateCursorVisual();
             soundFX.playSelect();
+            if (!titleOpen) showCombatTelemetry(isChess() ? '♚ CHESS' : '⛂ CHECKERS', '', 1000, true);
         }
-
-        const GAME_META = {
-            chess: {
-                title: "IONITY GLOBAL // WIZARD'S CHESS",
-                doc: "IONITY GLOBAL // VBLOCKS Wizard's Chess",
-                hint: 'Select piece to command &bull; Drag to orbit &bull; Captures trigger physical knock-downs'
-            },
-            checkers: {
-                title: "IONITY GLOBAL // WIZARD'S CHECKERS",
-                doc: "IONITY GLOBAL // VBLOCKS Wizard's Checkers",
-                hint: 'Dark squares only &bull; Jumps are mandatory &bull; Chain jumps knock down every piece in the path'
-            }
-        };
 
         function setGameMode(mode) {
             if (mode === gameMode) return;
             gameMode = mode;
             document.querySelectorAll('.game-tab').forEach(t => t.classList.toggle('active', t.dataset.game === mode));
-            document.getElementById('game-title').textContent = GAME_META[mode].title;
-            document.getElementById('hint-text').innerHTML = GAME_META[mode].hint;
-            document.title = GAME_META[mode].doc;
+            document.title = mode === 'chess' ? "Wizard's Chess · IONITY.FUN" : "Wizard's Checkers · IONITY.FUN";
             newGame();
+            renderTitle();
         }
-        document.querySelectorAll('.game-tab').forEach(t => t.addEventListener('click', () => setGameMode(t.dataset.game)));
 
-        document.getElementById('btn-new').addEventListener('click', newGame);
-        document.getElementById('btn-modal-new').addEventListener('click', newGame);
-        document.getElementById('btn-modal-close').addEventListener('click', closeModal);
-
-        document.getElementById('btn-undo').addEventListener('click', () => {
+        function doUndo() {
             if (isAnimating) return;
             clearTimeout(aiTimer);
             const engine = isChess() ? chess : checkers;
@@ -1843,33 +2033,87 @@
             syncBoardFromState();
             soundFX.playMove();
             maybeTriggerAI();
-        });
+        }
 
-        document.getElementById('btn-demo').addEventListener('click', triggerDemoKnockDown);
-        document.getElementById('btn-camera').addEventListener('click', () => { cameraControl.cyclePreset(); soundFX.playSelect(); });
-
-        document.getElementById('btn-mode').addEventListener('click', () => {
-            playVsAI = !playVsAI;
+        function setAI(v) {
+            playVsAI = v;
             document.getElementById('mode-icon').textContent = playVsAI ? 'smart_toy' : 'group';
-            document.getElementById('mode-label').textContent = playVsAI ? 'vs Automaton' : '2-Player Pass';
+            document.querySelectorAll('#t-mode button').forEach(b => b.classList.toggle('active', (b.dataset.ai === '1') === playVsAI));
             clearHighlights();
             updateUI();
-            if (!isAnimating) maybeTriggerAI();
-        });
+            if (!isAnimating && !titleOpen) maybeTriggerAI();
+        }
+        function toggleAIFromMenu() { setAI(!playVsAI); soundFX.playSelect(); }
 
+        // ---- Title / pause menu ----
+        let titleOpen = true, titleFocus = 'chess', gameStarted = false;
+        function renderTitle() {
+            document.querySelectorAll('.tile').forEach(t => {
+                t.classList.toggle('focus', t.dataset.game === titleFocus);
+                t.classList.toggle('current', gameStarted && t.dataset.game === gameMode);
+            });
+        }
+        function openTitle() {
+            titleOpen = true;
+            titleFocus = gameMode;
+            renderTitle();
+            titleEl.classList.remove('off');
+            hudEl.classList.add('off');
+            updateCursorVisual();
+        }
+        function closeTitle() {
+            titleOpen = false;
+            titleEl.classList.add('off');
+            hudEl.classList.remove('off');
+            cameraControl.targetTheta = Math.round(cameraControl.theta / (Math.PI * 2)) * Math.PI * 2;
+            updateCursorVisual();
+        }
+        function startFromTitle(game) {
+            soundFX.init();
+            if (game !== gameMode) setGameMode(game);
+            else if (!gameStarted) newGame();
+            gameStarted = true;
+            closeTitle();
+            soundFX.playCrown();
+            showCombatTelemetry(isChess() ? '♚ CHESS' : '⛂ CHECKERS', '', 1100, true);
+            maybeTriggerAI();
+        }
+        function titleAction(a) {
+            if (a === 'left' || a === 'right' || a === 'chess' || a === 'checkers' || a === 'swap') {
+                titleFocus = a === 'chess' ? 'chess' : a === 'checkers' ? 'checkers' : (titleFocus === 'chess' ? 'checkers' : 'chess');
+                renderTitle(); soundFX.playSelect();
+            } else if (a === 'up' || a === 'down' || a === 'menu') toggleAIFromMenu();
+            else if (a === 'confirm') startFromTitle(titleFocus);
+            else if (a === 'back' && gameStarted) closeTitle();
+        }
+        document.querySelectorAll('.tile').forEach(t => {
+            t.addEventListener('mouseenter', () => { titleFocus = t.dataset.game; renderTitle(); });
+            t.addEventListener('click', () => startFromTitle(t.dataset.game));
+        });
+        document.querySelectorAll('#t-mode button').forEach(b => b.addEventListener('click', () => { setAI(b.dataset.ai === '1'); soundFX.playSelect(); }));
+
+        // ---- HUD buttons ----
+        document.querySelectorAll('.game-tab').forEach(t => t.addEventListener('click', () => setGameMode(t.dataset.game)));
+        document.getElementById('btn-new').addEventListener('click', newGame);
+        document.getElementById('btn-modal-new').addEventListener('click', newGame);
+        document.getElementById('btn-modal-close').addEventListener('click', closeModal);
+        document.getElementById('btn-modal-menu').addEventListener('click', () => { closeModal(); openTitle(); });
+        document.getElementById('btn-menu').addEventListener('click', openTitle);
+        document.getElementById('btn-undo').addEventListener('click', doUndo);
+        document.getElementById('btn-demo').addEventListener('click', triggerDemoKnockDown);
+        document.getElementById('btn-camera').addEventListener('click', () => { cameraControl.cyclePreset(); soundFX.playSelect(); });
+        document.getElementById('btn-mode').addEventListener('click', () => toggleAIFromMenu());
         document.getElementById('btn-sound').addEventListener('click', () => {
             soundFX.enabled = !soundFX.enabled;
             document.getElementById('sound-icon').textContent = soundFX.enabled ? 'volume_up' : 'volume_off';
+            document.getElementById('btn-sound').classList.toggle('on', !soundFX.enabled);
         });
-
         document.getElementById('btn-actioncam').addEventListener('click', () => {
             useActionCam = !useActionCam;
             document.getElementById('actioncam-icon').textContent = useActionCam ? 'videocam' : 'videocam_off';
-            document.getElementById('actioncam-label').textContent = useActionCam ? 'Impact Cam: ON' : 'Impact Cam: OFF';
-            document.getElementById('btn-actioncam').className = useActionCam
-                ? 'md-btn flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium text-cyan-300 bg-cyan-500/15 border border-cyan-500/30'
-                : 'md-btn flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 bg-slate-800/40 border border-slate-700/40';
+            document.getElementById('btn-actioncam').classList.toggle('on', useActionCam);
         });
+        renderLegend();
 
         /***********************************************************************
          * 10. MAIN LOOP
@@ -1881,7 +2125,24 @@
             const dt = Math.min(clock.getDelta(), 0.1);
             const elapsedTime = clock.getElapsedTime();
 
+            pollGamepad(dt);
+            if (titleOpen) cameraControl.targetTheta += dt * 0.12;
             cameraControl.update(dt);
+
+            // Console FX: cursor pulse, selection beam, marker breathing, light shafts
+            if (cursorMesh.visible) {
+                cursorMesh.material.opacity = 0.55 + Math.sin(elapsedTime * 6) * 0.35;
+                cursorMesh.material.color.setHex(selectedSquare ? 0xfbbf24 : 0x00f0ff);
+            }
+            beamMesh.visible = !!selectedSquare && !isAnimating;
+            if (beamMesh.visible) {
+                beamMesh.position.copy(squareToWorld(selectedSquare)).setY(0.9);
+                beamMesh.material.opacity = 0.16 + Math.sin(elapsedTime * 4) * 0.06;
+                beamMesh.rotation.y = elapsedTime;
+            }
+            const pulse = 1 + Math.sin(elapsedTime * 5) * 0.08;
+            Object.values(highlightMeshes).forEach(h => { if (h.group.visible) h.ring.scale.setScalar(pulse); });
+            lightShafts.forEach((m, i) => { m.material.opacity = 0.03 + Math.sin(elapsedTime * 0.6 + i * 1.7) * 0.015; });
 
             vblocksHolos.forEach(h => {
                 h.group.rotation.y = elapsedTime * 0.85 + h.basePhase;
@@ -2022,19 +2283,26 @@
             renderer.render(scene, camera);
         }
 
-        window.addEventListener('resize', () => {
+        function fitCamera() {
             camera.aspect = window.innerWidth / window.innerHeight;
+            // Portrait screens: widen vertical FOV so the whole board stays in frame
+            camera.fov = camera.aspect < 1 ? Math.max(45, 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(19)) / camera.aspect) * 180 / Math.PI) : 45;
             camera.updateProjectionMatrix();
+        }
+        fitCamera();
+        window.addEventListener('resize', () => {
+            fitCamera();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
         window.addEventListener('load', () => {
             syncBoardFromState();
+            renderTitle();
             animate();
         });
 
         // Test/automation hook
-        window.__arena = { triggerDemoKnockDown, chess, checkers, setGameMode, newGame, triggerAutomatonMove, executeCheckersMove, executeAnimatedMove, get state() { return { gameMode, isAnimating, playVsAI, pieces: Object.keys(pieceMeshes).length }; } };
+        window.__arena = { handleAction, startFromTitle, handleSquare, triggerDemoKnockDown, chess, checkers, setGameMode, newGame, triggerAutomatonMove, executeCheckersMove, executeAnimatedMove, get state() { return { gameMode, isAnimating, playVsAI, pieces: Object.keys(pieceMeshes).length }; } };
     </script>
 </body>
 </html>
