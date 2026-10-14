@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>PAWN* — Sovereign Realm MMO · ionity.fun</title>
+  <meta name="description" content="PAWN* Sovereign Realm — a free isometric .IO MMO ARPG by Ionity Global. Centurion, Witwatersrand, Karoo BESS, Cape Subsea Trench." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;700&family=Cinzel:wght@600;700;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: { extend: {
+        fontFamily: { sans: ['Plus Jakarta Sans','sans-serif'], display: ['Cinzel','serif'], mono: ['JetBrains Mono','monospace'] },
+        colors: { void:'#010307', panel:'#050912', pawnCyan:'#00F0FF', pawnGold:'#F59E0B', matrixGreen:'#10B981', dangerRed:'#EF4444' }
+      } }
+    }
+  </script>
+  <style>
+    * { user-select: none; -webkit-user-select: none; box-sizing: border-box; }
+    input, textarea { user-select: text; -webkit-user-select: text; }
+    body, html { margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:#010307; color:#F1F5F9; font-family:'Plus Jakarta Sans',sans-serif; }
+    #game-canvas { position:absolute; inset:0; width:100%; height:100%; display:block; z-index:1; }
+    .gothic-glass { background:linear-gradient(135deg,rgba(5,9,18,.94) 0%,rgba(2,4,8,.98) 100%); backdrop-filter:blur(28px); -webkit-backdrop-filter:blur(28px); border:1px solid rgba(0,240,255,.28); box-shadow:0 20px 60px rgba(0,0,0,.95), inset 0 1px 0 rgba(255,255,255,.15); }
+    .gothic-btn { background:linear-gradient(180deg,rgba(0,240,255,.2) 0%,rgba(0,240,255,.05) 100%); border:1px solid rgba(0,240,255,.5); transition:all .2s cubic-bezier(.16,1,.3,1); }
+    .gothic-btn:hover:not(:disabled) { background:linear-gradient(180deg,rgba(0,240,255,.38) 0%,rgba(0,240,255,.18) 100%); border-color:#00F0FF; box-shadow:0 0 35px rgba(0,240,255,.65); transform:translateY(-2px); }
+    .custom-scroll::-webkit-scrollbar { width:5px; }
+    .custom-scroll::-webkit-scrollbar-track { background:rgba(1,3,7,.9); }
+    .custom-scroll::-webkit-scrollbar-thumb { background:rgba(0,240,255,.45); border-radius:4px; }
+    @keyframes floatText { 0%{opacity:1;transform:translateY(0) scale(.85)} 100%{opacity:0;transform:translateY(-70px) scale(1.25)} }
+    .combat-text { position:absolute; pointer-events:none; animation:floatText 1s cubic-bezier(.16,1,.3,1) forwards; z-index:40; text-shadow:0 2px 14px rgba(0,0,0,.98); font-family:'JetBrains Mono',monospace; font-weight:700; }
+    .name-tag { position:absolute; pointer-events:none; transform:translate(-50%,-100%); font-family:'JetBrains Mono',monospace; font-size:10px; white-space:nowrap; text-shadow:0 1px 6px #000; z-index:20; }
+    .name-tag .bar { height:3px; background:#222; border-radius:2px; margin-top:2px; overflow:hidden; }
+    .name-tag .bar i { display:block; height:100%; background:#10B981; }
+    @keyframes vignetteGlow { 0%,100%{box-shadow:inset 0 0 90px rgba(0,240,255,.06)} 50%{box-shadow:inset 0 0 140px rgba(0,240,255,.15)} }
+    .vignette-overlay { position:absolute; inset:0; pointer-events:none; z-index:2; animation:vignetteGlow 6s ease-in-out infinite; }
+    .chat-line { font-family:'JetBrains Mono',monospace; font-size:11px; line-height:1.4; word-break:break-word; }
+    .chat-line .who { color:#00F0FF; font-weight:700; }
+    .chat-line.sys .who { color:#F59E0B; }
+    #death-overlay { background:radial-gradient(circle, rgba(239,68,68,.35) 0%, rgba(1,3,7,.95) 70%); }
+  </style>
+</head>
+<body class="vignette-overlay">
+
+  <canvas id="game-canvas"></canvas>
+  <div id="floating-labels" class="fixed inset-0 pointer-events-none z-30 overflow-hidden"></div>
+  <div id="name-tags" class="fixed inset-0 pointer-events-none z-20 overflow-hidden"></div>
+
+  <!-- Login / Intro -->
+  <div id="intro-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-void/95 backdrop-blur-2xl p-4 overflow-y-auto">
+    <div class="gothic-glass max-w-4xl w-full rounded-3xl p-6 sm:p-10 border border-pawnCyan/40 relative overflow-hidden my-4">
+      <div class="absolute -top-32 -right-32 w-80 h-80 bg-pawnCyan/15 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-32 -left-32 w-80 h-80 bg-pawnGold/15 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-5 mb-6">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-2xl bg-pawnCyan/15 border border-pawnCyan flex items-center justify-center font-display text-2xl text-pawnCyan font-bold shadow-[0_0_25px_rgba(0,240,255,0.4)]">♜</div>
+          <div>
+            <div class="font-mono text-xs text-pawnCyan tracking-widest uppercase">PAWN* GLOBAL .IO MMO ENGINE v7.0 · FIREBASE SYNC</div>
+            <h1 class="font-display text-2xl sm:text-4xl font-black text-white tracking-tight">SOVEREIGN REALM: PAWN* MMO</h1>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+        <a href="/games/" class="px-3 py-1 rounded-full border border-white/15 font-mono text-xs text-slate-300 hover:border-pawnCyan hover:text-pawnCyan">← GAMES</a>
+        <span id="server-badge" class="px-3.5 py-1 rounded-full bg-matrixGreen/15 border border-matrixGreen/40 font-mono text-xs text-matrixGreen flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-matrixGreen animate-pulse"></span>
+          <span id="server-badge-text">CONNECTING…</span>
+        </span>
+        </div>
+      </div>
+
+      <p class="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
+        Step into the shared isometric world of <strong class="text-pawnCyan">PAWN*</strong>. Every player you see is real. Clear creature swarms together, race for defensive towers, harvest ZAR-T, climb the global leaderboard. Progress is saved to your account.
+      </p>
+
+      <!-- Auth state -->
+      <div id="auth-box" class="grid sm:grid-cols-2 gap-4 mb-6">
+        <div id="auth-signed-out" class="sm:col-span-2 flex flex-col sm:flex-row items-center gap-3 p-4 rounded-2xl bg-void/80 border border-pawnCyan/30">
+          <div class="flex-1 text-sm text-slate-300">
+            <div class="font-mono text-xs text-pawnCyan uppercase mb-1">IDENTITY REQUIRED</div>
+            Sign in with Google to create your hero and sync progress across devices.
+          </div>
+          <button onclick="signInGoogle()" class="px-6 py-3 rounded-xl bg-white text-void font-bold text-sm hover:bg-pawnCyan transition-all flex items-center gap-2 cursor-pointer shadow-lg">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.1 5.6l6.2 5.2C40.9 35.4 44 30.2 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>
+            SIGN IN WITH GOOGLE
+          </button>
+        </div>
+
+        <div id="auth-signed-in" class="hidden sm:col-span-2 grid sm:grid-cols-2 gap-4">
+          <div class="sm:col-span-2 flex items-center justify-between p-3 rounded-2xl bg-matrixGreen/10 border border-matrixGreen/30">
+            <div class="flex items-center gap-3">
+              <img id="auth-avatar" src="" class="w-9 h-9 rounded-full border border-matrixGreen/50 hidden" referrerpolicy="no-referrer" />
+              <div>
+                <div class="font-mono text-[10px] text-matrixGreen uppercase">LINKED ACCOUNT</div>
+                <div id="auth-email" class="text-sm text-white font-semibold">—</div>
+              </div>
+            </div>
+            <button onclick="signOutGoogle()" class="px-3 py-1.5 rounded-lg border border-white/15 font-mono text-[10px] text-slate-300 hover:border-dangerRed hover:text-dangerRed cursor-pointer">SIGN OUT</button>
+          </div>
+          <div>
+            <label class="block font-mono text-xs text-pawnCyan uppercase mb-1.5">HERO CALLSIGN</label>
+            <input id="player-name-input" type="text" value="ZA_Pawn_Exile" maxlength="18" class="w-full bg-void/85 border border-pawnCyan/40 rounded-xl px-4 py-3 font-mono text-white text-sm focus:outline-none focus:border-pawnCyan shadow-inner" />
+          </div>
+          <div>
+            <label class="block font-mono text-xs text-pawnCyan uppercase mb-1.5">HERO CLASS</label>
+            <select id="player-class-select" class="w-full bg-void/85 border border-pawnCyan/40 rounded-xl px-4 py-3 font-mono text-white text-sm focus:outline-none focus:border-pawnCyan shadow-inner">
+              <option value="Sovereign AI Templar">Sovereign AI Templar (Heavy Shield &amp; Arc Nova)</option>
+              <option value="Firmware Ranger">Firmware Ranger (ESP32 Swarm &amp; LoRa Lightning)</option>
+              <option value="Electrotechnic Titan">Electrotechnic Titan (HV Switchgear &amp; BESS Surge)</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block font-mono text-xs text-pawnCyan uppercase mb-1.5">REALM SERVER</label>
+            <select id="realm-select" class="w-full bg-void/85 border border-pawnCyan/40 rounded-xl px-4 py-3 font-mono text-white text-sm focus:outline-none focus:border-pawnCyan shadow-inner">
+              <option value="pawn-centurion">PAWN-CENTURION · io-man.web.app (ZA Primary)</option>
+              <option value="ionity-fun">IONITY.FUN · www.ionity.fun (Public Realm)</option>
+              <option value="ionity-today">IONITY.TODAY · Corporate Dev Realm</option>
+            </select>
+          </div>
+          <div id="save-notice" class="sm:col-span-2 hidden font-mono text-[11px] text-matrixGreen">☁ Cloud save found — continuing your hero.</div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 font-mono">
+        <div class="p-3.5 rounded-2xl bg-void/90 border border-pawnCyan/30"><div class="text-pawnCyan font-bold text-xs">01. CENTURION HQ</div><div class="text-slate-400 text-[11px] mt-1">Safe Citadel &amp; Forge</div></div>
+        <div class="p-3.5 rounded-2xl bg-void/90 border border-pawnGold/30"><div class="text-pawnGold font-bold text-xs">02. WITWATERSRAND</div><div class="text-slate-400 text-[11px] mt-1">Lv 1-5 · Cavitation Drones</div></div>
+        <div class="p-3.5 rounded-2xl bg-void/90 border border-matrixGreen/30"><div class="text-matrixGreen font-bold text-xs">03. KAROO BESS</div><div class="text-slate-400 text-[11px] mt-1">Lv 4-8 · Pylons &amp; Titans</div></div>
+        <div class="p-3.5 rounded-2xl bg-void/90 border border-dangerRed/30"><div class="text-dangerRed font-bold text-xs">04. CAPE SUBSEA</div><div class="text-slate-400 text-[11px] mt-1">Lv 10 Raid · Cloud Leviathan</div></div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div class="text-xs font-mono text-slate-400">
+          <span class="text-white font-semibold">CONTROLS:</span> [Click] Move / Target · [WASD] Move · [1-5] Spells · [E] Interact · [K] Forge · [Enter] Chat · [L] Leaderboard
+        </div>
+        <button id="enter-btn" onclick="startGame()" disabled class="px-8 py-4 rounded-xl bg-pawnCyan text-void font-display font-bold text-base hover:bg-white transition-all shadow-[0_0_35px_rgba(0,240,255,0.6)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+          ENTER PAWN* REALM →
+        </button>
+      </div>
+      <div class="mt-5 pt-4 border-t border-white/10 font-mono text-[10px] text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
+        <span>© 2018-2026 Antwerp Designs | Ionity (Pty) Ltd · TM2</span><span>Policy 986 AED · License AED 900</span><span>www.ionity.today · www.ionity.fun</span><span>Building Tomorrow, Today.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Death overlay -->
+  <div id="death-overlay" class="fixed inset-0 z-40 hidden flex items-center justify-center">
+    <div class="text-center">
+      <div class="font-display text-4xl sm:text-6xl text-dangerRed font-black tracking-widest">CHASSIS DESTROYED</div>
+      <div id="death-sub" class="font-mono text-sm text-slate-300 mt-3">Rebooting at Centurion Citadel in 5s…</div>
+    </div>
+  </div>
+
+  <!-- Top-Left HUD -->
+  <div class="fixed top-3 left-3 z-30 flex flex-col gap-2.5 w-72 sm:w-80 pointer-events-auto">
+    <div class="gothic-glass rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div id="hud-level" class="w-10 h-10 rounded-xl bg-pawnCyan text-void font-mono font-extrabold text-sm flex items-center justify-center shadow-[0_0_15px_rgba(0,240,255,0.6)]">L1</div>
+          <div>
+            <div id="hud-name" class="font-display font-bold text-sm text-white leading-tight">—</div>
+            <div id="hud-class" class="font-mono text-[10px] text-pawnCyan">—</div>
+          </div>
+        </div>
+        <div class="text-right font-mono">
+          <div id="hud-zar" class="text-xs font-bold text-matrixGreen">250 ZAR-T</div>
+          <div id="hud-power" class="text-[10px] text-slate-400">140 TFLOPS</div>
+        </div>
+      </div>
+      <div class="space-y-1 mb-2">
+        <div class="flex justify-between text-[10px] font-mono"><span class="text-slate-300">CHASSIS INTEGRITY (HP)</span><span id="hud-hp-text" class="text-matrixGreen font-bold">1200 / 1200</span></div>
+        <div class="w-full h-2.5 bg-void rounded-full overflow-hidden border border-white/10"><div id="hud-hp-bar" class="h-full bg-gradient-to-r from-emerald-500 to-pawnCyan transition-all duration-150" style="width:100%"></div></div>
+      </div>
+      <div class="space-y-1 mb-2">
+        <div class="flex justify-between text-[10px] font-mono"><span class="text-slate-300">BESS CAPACITOR</span><span id="hud-mp-text" class="text-pawnCyan font-bold">600 / 600 kWh</span></div>
+        <div class="w-full h-2 bg-void rounded-full overflow-hidden border border-white/10"><div id="hud-mp-bar" class="h-full bg-pawnCyan transition-all duration-150" style="width:100%"></div></div>
+      </div>
+      <div class="space-y-1">
+        <div class="flex justify-between text-[9px] font-mono text-slate-400"><span>NEURALWEIGHT XP</span><span id="hud-xp-text">0 / 400 XP</span></div>
+        <div class="w-full h-1.5 bg-void rounded-full overflow-hidden"><div id="hud-xp-bar" class="h-full bg-pawnGold transition-all duration-200" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div id="target-panel" class="gothic-glass rounded-2xl p-3 hidden border-dangerRed/40">
+      <div class="flex items-center justify-between mb-1">
+        <span id="target-name" class="font-display font-bold text-xs text-dangerRed">—</span>
+        <span id="target-lvl" class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-dangerRed/20 text-rose-300">LV —</span>
+      </div>
+      <div class="w-full h-2 bg-void rounded-full overflow-hidden border border-white/10"><div id="target-hp-bar" class="h-full bg-dangerRed transition-all duration-100" style="width:100%"></div></div>
+      <div id="target-hp-text" class="text-[10px] font-mono text-slate-400 mt-1 text-right">—</div>
+    </div>
+  </div>
+
+  <!-- Top Center -->
+  <div class="fixed top-3 left-1/2 -translate-x-1/2 z-30 hidden md:flex flex-col items-center gap-1.5 pointer-events-auto">
+    <div class="gothic-glass px-5 py-2 rounded-full flex items-center gap-4 text-xs font-mono">
+      <span id="biome-indicator" class="text-pawnCyan font-bold">♜ SECTOR 01: CENTURION CITADEL (SAFE ZONE)</span>
+      <span class="text-slate-600">|</span>
+      <span id="online-count" class="text-matrixGreen">ONLINE: 1</span>
+      <span class="text-slate-600">|</span>
+      <span id="ping-readout" class="text-slate-300">PING: --ms</span>
+      <span class="text-slate-600">|</span>
+      <span id="sast-game-clock" class="text-slate-300">SAST --:--:--</span>
+    </div>
+    <div class="flex items-center gap-1.5 bg-void/90 px-3 py-1 rounded-full border border-white/10 text-[11px] font-mono">
+      <span class="text-slate-400 mr-1">WARP MAP:</span>
+      <button onclick="warpToSector('centurion')" class="px-2.5 py-0.5 rounded hover:bg-pawnCyan/20 text-pawnCyan cursor-pointer">Centurion HQ</button>
+      <button onclick="warpToSector('mines')" class="px-2.5 py-0.5 rounded hover:bg-pawnGold/20 text-pawnGold cursor-pointer">Witwatersrand</button>
+      <button onclick="warpToSector('karoo')" class="px-2.5 py-0.5 rounded hover:bg-matrixGreen/20 text-matrixGreen cursor-pointer">Karoo BESS</button>
+      <button onclick="warpToSector('trench')" class="px-2.5 py-0.5 rounded hover:bg-dangerRed/20 text-dangerRed cursor-pointer">Cape Trench</button>
+    </div>
+  </div>
+
+  <!-- Top Right: Radar -->
+  <div class="fixed top-3 right-3 z-30 flex flex-col items-end gap-2.5 w-64 sm:w-72 pointer-events-auto">
+    <div class="gothic-glass rounded-2xl p-3.5 w-full">
+      <div class="flex items-center justify-between mb-2">
+        <span class="font-mono text-[10px] text-pawnCyan uppercase tracking-wider">TACTICAL .IO RADAR</span>
+        <div class="flex items-center gap-1.5">
+          <button onclick="toggleAudioMute()" id="audio-btn" class="px-2 py-0.5 rounded bg-white/5 hover:bg-pawnCyan/20 font-mono text-[10px] text-slate-300 border border-white/10 cursor-pointer">SFX: ON</button>
+          <button onclick="toggleModal('leaderboard-modal')" class="px-2 py-0.5 rounded bg-pawnGold/15 hover:bg-pawnGold/30 font-mono text-[10px] text-pawnGold border border-pawnGold/30 cursor-pointer">TOP [L]</button>
+          <button onclick="toggleModal('forge-modal')" class="px-2.5 py-0.5 rounded bg-pawnCyan/15 hover:bg-pawnCyan/30 font-mono text-[10px] text-pawnCyan border border-pawnCyan/30 cursor-pointer">FORGE [K]</button>
+        </div>
+      </div>
+      <div class="relative w-full h-32 rounded-xl bg-void border border-pawnCyan/25 overflow-hidden shadow-inner">
+        <canvas id="radar-canvas" class="w-full h-full block"></canvas>
+        <div id="coords-readout" class="absolute bottom-1 right-2 font-mono text-[10px] text-pawnCyan/80">X: 0 · Z: 0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Left: Chat -->
+  <div class="fixed bottom-3 left-3 z-30 w-72 sm:w-80 pointer-events-auto">
+    <div class="gothic-glass rounded-2xl p-3">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="font-mono text-[10px] text-pawnCyan uppercase tracking-wider">REALM COMMS</span>
+        <span id="realm-label" class="font-mono text-[10px] text-slate-400">—</span>
+      </div>
+      <div id="chat-log" class="h-28 overflow-y-auto custom-scroll space-y-0.5 pr-1 mb-2"></div>
+      <form onsubmit="sendChat(event)" class="flex gap-1.5">
+        <input id="chat-input" type="text" maxlength="240" placeholder="Press Enter to chat…" class="flex-1 bg-void/85 border border-pawnCyan/30 rounded-lg px-2.5 py-1.5 font-mono text-[11px] text-white focus:outline-none focus:border-pawnCyan" />
+        <button type="submit" class="px-3 rounded-lg bg-pawnCyan/20 border border-pawnCyan/40 font-mono text-[10px] text-pawnCyan hover:bg-pawnCyan hover:text-void cursor-pointer">SEND</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Bottom Center: Skills -->
+  <div class="fixed bottom-3 left-1/2 -translate-x-1/2 z-30 flex flex-col items-center gap-2 pointer-events-auto w-full max-w-2xl px-3">
+    <div id="interact-banner" class="hidden px-5 py-2 rounded-full bg-pawnCyan text-void font-mono font-extrabold text-xs shadow-[0_0_25px_rgba(0,240,255,0.7)] animate-bounce cursor-pointer" onclick="triggerInteract()">[E] HARVEST DEFENSIVE TOWER</div>
+    <div class="gothic-glass rounded-2xl p-2.5 flex items-center gap-2 sm:gap-3 shadow-2xl">
+      <button onclick="useSkill(0)" class="gothic-btn relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl p-1.5 flex flex-col items-center justify-between cursor-pointer"><span class="font-mono text-[9px] text-slate-400 self-start">1</span><span class="text-lg sm:text-xl">⚡</span><span class="font-mono text-[9px] text-pawnCyan leading-none">ESP-BOLT</span><div id="cd-overlay-0" class="absolute inset-0 bg-void/85 rounded-xl flex items-center justify-center font-mono text-xs text-white hidden">0s</div></button>
+      <button onclick="useSkill(1)" class="gothic-btn relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl p-1.5 flex flex-col items-center justify-between cursor-pointer"><span class="font-mono text-[9px] text-slate-400 self-start">2</span><span class="text-lg sm:text-xl">🛡️</span><span class="font-mono text-[9px] text-matrixGreen leading-none">BESS-SHIELD</span><div id="cd-overlay-1" class="absolute inset-0 bg-void/85 rounded-xl flex items-center justify-center font-mono text-xs text-white hidden">0s</div></button>
+      <button onclick="useSkill(2)" class="gothic-btn relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl p-1.5 flex flex-col items-center justify-between cursor-pointer"><span class="font-mono text-[9px] text-slate-400 self-start">3</span><span class="text-lg sm:text-xl">🔥</span><span class="font-mono text-[9px] text-pawnGold leading-none">ARC-NOVA</span><div id="cd-overlay-2" class="absolute inset-0 bg-void/85 rounded-xl flex items-center justify-center font-mono text-xs text-white hidden">0s</div></button>
+      <button onclick="useSkill(3)" class="gothic-btn relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl p-1.5 flex flex-col items-center justify-between cursor-pointer"><span class="font-mono text-[9px] text-slate-400 self-start">4</span><span class="text-lg sm:text-xl">⏳</span><span class="font-mono text-[9px] text-purple-400 leading-none">CHRONO-HEAL</span><div id="cd-overlay-3" class="absolute inset-0 bg-void/85 rounded-xl flex items-center justify-center font-mono text-xs text-white hidden">0s</div></button>
+      <button onclick="useSkill(4)" class="gothic-btn relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl p-1.5 flex flex-col items-center justify-between cursor-pointer"><span class="font-mono text-[9px] text-slate-400 self-start">5</span><span class="text-lg sm:text-xl">♜</span><span class="font-mono text-[9px] text-dangerRed leading-none">PAWN* ULT</span><div id="cd-overlay-4" class="absolute inset-0 bg-void/85 rounded-xl flex items-center justify-center font-mono text-xs text-white hidden">0s</div></button>
+    </div>
+  </div>
+
+  <!-- Forge Modal -->
+  <div id="forge-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-void/85 backdrop-blur-xl p-4 hidden">
+    <div class="gothic-glass max-w-3xl w-full rounded-3xl p-6 sm:p-8 border border-pawnCyan/40 relative shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-5">
+        <div><h2 class="font-display font-bold text-lg text-white">PAWN* FORGE &amp; STAT TREE</h2><p class="font-mono text-[10px] text-pawnCyan">Upgrade combat stats using ZAR-T. Saved to your account.</p></div>
+        <button onclick="toggleModal('forge-modal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-pawnCyan/30 text-white flex items-center justify-center font-mono text-sm cursor-pointer">✕</button>
+      </div>
+      <div id="disciplines-grid" class="grid sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto custom-scroll pr-1"></div>
+    </div>
+  </div>
+
+  <!-- Leaderboard Modal -->
+  <div id="leaderboard-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-void/85 backdrop-blur-xl p-4 hidden">
+    <div class="gothic-glass max-w-xl w-full rounded-3xl p-6 sm:p-8 border border-pawnGold/40 relative shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+        <div><h2 class="font-display font-bold text-lg text-white">GLOBAL SOVEREIGN LEADERBOARD</h2><p class="font-mono text-[10px] text-pawnGold">Top heroes across all realms · live</p></div>
+        <button onclick="toggleModal('leaderboard-modal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-pawnGold/30 text-white flex items-center justify-center font-mono text-sm cursor-pointer">✕</button>
+      </div>
+      <div id="leaderboard-list" class="space-y-1.5 max-h-[60vh] overflow-y-auto custom-scroll font-mono text-xs"></div>
+    </div>
+  </div>
+
+  <script>
+  // ============================================================
+  //  PAWN* SOVEREIGN REALM MMO — Ionity Global / AEDI
+  //  Policy 986 AED · (c) 2018-2026 Antwerp Designs | Ionity (Pty) Ltd
+  // ============================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyBDWHaRVFf1tmC7T3fbyk2MpIBeuyoyoIc",
+    authDomain: "io-man.firebaseapp.com",
+    databaseURL: "https://io-man-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "io-man",
+    storageBucket: "io-man.firebasestorage.app",
+    messagingSenderId: "737401934489",
+    appId: "1:737401934489:web:bfe305eba0bdc4416c9e08",
+    measurementId: "G-8ZLB4NK7K9"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+  const db = firebase.database();
+
+  // ---------- Game state ----------
+  let scene, camera, renderer, clock, terrainMesh, gridHelper, synth, sfxEnabled = true;
+  let player, mobs = {}, towers = {}, remotePlayers = {};
+  let keys = { w:false, a:false, s:false, d:false }, targetDest = null;
+  let currentUser = null, realm = 'pawn-centurion', gameStarted = false, isDead = false;
+  let sectorRefs = [], chatRef = null, leaderRef = null, presenceRef = null;
+  let lastPresencePush = 0, lastSave = 0, dirtySave = false, lastHostTick = 0, isHost = false;
+  const floatingLabelsContainer = document.getElementById('floating-labels');
+  const nameTagsContainer = document.getElementById('name-tags');
+
+  const SECTORS = {
+    centurion: { title:"♜ SECTOR 01: CENTURION CITADEL (SAFE ZONE)", ground:0x050912, grid:0x00F0FF, mobs:0, towers:4, mobName:'', mobLvl:0, mobHp:0 },
+    mines:     { title:"⚡ SECTOR 02: WITWATERSRAND MINES (LV 1-5)",   ground:0x120D06, grid:0xF59E0B, mobs:10, towers:4, mobName:'Cavitation Crawler', mobLvl:2, mobHp:600 },
+    karoo:     { title:"🔋 SECTOR 03: KAROO BESS GRID (LV 4-8)",      ground:0x06120D, grid:0x10B981, mobs:10, towers:4, mobName:'Surge Titan Construct', mobLvl:5, mobHp:1600 },
+    trench:    { title:"🌊 SECTOR 04: CAPE SUBSEA TRENCH (LV 10 RAID)", ground:0x12060A, grid:0xEF4444, mobs:8, towers:4, mobName:'Cloud Leviathan Sovereign', mobLvl:10, mobHp:6000 }
+  };
+  const CLASS_COLORS = { 'Sovereign AI Templar':0x00F0FF, 'Firmware Ranger':0x10B981, 'Electrotechnic Titan':0xF59E0B };
+
+  let gameState = {
+    name:"ZA_Pawn_Exile", className:"Sovereign AI Templar", level:1, xp:0, xpNext:400,
+    hp:1200, maxHp:1200, mp:600, maxMp:600, zar:250, powerTFLOPS:140, kills:0, totalXp:0,
+    currentSector:'centurion', selectedTarget:null, shieldUntil:0
+  };
+  let disciplines = [
+    { id:'mech', name:'01. Exosuit Chassis', level:1, bonus:'+150 Max HP', cost:120 },
+    { id:'electro', name:'02. LiFePO4 BESS Capacity', level:1, bonus:'+75 kWh Capacitor', cost:120 },
+    { id:'firmware', name:'03. ESP32 Swarm Overclock', level:1, bonus:'+8% Damage', cost:140 },
+    { id:'ai', name:'04. Sovereign Inference', level:1, bonus:'+30 TFLOPS Power', cost:150 },
+    { id:'twin', name:'05. Spatial Digital Twins', level:1, bonus:'+5% Critical Strike', cost:180 },
+    { id:'audit', name:'06. Forensic POPIA Audit', level:1, bonus:'+10% ZAR Drop Rate', cost:200 }
+  ];
+  const skills = [
+    { name:'ESP-BOLT', cd:1.0, cost:30, timer:0, mult:1.0, range:28 },
+    { name:'BESS-SHIELD', cd:8.0, cost:80, timer:0, shield:true },
+    { name:'ARC-NOVA', cd:3.5, cost:65, timer:0, mult:1.6, range:14, aoe:true },
+    { name:'CHRONO-HEAL', cd:12.0, cost:120, timer:0, heal:0.35 },
+    { name:'PAWN* ULT', cd:25.0, cost:200, timer:0, mult:4.0, range:34, aoe:true }
+  ];
+
+  // ---------- Auth ----------
+  function signInGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(err => {
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
+        auth.signInWithRedirect(provider);
+      } else { alert('Sign-in failed: ' + err.message); }
+    });
+  }
+  function signOutGoogle() { auth.signOut().then(() => location.reload()); }
+
+  auth.onAuthStateChanged(async user => {
+    currentUser = user;
+    const so = document.getElementById('auth-signed-out'), si = document.getElementById('auth-signed-in');
+    if (user) {
+      so.classList.add('hidden'); si.classList.remove('hidden');
+      document.getElementById('auth-email').innerText = user.displayName || user.email;
+      if (user.photoURL) { const av = document.getElementById('auth-avatar'); av.src = user.photoURL; av.classList.remove('hidden'); }
+      const snap = await db.ref('players/' + user.uid).get();
+      if (snap.exists()) {
+        const d = snap.val();
+        Object.assign(gameState, {
+          name:d.name, className:d.className, level:d.level, xp:d.xp, xpNext:d.xpNext, maxHp:d.maxHp, maxMp:d.maxMp,
+          hp:d.maxHp, mp:d.maxMp, zar:d.zar, powerTFLOPS:d.powerTFLOPS, kills:d.kills||0, totalXp:d.totalXp||0
+        });
+        if (d.disciplines) disciplines = disciplines.map(x => Object.assign(x, d.disciplines[x.id] || {}));
+        document.getElementById('player-name-input').value = d.name;
+        document.getElementById('player-class-select').value = d.className;
+        if (d.realm) document.getElementById('realm-select').value = d.realm;
+        document.getElementById('save-notice').classList.remove('hidden');
+      } else {
+        const base = (user.displayName || 'Pawn').replace(/[^A-Za-z0-9_]/g,'_').slice(0,14);
+        document.getElementById('player-name-input').value = base + '_' + Math.floor(Math.random()*99);
+      }
+      document.getElementById('enter-btn').disabled = false;
+    } else {
+      so.classList.remove('hidden'); si.classList.add('hidden');
+      document.getElementById('enter-btn').disabled = true;
+    }
+  });
+
+  // auto-pick realm by hostname
+  (function pickRealm(){
+    const h = location.hostname;
+    const sel = document.getElementById('realm-select');
+    if (h.includes('ionity.fun')) sel.value = 'ionity-fun';
+    else if (h.includes('ionity.today')) sel.value = 'ionity-today';
+  })();
+
+  db.ref('.info/connected').on('value', s => {
+    const t = document.getElementById('server-badge-text');
+    t.innerText = s.val() ? 'SERVER: IO-MAN · europe · ONLINE' : 'SERVER: RECONNECTING…';
+  });
+
+  // ---------- Start ----------
+  function startGame() {
+    if (!currentUser) return;
+    const nameInput = document.getElementById('player-name-input').value.trim().replace(/[.#$\[\]\/]/g,'');
+    if (nameInput) gameState.name = nameInput.slice(0,18);
+    gameState.className = document.getElementById('player-class-select').value;
+    realm = document.getElementById('realm-select').value;
+    document.getElementById('hud-name').innerText = gameState.name;
+    document.getElementById('hud-class').innerText = gameState.className;
+    document.getElementById('realm-label').innerText = realm.toUpperCase();
+    document.getElementById('intro-modal').classList.add('hidden');
+
+    initAudio();
+    if (!gameStarted) { initThreeEngine(); gameStarted = true; }
+    initForgeUI(); updateHUD();
+    bindGlobalRefs();
+    enterSector('centurion');
+    saveProgress(true);
+    systemChat(`${gameState.name} entered the realm.`);
+  }
+
+  // ---------- Audio ----------
+  function initAudio() {
+    try { if (typeof Tone !== 'undefined' && !synth) { Tone.start(); synth = new Tone.Synth({ oscillator:{type:"triangle"}, envelope:{attack:.005,decay:.12,sustain:0,release:.1} }).toDestination(); } } catch(e) {}
+  }
+  function playBeep(freq=440, dur="8n") { if (!sfxEnabled || !synth) return; try { synth.triggerAttackRelease(freq, dur); } catch(e) {} }
+  function toggleAudioMute() { sfxEnabled = !sfxEnabled; document.getElementById('audio-btn').innerText = sfxEnabled ? "SFX: ON" : "SFX: OFF"; }
+
+  // ---------- Three ----------
+  function makePawn(color, scale=1) {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshStandardMaterial({ color, roughness:.2, metalness:.9, emissive:color, emissiveIntensity:.18 });
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(.6*scale,.9*scale,2.5*scale,12), mat); body.position.y = 1.25*scale; body.castShadow = true; g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.55*scale,16,16), mat); head.position.y = 2.6*scale; head.castShadow = true; g.add(head);
+    return g;
+  }
+  function initThreeEngine() {
+    const container = document.getElementById('game-canvas');
+    scene = new THREE.Scene(); scene.background = new THREE.Color(0x010307); scene.fog = new THREE.FogExp2(0x010307, .01);
+    camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, .1, 1000);
+    renderer = new THREE.WebGLRenderer({ canvas:container, antialias:true, powerPreference:"high-performance" });
+    renderer.setSize(innerWidth, innerHeight); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    scene.add(new THREE.AmbientLight(0x0C1628, 2.8));
+    const dirLight = new THREE.DirectionalLight(0x00F0FF, 4.0); dirLight.position.set(40,90,40); dirLight.castShadow = true; dirLight.shadow.mapSize.set(2048,2048);
+    dirLight.shadow.camera.left = -80; dirLight.shadow.camera.right = 80; dirLight.shadow.camera.top = 80; dirLight.shadow.camera.bottom = -80; scene.add(dirLight);
+    const goldLight = new THREE.DirectionalLight(0xF59E0B, 2.2); goldLight.position.set(-40,50,-40); scene.add(goldLight);
+
+    const pg = makePawn(CLASS_COLORS[gameState.className] || 0x00F0FF);
+    scene.add(pg); player = { group:pg, x:0, z:0, speed:12 };
+
+    addEventListener('resize', onWindowResize);
+    addEventListener('keydown', e => handleKey(e,true));
+    addEventListener('keyup', e => handleKey(e,false));
+    container.addEventListener('click', onCanvasClick);
+    clock = new THREE.Clock();
+    animateLoop();
+  }
+  function onCanvasClick(e) {
+    const mouse = new THREE.Vector2((e.clientX/innerWidth)*2-1, -(e.clientY/innerHeight)*2+1);
+    const rc = new THREE.Raycaster(); rc.setFromCamera(mouse, camera);
+    const mobMeshes = Object.values(mobs).filter(m => m.hp > 0).map(m => m.mesh);
+    const hit = rc.intersectObjects(mobMeshes, true);
+    if (hit.length) {
+      let obj = hit[0].object; while (obj.parent && !obj.userData.mobId) obj = obj.parent;
+      const m = mobs[obj.userData.mobId]; if (m) { gameState.selectedTarget = m.id; updateTargetHUD(m); playBeep(520,"16n"); return; }
+    }
+    const t = rc.intersectObject(terrainMesh);
+    if (t.length) targetDest = { x:t[0].point.x, z:t[0].point.z };
+  }
+  function onWindowResize() { if (!camera||!renderer) return; camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); }
+
+  // ---------- Sector / World sync ----------
+  function worldRef(path) { return db.ref(`world/${realm}/${gameState.currentSector}/${path}`); }
+  function seededRand(seed) { let s = seed>>>0; return () => { s = (s*1664525 + 1013904223)>>>0; return s/4294967296; }; }
+
+  function clearSectorObjects() {
+    Object.values(mobs).forEach(m => scene.remove(m.mesh)); mobs = {};
+    Object.values(towers).forEach(t => scene.remove(t.group)); towers = {};
+    Object.values(remotePlayers).forEach(p => { scene.remove(p.group); p.tag.remove(); }); remotePlayers = {};
+    if (terrainMesh) scene.remove(terrainMesh); if (gridHelper) scene.remove(gridHelper);
+    sectorRefs.forEach(r => r.ref.off(r.evt, r.cb)); sectorRefs = [];
+    if (presenceRef) { presenceRef.remove(); presenceRef = null; }
+    gameState.selectedTarget = null; document.getElementById('target-panel').classList.add('hidden');
+  }
+  function listen(ref, evt, cb) { ref.on(evt, cb); sectorRefs.push({ref, evt, cb}); }
+
+  async function enterSector(key) {
+    clearSectorObjects();
+    gameState.currentSector = key;
+    const S = SECTORS[key];
+    document.getElementById('biome-indicator').innerText = S.title;
+
+    terrainMesh = new THREE.Mesh(new THREE.PlaneGeometry(400,400,40,40), new THREE.MeshStandardMaterial({ color:S.ground, roughness:.9, metalness:.1 }));
+    terrainMesh.rotation.x = -Math.PI/2; terrainMesh.receiveShadow = true; scene.add(terrainMesh);
+    gridHelper = new THREE.GridHelper(400, 80, S.grid, 0x0A101D); gridHelper.position.y = .05; scene.add(gridHelper);
+
+    player.x = 0; player.z = 0; targetDest = null;
+
+    // Seed world once per realm/sector (transaction so only one client wins)
+    await worldRef('meta').transaction(cur => {
+      if (cur && cur.seeded) return;
+      return { seeded:true, seed: Math.floor(Math.random()*1e9), ts: firebase.database.ServerValue.TIMESTAMP };
+    });
+    const meta = (await worldRef('meta').get()).val() || { seed: 42 };
+    const rnd = seededRand(meta.seed);
+    const towersSnap = await worldRef('towers').get();
+    if (!towersSnap.exists()) {
+      const t = {}; for (let i=0;i<S.towers;i++) t['t'+i] = { x:Math.round((rnd()-.5)*220), z:Math.round((rnd()-.5)*220), claimedBy:'', until:0 };
+      await worldRef('towers').set(t);
+    }
+    const mobsSnap = await worldRef('mobs').get();
+    if (!mobsSnap.exists() && S.mobs > 0) {
+      const m = {}; for (let i=0;i<S.mobs;i++) m['m'+i] = { x:Math.round((rnd()-.5)*260), z:Math.round((rnd()-.5)*260), hp:S.mobHp, maxHp:S.mobHp, lvl:S.mobLvl, name:S.mobName, deadUntil:0 };
+      await worldRef('mobs').set(m);
+    }
+
+    // Towers listener
+    listen(worldRef('towers'), 'value', snap => {
+      const data = snap.val() || {};
+      Object.entries(data).forEach(([id, t]) => {
+        if (!towers[id]) {
+          const g = new THREE.Group();
+          const base = new THREE.Mesh(new THREE.CylinderGeometry(1.6,2.4,4.5,8), new THREE.MeshStandardMaterial({ color:0x0D121C, metalness:.85, roughness:.3 })); base.position.y = 2.25; base.castShadow = true; g.add(base);
+          const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1.3), new THREE.MeshStandardMaterial({ color:S.grid, emissive:S.grid, emissiveIntensity:.95 })); crystal.position.y = 5.2; g.add(crystal);
+          g.position.set(t.x,0,t.z); scene.add(g);
+          towers[id] = { id, group:g, crystal, x:t.x, z:t.z };
+        }
+        towers[id].claimedBy = t.claimedBy; towers[id].until = t.until || 0;
+      });
+    });
+
+    // Mobs listener
+    listen(worldRef('mobs'), 'value', snap => {
+      const data = snap.val() || {};
+      Object.entries(data).forEach(([id, m]) => {
+        if (!mobs[id]) {
+          const col = S.grid, g = new THREE.Group();
+          const size = key==='trench' ? 4 : (key==='karoo' ? 3 : 2.5);
+          const mesh = new THREE.Mesh(new THREE.BoxGeometry(size,size,size), new THREE.MeshStandardMaterial({ color:col, roughness:.25, metalness:.85, emissive:col, emissiveIntensity:.35 }));
+          mesh.position.y = size/2; mesh.castShadow = true; g.add(mesh); g.userData.mobId = id; mesh.userData.mobId = id;
+          scene.add(g);
+          mobs[id] = { id, mesh:g, x:m.x, z:m.z, tx:m.x, tz:m.z, hp:m.hp, maxHp:m.maxHp, lvl:m.lvl, name:m.name, speed: key==='trench'?4:5.2, aggroRange:50 };
+        }
+        const mo = mobs[id];
+        mo.tx = m.x; mo.tz = m.z; mo.hp = m.hp; mo.maxHp = m.maxHp; mo.deadUntil = m.deadUntil || 0;
+        mo.mesh.visible = mo.hp > 0;
+        if (gameState.selectedTarget === id) updateTargetHUD(mo);
+      });
+    });
+
+    // Presence (other players in this sector of this realm)
+    presenceRef = db.ref(`presence/${realm}/${key}/${currentUser.uid}`);
+    presenceRef.onDisconnect().remove();
+    pushPresence(true);
+    listen(db.ref(`presence/${realm}/${key}`), 'value', snap => {
+      const data = snap.val() || {};
+      const uids = Object.keys(data).sort();
+      isHost = uids.length ? uids[0] === currentUser.uid : true;
+      document.getElementById('online-count').innerText = `ONLINE: ${uids.length} · ${isHost?'HOST':'CLIENT'}`;
+      Object.entries(data).forEach(([uid, p]) => {
+        if (uid === currentUser.uid) return;
+        if (!remotePlayers[uid]) {
+          const g = makePawn(CLASS_COLORS[p.cls] || 0x00F0FF, .95); scene.add(g);
+          const tag = document.createElement('div'); tag.className = 'name-tag'; nameTagsContainer.appendChild(tag);
+          remotePlayers[uid] = { group:g, tag, x:p.x, z:p.z };
+        }
+        const rp = remotePlayers[uid]; rp.tx = p.x; rp.tz = p.z; rp.name = p.name; rp.lvl = p.lvl; rp.hp = p.hp; rp.maxHp = p.maxHp;
+        rp.tag.innerHTML = `<span style="color:#00F0FF">${escapeHtml(p.name)}</span> <span style="color:#94A3B8">L${p.lvl}</span><div class="bar"><i style="width:${Math.max(0,100*p.hp/p.maxHp)}%"></i></div>`;
+      });
+      Object.keys(remotePlayers).forEach(uid => { if (!data[uid]) { scene.remove(remotePlayers[uid].group); remotePlayers[uid].tag.remove(); delete remotePlayers[uid]; } });
+    });
+    updateHUD();
+  }
+  function warpToSector(key) {
+    if (key === gameState.currentSector || isDead) return;
+    playBeep(900,"4n"); enterSector(key);
+    showFloatingText(`WARPED TO ${key.toUpperCase()}`, 0, 0, '#00F0FF');
+  }
+  function pushPresence(force) {
+    if (!presenceRef) return;
+    const now = performance.now();
+    if (!force && now - lastPresencePush < 100) return;
+    lastPresencePush = now;
+    presenceRef.set({ name:gameState.name, cls:gameState.className, lvl:gameState.level, x:Math.round(player.x*10)/10, z:Math.round(player.z*10)/10, hp:gameState.hp, maxHp:gameState.maxHp, ts:firebase.database.ServerValue.TIMESTAMP });
+  }
+
+  // ---------- Global refs: chat, leaderboard, ping ----------
+  function bindGlobalRefs() {
+    if (chatRef) chatRef.off();
+    chatRef = db.ref(`chat/${realm}`).limitToLast(40);
+    const log = document.getElementById('chat-log'); log.innerHTML = '';
+    chatRef.on('child_added', s => {
+      const m = s.val(); const el = document.createElement('div');
+      el.className = 'chat-line' + (m.sys ? ' sys' : '');
+      el.innerHTML = `<span class="who">${escapeHtml(m.name)}:</span> <span class="text-slate-200">${escapeHtml(m.text)}</span>`;
+      log.appendChild(el); log.scrollTop = log.scrollHeight;
+      while (log.children.length > 60) log.removeChild(log.firstChild);
+    });
+    if (!leaderRef) {
+      leaderRef = db.ref('leaderboard').orderByChild('score').limitToLast(15);
+      leaderRef.on('value', s => {
+        const arr = []; s.forEach(c => arr.push(c.val())); arr.reverse();
+        document.getElementById('leaderboard-list').innerHTML = arr.map((p,i) => `
+          <div class="flex items-center justify-between p-2 rounded-lg ${p.uid===currentUser.uid?'bg-pawnGold/15 border border-pawnGold/40':'bg-void/70 border border-white/5'}">
+            <div class="flex items-center gap-3"><span class="w-6 text-right ${i<3?'text-pawnGold':'text-slate-500'}">#${i+1}</span><span class="text-white font-bold">${escapeHtml(p.name)}</span><span class="text-slate-500 text-[10px]">${escapeHtml(p.cls||'')}</span></div>
+            <div class="flex items-center gap-3"><span class="text-pawnCyan">L${p.level}</span><span class="text-matrixGreen">${p.kills||0} kills</span><span class="text-pawnGold">${p.score} pts</span></div>
+          </div>`).join('') || '<div class="text-slate-500">No heroes yet.</div>';
+      });
+    }
+    setInterval(() => { const t = performance.now(); db.ref('.info/serverTimeOffset').get().then(() => { document.getElementById('ping-readout').innerText = `PING: ${Math.round(performance.now()-t)}ms`; }); }, 5000);
+  }
+  function sendChat(e) {
+    e.preventDefault();
+    const inp = document.getElementById('chat-input'); const text = inp.value.trim(); if (!text || !currentUser) return;
+    db.ref(`chat/${realm}`).push({ uid:currentUser.uid, name:gameState.name, text:text.slice(0,240), ts:firebase.database.ServerValue.TIMESTAMP });
+    inp.value = ''; inp.blur();
+  }
+  function systemChat(text) { if (currentUser) db.ref(`chat/${realm}`).push({ uid:currentUser.uid, name:'SYS', sys:true, text, ts:firebase.database.ServerValue.TIMESTAMP }); }
+  function escapeHtml(s) { return String(s??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ---------- Save ----------
+  function saveProgress(force) {
+    if (!currentUser) return;
+    const now = performance.now();
+    if (!force && now - lastSave < 4000) { dirtySave = true; return; }
+    lastSave = now; dirtySave = false;
+    const d = {}; disciplines.forEach(x => d[x.id] = { level:x.level, cost:x.cost });
+    db.ref('players/' + currentUser.uid).set({
+      name:gameState.name, className:gameState.className, level:gameState.level, xp:gameState.xp, xpNext:gameState.xpNext,
+      maxHp:gameState.maxHp, maxMp:gameState.maxMp, zar:gameState.zar, powerTFLOPS:gameState.powerTFLOPS, kills:gameState.kills,
+      totalXp:gameState.totalXp, disciplines:d, realm, sector:gameState.currentSector, updated:firebase.database.ServerValue.TIMESTAMP
+    });
+    db.ref('leaderboard/' + currentUser.uid).set({ uid:currentUser.uid, name:gameState.name, cls:gameState.className, level:gameState.level, kills:gameState.kills, score: gameState.totalXp + gameState.kills*50, realm });
+  }
+
+  // ---------- Input ----------
+  function handleKey(e, isDown) {
+    const chatFocused = document.activeElement === document.getElementById('chat-input') || document.activeElement === document.getElementById('player-name-input');
+    if (chatFocused) { if (e.key === 'Escape') document.activeElement.blur(); return; }
+    const k = e.key.toLowerCase();
+    if (k==='w'||k==='arrowup') keys.w = isDown; if (k==='a'||k==='arrowleft') keys.a = isDown;
+    if (k==='s'||k==='arrowdown') keys.s = isDown; if (k==='d'||k==='arrowright') keys.d = isDown;
+    if (!isDown || !gameStarted) return;
+    if (k==='e') triggerInteract(); if (k==='k') toggleModal('forge-modal'); if (k==='l') toggleModal('leaderboard-modal');
+    if (k==='enter') { e.preventDefault(); document.getElementById('chat-input').focus(); }
+    if (k==='tab') { e.preventDefault(); cycleTarget(); }
+    if (['1','2','3','4','5'].includes(k)) useSkill(parseInt(k)-1);
+  }
+  function cycleTarget() {
+    const alive = Object.values(mobs).filter(m => m.hp > 0).sort((a,b) => dist(a)-dist(b));
+    if (!alive.length) return;
+    const i = alive.findIndex(m => m.id === gameState.selectedTarget);
+    const n = alive[(i+1) % alive.length]; gameState.selectedTarget = n.id; updateTargetHUD(n);
+  }
+  function dist(o) { return Math.hypot(player.x - o.x, player.z - o.z); }
+
+  // ---------- Main loop ----------
+  function animateLoop() {
+    requestAnimationFrame(animateLoop);
+    const delta = Math.min(clock ? clock.getDelta() : .016, .05);
+    const clockEl = document.getElementById('sast-game-clock'); if (clockEl) clockEl.innerText = `SAST ${new Date().toTimeString().split(' ')[0]}`;
+
+    // movement
+    if (!isDead) {
+      let mx=0, mz=0; if (keys.w) mz-=1; if (keys.s) mz+=1; if (keys.a) mx-=1; if (keys.d) mx+=1;
+      if (mx||mz) { targetDest = null; const a = Math.atan2(mx,mz); player.x += Math.sin(a)*player.speed*delta; player.z += Math.cos(a)*player.speed*delta; player.group.rotation.y = a; }
+      else if (targetDest) {
+        const dx = targetDest.x-player.x, dz = targetDest.z-player.z, d = Math.hypot(dx,dz);
+        if (d > 1.5) { const a = Math.atan2(dx,dz); player.x += Math.sin(a)*player.speed*delta; player.z += Math.cos(a)*player.speed*delta; player.group.rotation.y = a; } else targetDest = null;
+      }
+      player.x = Math.max(-195, Math.min(195, player.x)); player.z = Math.max(-195, Math.min(195, player.z));
+    }
+    player.group.position.set(player.x, 0, player.z);
+    camera.position.set(player.x, 22, player.z + 18); camera.lookAt(player.x, 0, player.z - 2);
+
+    // cooldowns & regen
+    skills.forEach((s,i) => { if (s.timer > 0) { s.timer -= delta; const o = document.getElementById(`cd-overlay-${i}`); if (s.timer > 0) { o.classList.remove('hidden'); o.innerText = s.timer.toFixed(1)+'s'; } else o.classList.add('hidden'); } });
+    const safe = gameState.currentSector === 'centurion';
+    if (gameState.mp < gameState.maxMp) gameState.mp = Math.min(gameState.maxMp, gameState.mp + (safe?60:12)*delta);
+    if (safe && gameState.hp < gameState.maxHp && !isDead) gameState.hp = Math.min(gameState.maxHp, gameState.hp + 120*delta);
+    const shieldOn = performance.now() < gameState.shieldUntil;
+    player.group.children.forEach(c => c.material.emissiveIntensity = shieldOn ? .9 : .18);
+
+    // mobs: interpolate; host simulates movement toward nearest player
+    const now = Date.now();
+    Object.values(mobs).forEach(m => {
+      if (m.hp <= 0) { if (isHost && m.deadUntil && now > m.deadUntil) worldRef(`mobs/${m.id}`).update({ hp:m.maxHp, deadUntil:0 }); return; }
+      m.x += (m.tx - m.x) * Math.min(1, delta*6); m.z += (m.tz - m.z) * Math.min(1, delta*6);
+      m.mesh.position.set(m.x,0,m.z); m.mesh.rotation.y += delta*.8;
+      const d = dist(m);
+      if (d < 3.6 && !isDead && Math.random() < .035) {
+        let dmg = Math.floor((20 + m.lvl*14) * (.8 + Math.random()*.4)); if (shieldOn) dmg = Math.floor(dmg*.3);
+        gameState.hp = Math.max(0, gameState.hp - dmg); showFloatingText(`-${dmg} HP`, player.x, player.z, '#EF4444'); playBeep(180,"16n"); updateHUD();
+        if (gameState.hp <= 0) onDeath();
+      }
+    });
+    if (isHost && now - lastHostTick > 200) {
+      lastHostTick = now;
+      const allPlayers = [{x:player.x, z:player.z}, ...Object.values(remotePlayers).map(p => ({x:p.x, z:p.z}))];
+      const upd = {};
+      Object.values(mobs).forEach(m => {
+        if (m.hp <= 0) return;
+        let best = null, bd = 1e9; allPlayers.forEach(p => { const dd = Math.hypot(p.x-m.tx, p.z-m.tz); if (dd < bd) { bd = dd; best = p; } });
+        if (best && bd < m.aggroRange && bd > 2.5) { const a = Math.atan2(best.x-m.tx, best.z-m.tz); upd[`${m.id}/x`] = Math.round((m.tx + Math.sin(a)*m.speed*.2)*10)/10; upd[`${m.id}/z`] = Math.round((m.tz + Math.cos(a)*m.speed*.2)*10)/10; }
+      });
+      if (Object.keys(upd).length) worldRef('mobs').update(upd);
+    }
+
+    // remote players interpolate + tags
+    Object.values(remotePlayers).forEach(p => {
+      p.x += (p.tx - p.x)*Math.min(1, delta*8); p.z += (p.tz - p.z)*Math.min(1, delta*8); p.group.position.set(p.x,0,p.z);
+      const v = new THREE.Vector3(p.x, 4, p.z).project(camera);
+      p.tag.style.left = `${(v.x*.5+.5)*innerWidth}px`; p.tag.style.top = `${(v.y*-.5+.5)*innerHeight}px`; p.tag.style.display = v.z < 1 ? 'block' : 'none';
+    });
+
+    // towers
+    let near = null;
+    Object.values(towers).forEach(t => {
+      const claimed = t.claimedBy && now < t.until; t.crystal.visible = !claimed; t.crystal.rotation.y += delta;
+      if (!claimed && dist(t) < 6) near = t;
+    });
+    document.getElementById('interact-banner').classList.toggle('hidden', !near);
+
+    if (presenceRef) pushPresence(false);
+    if (dirtySave && performance.now() - lastSave > 4000) saveProgress(true);
+    drawRadar(); renderer.render(scene, camera);
+  }
+
+  // ---------- Combat ----------
+  function useSkill(idx) {
+    if (isDead || !gameStarted) return;
+    const s = skills[idx]; if (s.timer > 0) return;
+    if (gameState.mp < s.cost) { showFloatingText("LOW BESS ENERGY", player.x, player.z, '#00F0FF'); return; }
+    gameState.mp -= s.cost; s.timer = s.cd; updateHUD(); playBeep(650+idx*120,"8n");
+    if (s.shield) { gameState.shieldUntil = performance.now() + 5000; showFloatingText("BESS-SHIELD UP", player.x, player.z, '#10B981'); return; }
+    if (s.heal) { const h = Math.floor(gameState.maxHp*s.heal); gameState.hp = Math.min(gameState.maxHp, gameState.hp+h); showFloatingText(`+${h} HP`, player.x, player.z, '#A78BFA'); updateHUD(); return; }
+    const alive = Object.values(mobs).filter(m => m.hp > 0);
+    let targets = [];
+    if (s.aoe) targets = alive.filter(m => dist(m) <= s.range);
+    else {
+      let t = mobs[gameState.selectedTarget];
+      if (!t || t.hp <= 0 || dist(t) > s.range) { t = alive.filter(m => dist(m) <= s.range).sort((a,b) => dist(a)-dist(b))[0]; if (t) { gameState.selectedTarget = t.id; updateTargetHUD(t); } }
+      if (t) targets = [t];
+    }
+    if (!targets.length) { showFloatingText(`${s.name}: NO TARGET IN RANGE`, player.x, player.z, '#F59E0B'); return; }
+    const dmgMult = 1 + (disc('firmware').level-1)*.08, critChance = .1 + (disc('twin').level-1)*.05;
+    targets.forEach(t => {
+      let dmg = Math.floor((170 + gameState.level*45) * s.mult * dmgMult * (.9 + Math.random()*.3));
+      const crit = Math.random() < critChance; if (crit) dmg *= 2;
+      showFloatingText(`-${dmg}${crit?' CRIT':''}`, t.x, t.z, crit ? '#F59E0B' : '#00F0FF');
+      worldRef(`mobs/${t.id}`).transaction(cur => {
+        if (!cur || cur.hp <= 0) return cur;
+        cur.hp = Math.max(0, cur.hp - dmg);
+        if (cur.hp === 0) { cur.deadUntil = Date.now() + 25000; cur.killer = currentUser.uid; }
+        return cur;
+      }, (err, committed, snap) => {
+        if (committed && snap && snap.val() && snap.val().hp === 0 && snap.val().killer === currentUser.uid) onKill(t);
+      });
+    });
+  }
+  function disc(id) { return disciplines.find(d => d.id === id); }
+  function onKill(t) {
+    const zarMult = 1 + (disc('audit').level-1)*.10;
+    const xpGain = 240*t.lvl, zarGain = Math.floor(85*t.lvl*zarMult);
+    gameState.xp += xpGain; gameState.totalXp += xpGain; gameState.zar += zarGain; gameState.kills++;
+    showFloatingText(`+${xpGain} XP · +${zarGain} ZAR`, t.x, t.z, '#10B981'); playBeep(1100,"8n");
+    if (gameState.selectedTarget === t.id) { gameState.selectedTarget = null; document.getElementById('target-panel').classList.add('hidden'); }
+    checkLevelUp(); updateHUD(); saveProgress(false);
+    if (t.lvl >= 10) systemChat(`${gameState.name} slew a ${t.name}!`);
+  }
+  function triggerInteract() {
+    if (isDead) return;
+    const now = Date.now();
+    Object.values(towers).forEach(t => {
+      if (t.claimedBy && now < t.until) return;
+      if (dist(t) < 6) {
+        worldRef(`towers/${t.id}`).transaction(cur => { if (!cur || (cur.claimedBy && now < cur.until)) return cur; cur.claimedBy = currentUser.uid; cur.claimedName = gameState.name; cur.until = now + 90000; return cur; },
+          (err, committed, snap) => {
+            if (committed && snap && snap.val().claimedBy === currentUser.uid) {
+              gameState.xp += 350; gameState.totalXp += 350; gameState.zar += 160; playBeep(980,"4n");
+              showFloatingText("TOWER SYNCED! +350 XP · +160 ZAR", t.x, t.z, '#10B981'); checkLevelUp(); updateHUD(); saveProgress(false);
+            } else showFloatingText("TOWER ALREADY CLAIMED", t.x, t.z, '#EF4444');
+          });
+      }
+    });
+  }
+  function onDeath() {
+    isDead = true; gameState.selectedTarget = null;
+    const penalty = Math.floor(gameState.zar*.1); gameState.zar -= penalty;
+    const ov = document.getElementById('death-overlay'); ov.classList.remove('hidden');
+    let n = 5; const sub = document.getElementById('death-sub');
+    const tick = setInterval(() => { n--; sub.innerText = `Rebooting at Centurion Citadel in ${n}s… (-${penalty} ZAR-T)`; if (n <= 0) { clearInterval(tick); ov.classList.add('hidden'); isDead = false; gameState.hp = gameState.maxHp; gameState.mp = gameState.maxMp; enterSector('centurion'); updateHUD(); saveProgress(true); } }, 1000);
+    playBeep(120,"2n"); systemChat(`${gameState.name} was destroyed in ${SECTORS[gameState.currentSector].title.split(':')[1].trim()}.`);
+  }
+  function checkLevelUp() {
+    while (gameState.xp >= gameState.xpNext) {
+      gameState.level++; gameState.xp -= gameState.xpNext; gameState.xpNext = Math.floor(gameState.xpNext*1.4);
+      gameState.maxHp += 300; gameState.hp = gameState.maxHp; gameState.maxMp += 150; gameState.mp = gameState.maxMp;
+      playBeep(1400,"2n"); showFloatingText(`LEVEL UP! LV ${gameState.level}`, player.x, player.z, '#F59E0B');
+      if (gameState.level % 5 === 0) systemChat(`${gameState.name} reached Level ${gameState.level}!`);
+    }
+    updateHUD();
+  }
+
+  // ---------- HUD ----------
+  function updateHUD() {
+    const g = gameState, $ = id => document.getElementById(id);
+    $('hud-level').innerText = `L${g.level}`; $('hud-zar').innerText = `${g.zar} ZAR-T`; $('hud-power').innerText = `${g.powerTFLOPS} TFLOPS`;
+    $('hud-hp-text').innerText = `${Math.floor(g.hp)} / ${g.maxHp}`; $('hud-hp-bar').style.width = `${(g.hp/g.maxHp)*100}%`;
+    $('hud-mp-text').innerText = `${Math.floor(g.mp)} / ${g.maxMp} kWh`; $('hud-mp-bar').style.width = `${(g.mp/g.maxMp)*100}%`;
+    $('hud-xp-text').innerText = `${g.xp} / ${g.xpNext} XP`; $('hud-xp-bar').style.width = `${Math.min(100,(g.xp/g.xpNext)*100)}%`;
+  }
+  function updateTargetHUD(t) {
+    const p = document.getElementById('target-panel'); p.classList.remove('hidden');
+    document.getElementById('target-name').innerText = t.name; document.getElementById('target-lvl').innerText = `LV ${t.lvl}`;
+    document.getElementById('target-hp-bar').style.width = `${Math.max(0,(t.hp/t.maxHp)*100)}%`; document.getElementById('target-hp-text').innerText = `${t.hp} / ${t.maxHp}`;
+    if (t.hp <= 0) p.classList.add('hidden');
+  }
+  function showFloatingText(text, wx, wz, color) {
+    const el = document.createElement('div'); el.className = 'combat-text font-mono font-extrabold text-sm sm:text-base'; el.style.color = color; el.innerText = text; floatingLabelsContainer.appendChild(el);
+    const v = new THREE.Vector3(wx,3,wz).project(camera);
+    el.style.left = `${(v.x*.5+.5)*innerWidth}px`; el.style.top = `${(v.y*-.5+.5)*innerHeight}px`;
+    setTimeout(() => el.remove(), 1050);
+  }
+  function drawRadar() {
+    const c = document.getElementById('radar-canvas'); if (!c) return;
+    const ctx = c.getContext('2d'); c.width = c.offsetWidth; c.height = c.offsetHeight; ctx.clearRect(0,0,c.width,c.height);
+    const cx = c.width/2, cy = c.height/2, sc = .3;
+    document.getElementById('coords-readout').innerText = `X: ${Math.floor(player.x)} · Z: ${Math.floor(player.z)}`;
+    ctx.fillStyle = '#00F0FF'; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+    Object.values(towers).forEach(t => { ctx.fillStyle = (t.claimedBy && Date.now()<t.until) ? '#475569' : '#10B981'; ctx.fillRect(cx+(t.x-player.x)*sc-3, cy+(t.z-player.z)*sc-3, 6, 6); });
+    Object.values(mobs).forEach(m => { if (m.hp<=0) return; ctx.fillStyle = '#EF4444'; ctx.fillRect(cx+(m.x-player.x)*sc-2.5, cy+(m.z-player.z)*sc-2.5, 5, 5); });
+    Object.values(remotePlayers).forEach(p => { ctx.fillStyle = '#F59E0B'; ctx.beginPath(); ctx.arc(cx+(p.x-player.x)*sc, cy+(p.z-player.z)*sc, 3, 0, Math.PI*2); ctx.fill(); });
+  }
+
+  // ---------- Forge ----------
+  function initForgeUI() {
+    const grid = document.getElementById('disciplines-grid'); grid.innerHTML = '';
+    disciplines.forEach((d,i) => {
+      const card = document.createElement('div'); card.className = 'p-3.5 rounded-2xl bg-void border border-pawnCyan/25 flex items-center justify-between shadow-inner';
+      card.innerHTML = `<div><div class="font-display font-bold text-xs text-white">${d.name}</div><div class="font-mono text-[10px] text-pawnCyan mt-0.5">Lv. ${d.level} · ${d.bonus}</div></div>
+        <button onclick="upgradeDiscipline(${i})" class="px-3.5 py-2 rounded-xl bg-pawnCyan/15 hover:bg-pawnCyan text-pawnCyan hover:text-void font-mono text-xs font-bold transition-all border border-pawnCyan/40 cursor-pointer">${d.cost} ZAR-T</button>`;
+      grid.appendChild(card);
+    });
+  }
+  function upgradeDiscipline(i) {
+    const d = disciplines[i];
+    if (gameState.zar < d.cost) { showFloatingText("INSUFFICIENT ZAR-T", player.x, player.z, '#EF4444'); return; }
+    gameState.zar -= d.cost; d.level++; d.cost = Math.floor(d.cost*1.45);
+    if (d.id==='mech') { gameState.maxHp += 150; gameState.hp += 150; }
+    if (d.id==='electro') { gameState.maxMp += 75; gameState.mp += 75; }
+    if (d.id==='ai') gameState.powerTFLOPS += 30;
+    playBeep(1100,"8n"); showFloatingText(`UPGRADED ${d.name}`, player.x, player.z, '#00F0FF'); updateHUD(); initForgeUI(); saveProgress(true);
+  }
+  function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+  addEventListener('beforeunload', () => { if (gameStarted) saveProgress(true); });
+  </script>
+</body>
+</html>
