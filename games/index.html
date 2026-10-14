@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<!--
+=====================================================================================
+ IONITY.FUN - GAME SELECTION HUB  |  Document ID: GME-2026-10-011  |  Version: 1.0.0
+ Launcher for the Ionity Global arcade: IO-MAN, IO-COMBAT, PAWN* SOVEREIGN REALM MMO
+-------------------------------------------------------------------------------------
+ Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI (Antwerp Ecosystems Designs Ionity)
+ ORCID: 0009-0005-7181-0347 | Established 2018 | Centurion, Gauteng, South Africa
+ Governance: Policy 986 AED | License: AED 900 | CC BY-NC-SA 4.0 where stated
+ (c) 2018-2026 Antwerp Designs | Ionity (Pty) Ltd - All Rights Reserved - TM2
+ Web: https://www.ionity.today | https://www.ionity.world | Ref: https://www.ionity.co.za | Play: https://ionity.fun
+ Contact: ai@ionity.today | Classification: PUBLIC | Generated: 2026-10-14 SAST | Generator: AEDI GME pipeline (Claude Cowork)
+ Building Tomorrow, Today.  |  Anything is Possible with God.
+=====================================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IONITY.FUN — Game Selection</title>
+<meta name="description" content="ionity.fun — the Ionity Global arcade. Pick your game: IO-MAN (ASCII beat-em-up), IO-COMBAT (2D fighter) or PAWN* Sovereign Realm (isometric .IO MMO ARPG with cloud sync).">
+<meta name="author" content="Johan Wilhelm van Antwerp">
+<meta name="theme-color" content="#0d1b2a">
+<meta name="copyright" content="© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd. All rights reserved.">
+<meta name="dc.identifier" content="GME-2026-10-011">
+<link rel="canonical" href="https://www.ionity.fun/games/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="IONITY.FUN — Game Selection">
+<meta property="og:description" content="Three free browser games by Ionity Global: IO-MAN, IO-COMBAT and the PAWN* Sovereign Realm MMO.">
+<meta property="og:url" content="https://www.ionity.fun/games/">
+<meta property="og:image" content="https://www.ionity.fun/banners/ioman_og_1200x630.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2710%27 fill=%27%230d1b2a%27/%3E%3Ctext x=%2732%27 y=%2743%27 font-family=%27monospace%27 font-size=%2730%27 font-weight=%27700%27 fill=%27%2300c6ff%27 text-anchor=%27middle%27%3EIO%3C/text%3E%3Crect x=%2710%27 y=%2750%27 width=%2744%27 height=%274%27 fill=%27%2300c6ff%27/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0d1b2a; --cy:#00c6ff; --cy2:#00F0FF; --gold:#F59E0B; --green:#10B981; --red:#EF4444; --txt:#E2E8F0; --dim:#7a90a8; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; min-height:100%; background:var(--bg); color:var(--txt); font-family:'Space Grotesk','Segoe UI',sans-serif; }
+  body { background-image: linear-gradient(to right, rgba(0,198,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,198,255,.05) 1px, transparent 1px); background-size:44px 44px; }
+  .scan { position:fixed; inset:0; pointer-events:none; background:linear-gradient(to bottom, transparent 50%, rgba(0,198,255,.025) 51%); background-size:100% 4px; z-index:0; }
+  main { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:40px 16px 60px; }
+  header { text-align:center; margin-bottom:36px; }
+  .wordmark { font-family:'JetBrains Mono',monospace; font-size:clamp(28px,7vw,64px); font-weight:700; letter-spacing:.08em; color:var(--cy); text-shadow:0 0 24px rgba(0,198,255,.55); margin:0; }
+  .wordmark span { color:#fff; }
+  .tag { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); letter-spacing:.2em; text-transform:uppercase; margin-top:8px; }
+  .status { display:inline-flex; align-items:center; gap:8px; margin-top:14px; padding:6px 14px; border:1px solid rgba(16,185,129,.4); border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--green); background:rgba(16,185,129,.08); }
+  .status i { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity:.35; } }
+  h2.sel { font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.3em; color:var(--dim); text-align:center; margin:0 0 18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; }
+  .card { position:relative; display:flex; flex-direction:column; min-height:360px; padding:22px; border-radius:18px; border:1px solid rgba(255,255,255,.1); background:rgba(5,9,18,.85); text-decoration:none; color:inherit; overflow:hidden; transition:transform .25s cubic-bezier(.16,1,.3,1), border-color .25s, box-shadow .25s; outline:none; }
+  .card:hover, .card:focus-visible { transform:translateY(-6px); }
+  .card.ioman { --c:var(--cy); } .card.combat { --c:var(--red); } .card.pawn { --c:var(--cy2); }
+  .card:hover, .card:focus-visible { border-color:var(--c); box-shadow:0 0 40px -8px var(--c), 0 24px 50px rgba(0,0,0,.6); }
+  .card .glow { position:absolute; width:260px; height:260px; border-radius:50%; filter:blur(70px); opacity:.22; background:var(--c); top:-120px; right:-100px; pointer-events:none; }
+  .num { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--c); letter-spacing:.2em; }
+  .art { font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.15; color:var(--c); white-space:pre; margin:14px 0 10px; text-shadow:0 0 12px var(--c); }
+  .art.big { font-size:40px; line-height:1; }
+  .card h3 { margin:0 0 6px; font-size:22px; color:#fff; letter-spacing:.02em; }
+  .card p { margin:0; font-size:14px; line-height:1.5; color:#b6c4d4; flex:1; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0; }
+  .meta span { font-family:'JetBrains Mono',monospace; font-size:10px; padding:3px 8px; border-radius:6px; border:1px solid rgba(255,255,255,.12); color:var(--dim); }
+  .meta span.hot { color:var(--c); border-color:var(--c); }
+  .play { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-radius:12px; background:var(--c); color:#06080D; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; letter-spacing:.08em; }
+  .card:hover .play { background:#fff; }
+  .new { position:absolute; top:16px; right:16px; font-family:'JetBrains Mono',monospace; font-size:10px; padding:3px 8px; border-radius:999px; background:var(--gold); color:#06080D; font-weight:700; letter-spacing:.1em; }
+  footer { margin-top:44px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--dim); line-height:1.8; }
+  footer a { color:var(--cy); text-decoration:none; } footer a:hover { text-decoration:underline; }
+  kbd { font-family:'JetBrains Mono',monospace; font-size:10px; padding:1px 5px; border:1px solid rgba(255,255,255,.2); border-radius:4px; color:#fff; }
+</style>
+</head>
+<body>
+<div class="scan"></div>
+<main>
+  <header>
+    <h1 class="wordmark">IONITY<span>.FUN</span></h1>
+    <div class="tag">Ionity Global Arcade · AEDI · South Africa</div>
+    <div class="status"><i></i> <span id="st">SELECT A GAME · PRESS 1 / 2 / 3</span></div>
+  </header>
+
+  <h2 class="sel">— GAME SELECTION —</h2>
+  <div class="grid">
+    <a class="card ioman" href="/" data-key="1">
+      <div class="glow"></div>
+      <div class="num">01 · ARCADE · BEAT-EM-UP</div>
+      <div class="art">██╗ ██████╗       ███╗   ███╗ █████╗ ███╗   ██╗
+██║██╔═══██╗      ████╗ ████║██╔══██╗████╗  ██║
+██║██║   ██║█████╗██╔████╔██║███████║██╔██╗ ██║
+██║██║   ██║╚════╝██║╚██╔╝██║██╔══██║██║╚██╗██║
+██║╚██████╔╝      ██║ ╚═╝ ██║██║  ██║██║ ╚████║
+╚═╝ ╚═════╝       ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝</div>
+      <h3>IO-MAN — GET OVER IT DOOR</h3>
+      <p>ASCII / ANSI side-scrolling beat-em-up. Nine scrolling stages, warp pipes into the 2D underworld, six companion pals, dino riding, weapons, mini-bosses and the Great Fungus. Single file, no install.</p>
+      <div class="meta"><span class="hot">v5.0</span><span>1 PLAYER</span><span>GAMEPAD</span><span>MOBILE</span><span>CLOUD HALL OF FAME</span></div>
+      <div class="play"><span>PLAY IO-MAN</span><span>→</span></div>
+    </a>
+
+    <a class="card combat" href="/combat/" data-key="2">
+      <div class="glow"></div>
+      <div class="num">02 · ARCADE · FIGHTER</div>
+      <div class="art big">⚔ VS ⚔</div>
+      <h3>IO-COMBAT — Grid Tournament</h3>
+      <p>2D arcade fighting game. Six original fighters, an Arcade ladder with a boss, versus AI, two-player local on one keyboard, and a training mode.</p>
+      <div class="meta"><span class="hot">v1.0</span><span>1–2 PLAYERS</span><span>LOCAL VS</span><span>TRAINING</span></div>
+      <div class="play"><span>PLAY IO-COMBAT</span><span>→</span></div>
+    </a>
+
+    <a class="card pawn" href="/pawn/" data-key="3">
+      <div class="glow"></div>
+      <div class="new">NEW · MMO</div>
+      <div class="num">03 · MMO · ISOMETRIC ARPG</div>
+      <div class="art big">♜ PAWN*</div>
+      <h3>PAWN* — Sovereign Realm</h3>
+      <p>Shared-world isometric .IO ARPG. Sign in with Google, pick a hero class, and fight alongside real players across Centurion, the Witwatersrand Mines, the Karoo BESS grid and the Cape Subsea Trench. Live chat, world leaderboard, cloud save.</p>
+      <div class="meta"><span class="hot">MMO · LIVE</span><span>GOOGLE SIGN-IN</span><span>CLOUD SAVE</span><span>REALM CHAT</span><span>LEADERBOARD</span></div>
+      <div class="play"><span>ENTER THE REALM</span><span>→</span></div>
+    </a>
+  </div>
+
+  <footer>
+    <div><kbd>1</kbd> IO-MAN · <kbd>2</kbd> IO-COMBAT · <kbd>3</kbd> PAWN* MMO</div>
+    <div>© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd · All rights reserved · TM2 · Policy 986 AED · License AED 900</div>
+    <div><a href="https://www.ionity.today">www.ionity.today</a> · <a href="https://www.ionity.world">www.ionity.world</a> · <a href="https://www.ionity.co.za">www.ionity.co.za</a> · <a href="mailto:ai@ionity.today">ai@ionity.today</a></div>
+    <div>Ionity refers exclusively to ionity.today / ionity.world / ionity.fun and is not affiliated with ionity.com. · Building Tomorrow, Today.</div>
+  </footer>
+</main>
+<script>
+  const cards = [...document.querySelectorAll('.card')];
+  addEventListener('keydown', e => { const c = cards.find(x => x.dataset.key === e.key); if (c) location.href = c.getAttribute('href'); });
+  const st = document.getElementById('st');
+  cards.forEach(c => { c.addEventListener('mouseenter', () => st.textContent = 'LOADING TARGET: ' + c.querySelector('h3').textContent.toUpperCase()); c.addEventListener('mouseleave', () => st.textContent = 'SELECT A GAME · PRESS 1 / 2 / 3'); });
+</script>
+</body>
+</html>
