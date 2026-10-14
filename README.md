@@ -9,20 +9,33 @@
 
 ---
 
-## More games on ionity.fun
+## ionity.fun — game selection hub
 
-| Game | Play | Source |
-|---|---|---|
-| **IO-MAN — Get Over It Door** (this repo) | https://www.ionity.fun | here |
-| **IO-COMBAT — Grid Tournament** · original 2D arcade fighter, IO-MAN is on the roster | https://www.ionity.fun/combat/ | [Ionity-Global-Pty-Ltd/IO-Combat](https://github.com/Ionity-Global-Pty-Ltd/IO-Combat) |
+https://www.ionity.fun/ now opens the **game-selection launcher** (`index.html`, GME-2026-10-011). Press `1` / `2` / `3` or click a card.
+
+| # | Game | Play | Source |
+|---|---|---|---|
+| 1 | **IO-MAN — Get Over It Door** (this repo) | https://www.ionity.fun/ioman/ | `ioman/index.html` |
+| 2 | **IO-COMBAT — Grid Tournament** · original 2D arcade fighter, IO-MAN is on the roster | https://www.ionity.fun/combat/ | [Ionity-Global-Pty-Ltd/IO-Combat](https://github.com/Ionity-Global-Pty-Ltd/IO-Combat) |
+| 3 | **PAWN\* — Sovereign Realm MMO** · isometric .IO ARPG, shared world, Google sign-in, cloud save | https://www.ionity.fun/pawn/ | `pawn/index.html` |
 
 `combat/` is a deployed copy of IO-Combat `index.html` v1.0.0 (sha256 `e1d94291…2788`). Update it from the IO-Combat repo.
+
+### PAWN\* Sovereign Realm MMO (`pawn/`)
+
+Three.js isometric ARPG (GME-2026-10-012, v7.0) on **Firebase project `io-man`** (Spark / free plan):
+- **Auth:** Google sign-in (Firebase Auth). The hero, level, XP, ZAR-T, forge upgrades and realm are saved to `players/{uid}` in the **Realtime Database** (`europe-west1`) and restored on any device.
+- **Shared world:** per realm (`pawn-centurion`, `ionity-fun`, `ionity-today`) and per sector (Centurion, Witwatersrand Mines, Karoo BESS, Cape Subsea Trench). Mob HP, positions, respawns and tower claims live under `world/{realm}/{sector}`; damage uses transactions so kills are attributed fairly. The lowest-uid player present in a sector acts as **host** and ticks mob movement; everyone else interpolates.
+- **Presence:** `presence/{realm}/{sector}/{uid}` with `onDisconnect` cleanup — other players render as pawns with name tags and HP bars, and show on the radar.
+- **Realm chat** (`chat/{realm}`, 240 chars, Enter to type) and a **global leaderboard** (`leaderboard/{uid}`, score = total XP + 50 × kills, `L` to open).
+- **Rules:** `firebase/database.rules.json` — public read, writes only by the signed-in owner of a record, world writes by any signed-in player. Deploy with `firebase deploy --only database,auth --project io-man` from `firebase/`.
+- Realm defaults from the hostname: `www.ionity.fun` → `ionity-fun`; `io-man.web.app` → `pawn-centurion`.
 
 ---
 
 ## Play
 
-Open `index.html` (identical to `IONITY_IO-MAN_GET_OVER_IT_DOOR.html`) in any modern browser, or play at https://ionity.fun. No install, no assets, no network.
+Open `ioman/index.html` (identical to `IONITY_IO-MAN_GET_OVER_IT_DOOR.html`) in any modern browser, or play at https://www.ionity.fun/ioman/. No install, no assets, no network.
 Phones and tablets: play in **landscape** (portrait shows a rotate screen and pauses). Tap `[ ]` for fullscreen with landscape lock where the browser allows it.
 
 | Action | Keyboard | Touch |
