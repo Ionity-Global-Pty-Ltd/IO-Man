@@ -3,6 +3,7 @@ rules_version = '2';
 // Author: Johan Wilhelm van Antwerp · Ionity (Pty) Ltd · Policy 986 AED
 // Every phone / browser signs in anonymously; it can only read and write its own device save and logs.
 // Scores are public to read (global leaderboard) and append-only, with shape + range checks.
+// IO-COMBAT online PvP: matchmaking queue + WebRTC signalling rooms (pvp_queue, pvp_rooms).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
@@ -40,6 +41,57 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid && request.resource.data.v is string;
       allow read: if signedIn() && resource.data.uid == request.auth.uid;
       allow update, delete: if false;
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // IO-COMBAT · ONLINE PvP (GME-2026-10-011 v1.2) · matchmaking queue + WebRTC signalling only.
+    // No gameplay traffic touches Firestore: matched browsers play peer-to-peer over WebRTC.
+    function cleanTag(n) {
+      return n is string && n.matches('^[A-Z0-9-]{1,9}$')
+        && !n.lower().matches('.*(fuck|fuk|shit|cunt|bitch|dick|cock|puss|nigg|fag|rape|whore|slut|twat|wank|porn|nazi|hitler|kaffir|kafir|poes|naai|fokk).*');
+    }
+    function fighterOk(v) { return v is int && v >= 0 && v <= 6; }
+
+    // one queue entry per player (doc id = anonymous uid)
+    match /pvp_queue/{uid} {
+      allow read: if signedIn();
+      // owner creates / refreshes a waiting entry (heartbeat keeps ts fresh)
+      allow create, update: if own(uid)
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'fighter', 'alt', 'v', 'ts', 'status'])
+        && request.resource.data.uid == uid && cleanTag(request.resource.data.name)
+        && fighterOk(request.resource.data.fighter) && request.resource.data.alt is bool
+        && smallStr(request.resource.data.v, 16) && request.resource.data.status == 'waiting'
+        && request.resource.data.ts == request.time;
+      // another player claims a waiting entry: may only flip status and attach itself + room id
+      allow update: if signedIn() && !own(uid) && resource.data.status == 'waiting'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'guest', 'room'])
+        && request.resource.data.status == 'matched' && request.resource.data.guest == request.auth.uid
+        && smallStr(request.resource.data.room, 64);
+      allow delete: if own(uid);
+    }
+
+    // a matched pair's signalling room (offer / answer / ICE candidates)
+    match /pvp_rooms/{room} {
+      function member() { return signedIn() && (request.auth.uid == resource.data.host || request.auth.uid == resource.data.guest); }
+      allow read, delete: if member();
+      allow create: if signedIn() && request.resource.data.guest == request.auth.uid
+        && request.resource.data.keys().hasOnly(['host', 'guest', 'hostName', 'guestName', 'hostFighter', 'guestFighter', 'hostAlt', 'guestAlt', 'created', 'v'])
+        && smallStr(request.resource.data.host, 128) && cleanTag(request.resource.data.guestName) && smallStr(request.resource.data.hostName, 9)
+        && fighterOk(request.resource.data.hostFighter) && fighterOk(request.resource.data.guestFighter)
+        && request.resource.data.created == request.time;
+      allow update: if member() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['offer', 'answer'])
+        && (!('offer' in request.resource.data) || request.resource.data.offer.sdp.size() < 20000)
+        && (!('answer' in request.resource.data) || request.resource.data.answer.sdp.size() < 20000);
+
+      match /cand/{c} {
+        function inRoom() {
+          let r = get(/databases/$(database)/documents/pvp_rooms/$(room)).data;
+          return signedIn() && (request.auth.uid == r.host || request.auth.uid == r.guest);
+        }
+        allow read: if inRoom();
+        allow create: if inRoom() && request.resource.data.from == request.auth.uid && request.resource.data.keys().hasOnly(['from', 'c', 'at']);
+        allow delete: if signedIn() && resource.data.from == request.auth.uid;
+      }
     }
 
     match /{document=**} { allow read, write: if false; }
