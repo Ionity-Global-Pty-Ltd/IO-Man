@@ -514,7 +514,7 @@
     async function seedWorldIfEmpty() {
         await worldRef('meta').transaction(cur => { if (cur && cur.seeded) return; return { seeded: true, ts: Date.now() }; });
         if (!(await worldRef('mobs').get()).exists()) { const m = {}; const kinds = ['strider', 'kodo', 'cougar']; for (let i = 0; i < 18; i++) { const a = (i / 18) * Math.PI * 2, d = 46 + (i % 3) * 18, k = kinds[i % 3]; m['b' + i] = { kind: k, x: Math.round(Math.cos(a) * d), z: Math.round(Math.sin(a) * d), hp: MOB_TEMPLATES[k].hp, maxHp: MOB_TEMPLATES[k].hp, state: 'WANDER', creep: false, wander: Math.random() * 6.28 }; } await worldRef('mobs').set(m); }
-        if (!(await worldRef('core').get()).exists()) await worldRef('core').set({ hp: 500, maxHp: 500, downUntil: 0 });
+        if (!(await worldRef('core').get()).exists()) await worldRef('core').set({ hp: 1500, maxHp: 1500, downUntil: 0 });
         if (!(await worldRef('waveMeta').get()).exists()) await worldRef('waveMeta').set({ wave: 0, nextAt: Date.now() + 40000 });
     }
     function bindWorld() {
@@ -673,7 +673,7 @@
                 if (!target) target = { x: corePos.x, z: corePos.z, core: true, reach: 3 };
                 const d = Math.hypot(target.x - m.tx, target.z - m.tz);
                 if (d > (target.reach || reach)) { nx += (target.x - m.tx) / d * 5.2 * 0.25; nz += (target.z - m.tz) / d * 5.2 * 0.25; }
-                else if (target.core) coreDmg += m.dmg * 0.16; else if (target.s) structDmg[target.s.id] = (structDmg[target.s.id] || 0) + m.dmg * 0.16;
+                else if (target.core) coreDmg += m.dmg * 0.05; else if (target.s) structDmg[target.s.id] = (structDmg[target.s.id] || 0) + m.dmg * 0.08;
             } else if (state === 'CHASE') { if (nd > 32) state = 'WANDER'; else if (nd > 2.4) { nx += (nearest.x - m.tx) / nd * 6.5 * 0.25; nz += (nearest.z - m.tz) / nd * 6.5 * 0.25; } }
             else { m.wander = (m.wander || 0) + (Math.random() - 0.5) * 0.25; nx += Math.sin(m.wander) * 1.6 * 0.25; nz += Math.cos(m.wander) * 1.6 * 0.25; if (nearest && nd < 6 && !m.isCreep && m.tpl.name !== 'Prairie Plainstrider') state = 'CHASE'; }
             if (Math.abs(nx - m.tx) > 0.01 || Math.abs(nz - m.tz) > 0.01 || state !== m.state) { upd[`${m.id}/x`] = Math.round(nx * 10) / 10; upd[`${m.id}/z`] = Math.round(nz * 10) / 10; upd[`${m.id}/state`] = state; }
@@ -681,7 +681,8 @@
         if (Object.keys(upd).length) worldRef('mobs').update(upd);
         if (coreDmg > 0) worldRef('core').transaction(cur => { if (!cur || (cur.downUntil && now < cur.downUntil)) return cur; cur.hp = Math.max(0, cur.hp - coreDmg); if (cur.hp === 0) cur.downUntil = now + 60000; return cur; }, (e, c, s) => { if (c && s && s.val() && s.val().hp === 0) systemChat('💎 THE SOVEREIGN CORE HAS FALLEN — rebooting in 60s.'); });
         Object.entries(structDmg).forEach(([id, dmg]) => worldRef(`structures/${id}`).transaction(cur => { if (!cur) return cur; cur.hp = Math.max(0, cur.hp - dmg); return cur.hp === 0 ? null : cur; }));
-        if (coreState && coreState.downUntil && now > coreState.downUntil) worldRef('core').update({ hp: coreState.maxHp, downUntil: 0 });
+        if (coreState && coreState.downUntil && now > coreState.downUntil) worldRef('core').update({ hp: 1500, maxHp: 1500, downUntil: 0 });
+        if (coreState && coreState.maxHp < 1500) worldRef('core').update({ maxHp: 1500, hp: Math.max(coreState.hp, 1500) });
         if (waveMeta && now > waveMeta.nextAt && coreState && !(coreState.downUntil && now < coreState.downUntil)) spawnCreepWave(false);
     }
 
@@ -708,7 +709,7 @@
         $('hud-hero-name').textContent = hero.name; $('hud-level').textContent = `LV ${hero.level}`;
         $('hud-hp-bar').style.width = `${(hero.hp / hero.maxHp) * 100}%`; $('hud-hp-text').textContent = `${Math.round(hero.hp)} / ${hero.maxHp} HP`; $('hud-xp-bar').style.width = `${Math.min(100, hero.xp / hero.xpNext * 100)}%`;
         $('hud-zart').textContent = `${hero.zart} ZAR-T`; $('hud-hides').textContent = `${hero.hides} HIDES`;
-        const cs = coreState || { hp: 500, maxHp: 500 }; $('hud-core-hp').textContent = cs.downUntil && Date.now() < cs.downUntil ? 'CORE DOWN' : `CORE ${Math.round((cs.hp / cs.maxHp) * 100)}%`;
+        const cs = coreState || { hp: 1500, maxHp: 1500 }; $('hud-core-hp').textContent = cs.downUntil && Date.now() < cs.downUntil ? 'CORE DOWN' : `CORE ${Math.round((cs.hp / cs.maxHp) * 100)}%`;
         ['helm', 'chest', 'legs'].forEach(s => { $('slot-' + s).textContent = ARMOR_TIERS[hero.armor[s]].name; }); $('hud-armor-dr').textContent = `${getHeroDamageReduction()}% DR`;
         const dt = Math.hypot(hero.pos.x, hero.pos.z); $('hud-zone-name').textContent = dt < 30 ? 'RED CLOUD MESA (THUNDERHOOF TOWN)' : (hero.pos.y > 7.5 ? 'STONETALON HIGH MOUNTAIN CRAGS' : 'ENDLESS MULGORE HUNTING PLAINS');
         document.querySelectorAll('.btn-buy-plot').forEach(b => { if (hero.plots[b.dataset.plot]) { b.textContent = 'OWNED ✓'; b.disabled = true; b.classList.add('opacity-50'); } });
