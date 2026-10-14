@@ -9,6 +9,17 @@
 
 ---
 
+## More games on ionity.fun
+
+| Game | Play | Source |
+|---|---|---|
+| **IO-MAN — Get Over It Door** (this repo) | https://www.ionity.fun | here |
+| **IO-COMBAT — Grid Tournament** · original 2D arcade fighter, IO-MAN is on the roster | https://www.ionity.fun/combat/ | [Ionity-Global-Pty-Ltd/IO-Combat](https://github.com/Ionity-Global-Pty-Ltd/IO-Combat) |
+
+`combat/` is a deployed copy of IO-Combat `index.html` v1.0.0 (sha256 `e1d94291…2788`). Update it from the IO-Combat repo.
+
+---
+
 ## Play
 
 Open `index.html` (identical to `IONITY_IO-MAN_GET_OVER_IT_DOOR.html`) in any modern browser, or play at https://ionity.fun. No install, no assets, no network.
