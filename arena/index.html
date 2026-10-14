@@ -23,7 +23,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet" />
 
     <!--
-      IONITY GLOBAL // VBLOCKS Wizard's Arena v1.2.0 — console edition
+      IONITY GLOBAL // VBLOCKS Wizard's Arena v1.3.0 — console edition + ONLINE PvP (Firestore queue, Elo, leaderboard)
       Games: Wizard's Chess + Wizard's Checkers (English draughts)
       Console HUD, title menu, gamepad + keyboard cursor control, light shafts, selection beam
       Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI
@@ -186,7 +186,65 @@
         .go-btn.primary { background: linear-gradient(135deg, var(--gold), var(--gold2)); color: #1a1206; border-color: transparent; box-shadow: 0 0 20px rgba(251,191,36,.45); }
         .go-btn:hover { filter: brightness(1.12); }
 
+        /* ---------- Online lobby ---------- */
+        #online-screen { position: fixed; inset: 0; z-index: 32; display: flex; align-items: center; justify-content: center; padding: 16px;
+            background: radial-gradient(ellipse at center, rgba(7,9,15,.45), rgba(7,9,15,.92) 75%); transition: opacity .35s; }
+        #online-screen.off { opacity: 0; pointer-events: none; }
+        .ol-card { width: min(720px, 100%); max-height: 100%; overflow: auto; border-radius: 28px; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+        .ol-head { display: flex; align-items: center; gap: 12px; }
+        .ol-head h2 { margin: 0; font-family: 'Orbitron'; font-weight: 900; font-size: 22px; letter-spacing: .24em; color: #fff; display: flex; align-items: center; gap: 10px; }
+        .ol-head h2 .ms { color: var(--cyan); font-size: 26px; }
+        .ol-game { display: flex; gap: 4px; padding: 4px; border-radius: 14px; margin-left: auto; }
+        .ol-game button { all: unset; cursor: pointer; padding: 6px 12px; border-radius: 10px; font-size: 20px; color: var(--dim); }
+        .ol-game button.active { color: #fff7dd; background: linear-gradient(135deg, rgba(251,191,36,.35), rgba(0,240,255,.18)); box-shadow: inset 0 0 0 1px rgba(251,191,36,.6); }
+        .ol-profile { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 18px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+        .ol-avatar { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; font-size: 28px; background: linear-gradient(145deg, rgba(251,191,36,.25), rgba(0,240,255,.15)); box-shadow: inset 0 0 0 1px rgba(251,191,36,.5); }
+        #ol-name { all: unset; font-family: 'Orbitron'; font-weight: 900; font-size: 18px; letter-spacing: .12em; color: #fff; border-bottom: 1px dashed rgba(255,255,255,.25); width: 150px; padding: 2px 0; }
+        #ol-name:focus { border-bottom-color: var(--gold); }
+        .ol-stats { font-family: 'Orbitron'; font-size: 11px; letter-spacing: .14em; color: var(--dim); margin-top: 4px; }
+        .ol-stats b { color: var(--gold); font-size: 14px; }
+        .ol-findrow { display: flex; align-items: center; gap: 16px; }
+        .radar { width: 64px; height: 64px; border-radius: 50%; flex: none; position: relative; border: 1px solid rgba(0,240,255,.35);
+            background: radial-gradient(circle, rgba(0,240,255,.12) 0 30%, transparent 31% 60%, rgba(0,240,255,.08) 61% 62%, transparent 63%); overflow: hidden; }
+        .radar::after { content: ''; position: absolute; inset: 0; background: conic-gradient(from 0deg, rgba(0,240,255,.55), transparent 30%); border-radius: 50%; opacity: 0; }
+        #online-screen.searching .radar::after { opacity: 1; animation: sweep 1.4s linear infinite; }
+        @keyframes sweep { to { transform: rotate(360deg); } }
+        .ol-q { flex: 1; font-family: 'Orbitron'; }
+        .ol-q .a { font-size: 13px; font-weight: 800; letter-spacing: .2em; color: #fff; }
+        .ol-q .b { font-size: 11px; letter-spacing: .2em; color: var(--dim); margin-top: 4px; }
+        #online-screen:not(.searching) .ol-q .when-search { display: none; }
+        #online-screen.searching .ol-q .when-idle { display: none; }
+        .go-btn.big { padding: 14px 22px; font-size: 13px; }
+        #online-screen.searching #ol-find { background: rgba(244,63,94,.2); color: #fecdd3; box-shadow: 0 0 0 1px rgba(244,63,94,.6); }
+        .ol-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .ol-sub { font-family: 'Orbitron'; font-size: 10px; font-weight: 800; letter-spacing: .3em; color: var(--dim); margin-bottom: 8px; }
+        .ol-cols ol, .ol-cols ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+        .ol-cols li { display: flex; align-items: center; gap: 10px; padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.03); font-family: 'Orbitron'; font-size: 11px; letter-spacing: .1em; }
+        .ol-cols li .rk { width: 18px; color: var(--dim); } .ol-cols li .nm { flex: 1; color: #e2e8f0; } .ol-cols li .rt { color: var(--gold); font-weight: 800; }
+        .ol-cols li.me { box-shadow: inset 0 0 0 1px rgba(251,191,36,.6); }
+        .ol-cols li .gl { font-size: 15px; } .ol-cols li .res { font-weight: 900; font-size: 10px; }
+        .ol-cols li.win .res { color: #4ade80; } .ol-cols li.loss .res { color: #fb7185; } .ol-cols li.draw .res { color: #cbd5e1; } .ol-cols li.live .res { color: var(--cyan); }
+        .ol-cols li.empty { color: var(--dim); justify-content: center; }
+        .ol-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        #ol-status { font-family: 'Orbitron'; font-size: 10px; letter-spacing: .25em; color: #4ade80; display: flex; align-items: center; gap: 6px; }
+        #ol-status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+        #ol-status.bad { color: #fb7185; }
+        .hidden { display: none !important; }
+
+        /* in-game online bar */
+        .bottom-col { align-self: center; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .obar { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; border-radius: 999px; pointer-events: auto; font-family: 'Orbitron'; font-size: 11px; font-weight: 800; letter-spacing: .18em; }
+        .obar .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 10px #4ade80; }
+        .obar.turn { box-shadow: 0 0 0 1px rgba(251,191,36,.7), 0 0 22px rgba(251,191,36,.35); }
+        .obar.turn #ob-text { color: #fde68a; }
+        .mini { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; font-family: 'Orbitron'; font-size: 9px; font-weight: 800; letter-spacing: .14em; background: rgba(255,255,255,.07); color: #e2e8f0; }
+        .mini:hover { background: rgba(255,255,255,.14); }
+        .mini.warn { background: rgba(244,63,94,.22); color: #fecdd3; }
+        .mini .ms { font-size: 15px; }
+
         @media (max-width: 760px) {
+            .ol-cols { grid-template-columns: 1fr; }
+            .ol-findrow { flex-wrap: wrap; }
             #hud { padding: 10px; }
             .versus { order: 3; width: 100%; justify-content: center; }
             .plate { min-width: 0; height: 48px; padding: 0 10px; }
@@ -206,7 +264,7 @@
     <div id="hud" class="off">
         <div class="hud-top">
             <div class="hud-left">
-                <a class="logo-chip" href="/games/" title="ionity.fun">
+                <a class="logo-chip" href="/" title="ionity.fun">
                     <svg viewBox="0 0 64 64" fill="none"><polygon points="32,4 58,18 58,46 32,60 6,46 6,18" stroke="#fbbf24" stroke-width="3" fill="rgba(15,23,42,0.85)"/><path d="M18 22L32 48L46 22" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M24 22L32 37L40 22" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="32" cy="13" r="3" fill="#fbbf24"/></svg>
                 </a>
                 <div class="seg glass" id="game-switch">
@@ -218,7 +276,7 @@
             <div class="versus">
                 <div class="plate w glass active" id="plate-w">
                     <div class="orb"></div>
-                    <div class="pinfo"><span class="pname">P1</span><div class="spoils" id="captured-by-white"></div></div>
+                    <div class="pinfo"><span class="pname" id="p1-label">P1</span><div class="spoils" id="captured-by-white"></div></div>
                 </div>
                 <div class="vs-col"><span class="vs-txt">VS</span><span id="status-chip" class="chip hidden">CHECK</span></div>
                 <div class="plate b glass" id="plate-b">
@@ -241,7 +299,14 @@
             </div>
         </div>
 
-        <div class="legend glass" id="legend"></div>
+        <div class="bottom-col">
+            <div class="obar glass hidden" id="online-bar">
+                <span class="dot"></span><span id="ob-text">ONLINE</span>
+                <button class="mini warn hidden" id="btn-claim"><span class="ms">emoji_events</span>CLAIM WIN</button>
+                <button class="mini" id="btn-resign" title="Resign"><span class="ms">flag</span>RESIGN</button>
+            </div>
+            <div class="legend glass" id="legend"></div>
+        </div>
     </div>
 
     <!-- Big callouts -->
@@ -259,11 +324,44 @@
             <button class="tile" data-game="checkers"><span class="cur">● ACTIVE</span><span class="g">⛂</span><span class="n">CHECKERS</span></button>
         </div>
         <div class="t-mode glass" id="t-mode">
-            <button data-ai="1" class="active"><span class="ms" style="font-size:16px">smart_toy</span>1P · CPU</button>
-            <button data-ai="0"><span class="ms" style="font-size:16px">group</span>2P</button>
+            <button data-mode="cpu" class="active"><span class="ms" style="font-size:16px">smart_toy</span>1P · CPU</button>
+            <button data-mode="2p"><span class="ms" style="font-size:16px">group</span>2P</button>
+            <button data-mode="online"><span class="ms" style="font-size:16px">public</span>ONLINE</button>
         </div>
         <div class="press" id="press-hint"><span class="pb a">A</span> / <span class="kc">ENTER</span> START</div>
-        <div class="t-foot">© 2018–2026 Ionity (Pty) Ltd · <a href="/games/">IONITY.FUN</a> · <a href="https://www.ionity.today" target="_blank" rel="noopener">IONITY.TODAY</a></div>
+        <div class="t-foot">© 2018–2026 Ionity (Pty) Ltd · <a href="/">IONITY.FUN</a> · <a href="https://www.ionity.today" target="_blank" rel="noopener">IONITY.TODAY</a></div>
+    </div>
+
+    <!-- ===================== ONLINE LOBBY ===================== -->
+    <div id="online-screen" class="off">
+        <div class="ol-card glass">
+            <div class="ol-head">
+                <h2><span class="ms">public</span>ONLINE</h2>
+                <div class="ol-game glass"><button data-game="chess" class="active" title="Chess">♚</button><button data-game="checkers" title="Checkers">⛂</button></div>
+                <button class="rbtn" id="ol-close" title="Back"><span class="ms">close</span></button>
+            </div>
+            <div class="ol-profile">
+                <div class="ol-avatar">♚</div>
+                <div>
+                    <input id="ol-name" maxlength="9" spellcheck="false" autocomplete="off" aria-label="Callsign" value="">
+                    <div class="ol-stats"><b id="ol-rating">----</b> ELO · <span id="ol-wld"></span></div>
+                </div>
+            </div>
+            <div class="ol-findrow">
+                <div class="radar"></div>
+                <div class="ol-q">
+                    <div class="a when-idle">RANKED · 1V1</div><div class="b when-idle">MATCHED BY ELO</div>
+                    <div class="a when-search" id="ol-qtext">SEARCHING</div><div class="b when-search" id="ol-timer">0:00</div>
+                </div>
+                <button class="go-btn hidden" id="ol-resume"><span class="ms" style="font-size:16px">replay</span>RESUME</button>
+                <button class="go-btn primary big" id="ol-find"><span class="pb a">A</span><span id="ol-find-label">FIND MATCH</span></button>
+            </div>
+            <div class="ol-cols">
+                <div><div class="ol-sub">TOP WIZARDS</div><ol id="ol-board"><li class="empty">…</li></ol></div>
+                <div><div class="ol-sub">RECENT</div><ul id="ol-recent"><li class="empty">…</li></ul></div>
+            </div>
+            <div class="ol-foot"><span id="ol-status">OFFLINE</span><span class="t-foot" style="position:static">IONITY CLOUD</span></div>
+        </div>
     </div>
 
     <!-- ===================== MODALS ===================== -->
@@ -283,6 +381,7 @@
             <div class="go-row">
                 <button id="btn-modal-new" class="go-btn primary"><span class="pb a">A</span>REMATCH</button>
                 <button id="btn-modal-close" class="go-btn"><span class="pb b">B</span>VIEW</button>
+                <button id="btn-modal-find" class="go-btn" style="display:none"><span class="ms" style="font-size:16px">public</span>NEW MATCH</button>
                 <button id="btn-modal-menu" class="go-btn"><span class="ms" style="font-size:16px">menu</span>MENU</button>
             </div>
         </div>
@@ -1545,7 +1644,7 @@
 
         // One-click showcase duel on the centre VBLOCKS medallion (does not affect the game)
         function triggerDemoKnockDown() {
-            if (isAnimating || titleOpen || modalState) return;
+            if (isAnimating || titleOpen || modalState || Online.inMatch()) return;
             isAnimating = true;
             clearTimeout(aiTimer);
             selectedSquare = null; legalMovesForSelected = [];
@@ -1743,6 +1842,7 @@
         function handleSquare(clickedSquare) {
             if (titleOpen || modalState || isAnimating || isGameOver()) return;
             if (playVsAI && currentTurn() === 'b') return;
+            if (Online.active && (Online.over || !Online.canMove())) return;
             if (!clickedSquare) { selectedSquare = null; legalMovesForSelected = []; clearHighlights(); return; }
 
             const matchingMove = legalMovesForSelected.find(m => m.to === clickedSquare);
@@ -1755,10 +1855,11 @@
                     }
                     const res = chess.move({ from: selectedSquare, to: clickedSquare });
                     selectedSquare = null; legalMovesForSelected = [];
-                    if (res) executeAnimatedMove(res);
+                    if (res) { Online.localMove(res); executeAnimatedMove(res); }
                 } else {
                     const res = checkers.move(matchingMove);
                     selectedSquare = null; legalMovesForSelected = [];
+                    Online.localMove(res);
                     executeCheckersMove(res);
                 }
                 return;
@@ -1789,6 +1890,7 @@
 
         // ---- Unified action dispatcher (keyboard + gamepad) ----
         function handleAction(a) {
+            if (Online.open) return onlineAction(a);
             if (titleOpen) return titleAction(a);
             if (modalState === 'promo') return promoAction(a);
             if (modalState === 'over') return overAction(a);
@@ -1820,6 +1922,7 @@
             z: 'undo', Z: 'undo', Tab: 'swap', n: 'restart', N: 'restart', m: 'menu', M: 'menu'
         };
         window.addEventListener('keydown', (e) => {
+            if (e.target && e.target.tagName === 'INPUT') { if (e.key === 'Enter' || e.key === 'Escape') e.target.blur(); return; }
             if (modalState === 'promo' && '1234'.includes(e.key) && e.key.length === 1) { choosePromotion(['q', 'r', 'b', 'n'][+e.key - 1]); return; }
             const a = KEYMAP[e.key];
             if (!a) return;
@@ -1878,7 +1981,10 @@
 
         const chessGlyph = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' };
         const checkerGlyph = { w: { c: '⛀', k: '⛁' }, b: { c: '⛂', k: '⛃' } };
-        const sideLabel = (c) => (c === 'w' ? 'P1' : (playVsAI ? 'CPU' : 'P2'));
+        const sideLabel = (c) => {
+            if (Online.active) return c === Online.color ? (Online.profile ? Online.profile.name : 'YOU') : Online.oppName;
+            return c === 'w' ? 'P1' : (playVsAI ? 'CPU' : 'P2');
+        };
 
         function setChip(text, cls) {
             if (!text) { statusChip.className = 'chip hidden'; return; }
@@ -1895,8 +2001,8 @@
             };
             legendEl.innerHTML = L[inputMode] || L.mouse;
             document.getElementById('press-hint').innerHTML = inputMode === 'pad'
-                ? '<span class="pb a">A</span> START &nbsp; <span class="pb y">Y</span> 1P/2P'
-                : '<span class="kc">ENTER</span> START &nbsp; <span class="kc">M</span> 1P/2P';
+                ? '<span class="pb a">A</span> <span class="start-word">' + (playMode === 'online' ? 'LOBBY' : 'START') + '</span> &nbsp; <span class="pb y">Y</span> MODE'
+                : '<span class="kc">ENTER</span> <span class="start-word">' + (playMode === 'online' ? 'LOBBY' : 'START') + '</span> &nbsp; <span class="kc">M</span> MODE';
         }
 
         function updateUI() {
@@ -1907,7 +2013,8 @@
             plateW.classList.toggle('active', turn === 'w' && !over);
             plateB.classList.toggle('active', turn === 'b' && !over);
             plateB.classList.toggle('thinking', playVsAI && turn === 'b' && !over);
-            document.getElementById('p2-label').textContent = playVsAI ? 'CPU' : 'P2';
+            document.getElementById('p1-label').textContent = sideLabel('w') + (Online.active && Online.color === 'w' ? ' ★' : '');
+            document.getElementById('p2-label').textContent = sideLabel('b') + (Online.active && Online.color === 'b' ? ' ★' : '');
 
             if (isChess()) {
                 if (chess.in_checkmate()) { setChip('MATE', 'red'); showGameOverModal('CHECKMATE', turn === 'w' ? 'b' : 'w'); }
@@ -1949,6 +2056,7 @@
             promotionCard.style.display = ''; gameoverCard.style.display = 'none';
         }
         function showGameOverModal(title, winner) {
+            if (Online.active) return; // online results come from the cloud record (Online.finish)
             if (gameOverShown) return;
             gameOverShown = true;
             setTimeout(() => {
@@ -1961,14 +2069,19 @@
                 promotionCard.style.display = 'none'; gameoverCard.style.display = '';
             }, 900);
         }
-        function closeModal() { modalState = null; modalOverlay.classList.remove('open'); }
+        function closeModal() {
+            modalState = null; modalOverlay.classList.remove('open');
+            document.getElementById('btn-modal-new').innerHTML = '<span class="pb a">A</span>REMATCH';
+            document.getElementById('btn-modal-find').style.display = 'none';
+        }
+        function rematchOrNew() { if (Online.active && Online.over) Online.rematch(); else newGame(); }
 
         function choosePromotion(type) {
             closeModal();
             if (!pendingPromotionMove) return;
             const res = chess.move({ from: pendingPromotionMove.from, to: pendingPromotionMove.to, promotion: type });
             pendingPromotionMove = null; selectedSquare = null; legalMovesForSelected = [];
-            if (res) executeAnimatedMove(res);
+            if (res) { Online.localMove(res); executeAnimatedMove(res); }
         }
         promoBtns.forEach(btn => btn.addEventListener('click', () => choosePromotion(btn.dataset.promo)));
         function promoAction(a) {
@@ -1980,7 +2093,7 @@
             else if (a === 'back') { pendingPromotionMove = null; closeModal(); }
         }
         function overAction(a) {
-            if (a === 'confirm' || a === 'restart') newGame();
+            if (a === 'confirm' || a === 'restart') rematchOrNew();
             else if (a === 'back') closeModal();
             else if (a === 'menu') { closeModal(); openTitle(); }
         }
@@ -1998,6 +2111,10 @@
         }
 
         function newGame() {
+            if (!Online.internal) {
+                if (Online.inMatch()) { showCombatTelemetry('ONLINE MATCH', 'RESIGN FIRST', 1200, true); return; }
+                if (Online.active) { Online.leaveGame(); setPlayMode('cpu'); }
+            }
             clearTimeout(aiTimer);
             abortAnimations();
             closeModal();
@@ -2014,6 +2131,7 @@
 
         function setGameMode(mode) {
             if (mode === gameMode) return;
+            if (!Online.internal && Online.inMatch()) { showCombatTelemetry('ONLINE MATCH', 'RESIGN FIRST', 1200, true); return; }
             gameMode = mode;
             document.querySelectorAll('.game-tab').forEach(t => t.classList.toggle('active', t.dataset.game === mode));
             document.title = mode === 'chess' ? "Wizard's Chess · IONITY.FUN" : "Wizard's Checkers · IONITY.FUN";
@@ -2022,7 +2140,7 @@
         }
 
         function doUndo() {
-            if (isAnimating) return;
+            if (isAnimating || Online.inMatch()) return;
             clearTimeout(aiTimer);
             const engine = isChess() ? chess : checkers;
             if (playVsAI && engine.turn() === 'w' && moveHistory().length >= 2) { engine.undo(); engine.undo(); }
@@ -2035,18 +2153,26 @@
             maybeTriggerAI();
         }
 
-        function setAI(v) {
-            playVsAI = v;
-            document.getElementById('mode-icon').textContent = playVsAI ? 'smart_toy' : 'group';
-            document.querySelectorAll('#t-mode button').forEach(b => b.classList.toggle('active', (b.dataset.ai === '1') === playVsAI));
+        let playMode = 'cpu'; // 'cpu' | '2p' | 'online'
+        function setPlayMode(m) {
+            if (!Online.internal && Online.inMatch() && m !== 'online') { showCombatTelemetry('ONLINE MATCH', 'RESIGN FIRST', 1200, true); return; }
+            playMode = m;
+            playVsAI = m === 'cpu';
+            document.getElementById('mode-icon').textContent = m === 'cpu' ? 'smart_toy' : m === '2p' ? 'group' : 'public';
+            document.querySelectorAll('#t-mode button').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+            document.getElementById('press-hint').querySelectorAll('.start-word').forEach(el => { el.textContent = m === 'online' ? 'LOBBY' : 'START'; });
             clearHighlights();
             updateUI();
             if (!isAnimating && !titleOpen) maybeTriggerAI();
         }
-        function toggleAIFromMenu() { setAI(!playVsAI); soundFX.playSelect(); }
+        function setAI(v) { setPlayMode(v ? 'cpu' : '2p'); }
+        function toggleAIFromMenu() {
+            const order = titleOpen ? ['cpu', '2p', 'online'] : ['cpu', '2p'];
+            setPlayMode(order[(order.indexOf(playMode) + 1) % order.length]); soundFX.playSelect();
+        }
 
         // ---- Title / pause menu ----
-        let titleOpen = true, titleFocus = 'chess', gameStarted = false;
+        let titleOpen = true, titleFocus = 'chess', gameStarted = false, viewBase = 0;
         function renderTitle() {
             document.querySelectorAll('.tile').forEach(t => {
                 t.classList.toggle('focus', t.dataset.game === titleFocus);
@@ -2065,11 +2191,18 @@
             titleOpen = false;
             titleEl.classList.add('off');
             hudEl.classList.remove('off');
-            cameraControl.targetTheta = Math.round(cameraControl.theta / (Math.PI * 2)) * Math.PI * 2;
+            cameraControl.targetTheta = Math.round((cameraControl.theta - viewBase) / (Math.PI * 2)) * Math.PI * 2 + viewBase;
             updateCursorVisual();
         }
         function startFromTitle(game) {
             soundFX.init();
+            if (Online.inMatch()) {
+                if (game === gameMode) closeTitle(); else showCombatTelemetry('ONLINE MATCH', 'RESIGN FIRST', 1200, true);
+                return;
+            }
+            if (playMode === 'online') { openOnline(game); return; }
+            if (Online.active) { Online.leaveGame(); }
+            viewBase = 0;
             if (game !== gameMode) setGameMode(game);
             else if (!gameStarted) newGame();
             gameStarted = true;
@@ -2090,12 +2223,12 @@
             t.addEventListener('mouseenter', () => { titleFocus = t.dataset.game; renderTitle(); });
             t.addEventListener('click', () => startFromTitle(t.dataset.game));
         });
-        document.querySelectorAll('#t-mode button').forEach(b => b.addEventListener('click', () => { setAI(b.dataset.ai === '1'); soundFX.playSelect(); }));
+        document.querySelectorAll('#t-mode button').forEach(b => b.addEventListener('click', () => { setPlayMode(b.dataset.mode); soundFX.playSelect(); }));
 
         // ---- HUD buttons ----
         document.querySelectorAll('.game-tab').forEach(t => t.addEventListener('click', () => setGameMode(t.dataset.game)));
         document.getElementById('btn-new').addEventListener('click', newGame);
-        document.getElementById('btn-modal-new').addEventListener('click', newGame);
+        document.getElementById('btn-modal-new').addEventListener('click', rematchOrNew);
         document.getElementById('btn-modal-close').addEventListener('click', closeModal);
         document.getElementById('btn-modal-menu').addEventListener('click', () => { closeModal(); openTitle(); });
         document.getElementById('btn-menu').addEventListener('click', openTitle);
@@ -2116,6 +2249,426 @@
         renderLegend();
 
         /***********************************************************************
+         * 11. ONLINE PvP — IONITY CLOUD (Firestore · project io-man)
+         * Turn-based: matchmaking queue (arena_queue) → game doc (arena_games) holding
+         * the full move list. Each client validates moves with its own engine.
+         * Profiles + Elo rating (arena_players), global leaderboard, recent matches.
+         ***********************************************************************/
+        const ARENA_PROTO = 'arena-1';
+        const FB_CDN = 'https://www.gstatic.com/firebasejs/12.19.0/';
+        const FB_CFG = { apiKey: 'AIzaSyBDWHaRVFf1tmC7T3fbyk2MpIBeuyoyoIc', authDomain: 'io-man.firebaseapp.com', projectId: 'io-man',
+            storageBucket: 'io-man.firebasestorage.app', messagingSenderId: '737401934489', appId: '1:737401934489:web:bfe305eba0bdc4416c9e08' };
+        const BAD_NAME = /(fuck|fuk|shit|cunt|bitch|dick|cock|puss|nigg|fag|rape|whore|slut|twat|wank|porn|nazi|hitler|kaffir|kafir|poes|naai|fokk)/i;
+        const cleanName = (n) => { n = String(n || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 9); return n && !BAD_NAME.test(n) ? n : ''; };
+        const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+        const lsSet = (k, v) => { try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) { /* private mode */ } };
+        const $ = (id) => document.getElementById(id);
+
+        const Online = {
+            fb: null, F: null, db: null, uid: null, profile: null,
+            active: false, over: false, gid: null, color: null, doc: null, oppName: '', oppRating: 1000, myRating: 1000,
+            unsub: [], timers: [], remoteQueue: [], pendingFinish: null, internal: false, claimable: false, creatingNext: false,
+            searching: false, waiting: false, cancelled: false, sTimers: [], qUnsub: null, queueSize: 0, searchStart: 0, olGame: 'chess', open: false,
+
+            inMatch() { return this.active && !this.over; },
+            async load() {
+                if (this.fb) return this.fb;
+                olStatus('CONNECTING…');
+                const [A, Au, F] = await Promise.all([import(FB_CDN + 'firebase-app.js'), import(FB_CDN + 'firebase-auth.js'), import(FB_CDN + 'firebase-firestore.js')]);
+                const app = A.getApps().find(a => a.name === 'arena') || A.initializeApp(FB_CFG, 'arena');
+                let auth; try { auth = Au.initializeAuth(app, { persistence: [Au.browserLocalPersistence, Au.browserSessionPersistence] }); } catch (e) { auth = Au.getAuth(app); }
+                const emu = /[?&]emu=1/.test(location.search); // local test harness: Firebase emulators
+                if (emu) Au.connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+                if (auth.authStateReady) await auth.authStateReady();
+                if (!auth.currentUser) await Au.signInAnonymously(auth);
+                this.uid = auth.currentUser.uid; this.F = F; this.db = F.getFirestore(app);
+                if (emu) { try { F.connectFirestoreEmulator(this.db, '127.0.0.1', 8085); } catch (e) { /* already connected */ } }
+                await this.loadProfile();
+                olStatus('ONLINE');
+                return (this.fb = { A, Au, F, app, auth });
+            },
+            async loadProfile() {
+                const F = this.F, ref = F.doc(this.db, 'arena_players', this.uid);
+                const s = await F.getDoc(ref);
+                if (s.exists()) this.profile = s.data();
+                else {
+                    const name = cleanName(lsGet('arena.name')) || ('WIZ-' + Math.floor(1000 + Math.random() * 9000));
+                    this.profile = { uid: this.uid, name, rating: 1000, w: 0, l: 0, d: 0, games: 0, v: ARENA_PROTO };
+                    await F.setDoc(ref, { ...this.profile, updated: F.serverTimestamp() });
+                }
+                lsSet('arena.name', this.profile.name);
+            },
+            async saveProfile() {
+                const F = this.F;
+                const p = this.profile;
+                await F.setDoc(F.doc(this.db, 'arena_players', this.uid), { uid: this.uid, name: p.name, rating: p.rating, w: p.w, l: p.l, d: p.d, games: p.games, v: ARENA_PROTO, updated: F.serverTimestamp() });
+            },
+            async rename(n) {
+                n = cleanName(n);
+                if (!n || !this.profile || n === this.profile.name) return;
+                this.profile.name = n; lsSet('arena.name', n);
+                try { await this.saveProfile(); showCombatTelemetry('NAME SAVED', n, 900, true); } catch (e) { console.warn(e); }
+            },
+
+            /* ---------- matchmaking ---------- */
+            async find(game) {
+                if (this.searching || this.inMatch()) return;
+                this.searching = true; this.cancelled = false; this.waiting = false; this.olGame = game; this.searchStart = Date.now(); this.queueSize = 0;
+                renderOnline();
+                try { await this.load(); } catch (e) { console.warn(e); this.searching = false; olStatus('CLOUD UNREACHABLE', true); renderOnline(); return; }
+                if (this.cancelled) return;
+                const F = this.F, db = this.db, myRef = F.doc(db, 'arena_queue', this.uid);
+                const attempt = async () => {
+                    if (this.cancelled || !this.searching) return;
+                    let got = null;
+                    try { got = await this.tryClaim(); } catch (e) { console.warn('claim', e); }
+                    if (got) { this.stopSearch(true); return this.join(got); }
+                    if (!this.waiting && !this.cancelled && this.searching) {
+                        this.waiting = true;
+                        try {
+                            await F.setDoc(myRef, { uid: this.uid, name: this.profile.name, game, rating: this.profile.rating, v: ARENA_PROTO, ts: F.serverTimestamp(), status: 'waiting' });
+                        } catch (e) { console.warn(e); olStatus('QUEUE ERROR', true); this.stopSearch(false); return; }
+                        this.qUnsub = F.onSnapshot(myRef, (snap) => {
+                            const d = snap.data();
+                            if (d && d.status === 'matched' && d.room && this.searching) { this.stopSearch(true); this.join(d.room); }
+                        });
+                    }
+                    renderOnline();
+                };
+                await attempt();
+                this.sTimers.push(setInterval(() => { if (this.waiting) attempt(); }, 4000));
+                this.sTimers.push(setInterval(() => { if (this.waiting) F.updateDoc(myRef, { ts: F.serverTimestamp() }).catch(() => {}); }, 8000));
+                this.sTimers.push(setInterval(renderOnline, 1000));
+            },
+            async tryClaim() {
+                const F = this.F, db = this.db, me = this.profile.rating;
+                const snap = await F.getDocs(F.query(F.collection(db, 'arena_queue'), F.orderBy('ts', 'desc'), F.limit(40)));
+                const now = Date.now();
+                const live = snap.docs.map(d => d.data()).filter(d => d.status === 'waiting' && d.uid !== this.uid && d.v === ARENA_PROTO && d.game === this.olGame && d.ts && now - d.ts.toMillis() < 45000);
+                this.queueSize = live.length;
+                const list = live.filter(d => !this.waiting || d.uid < this.uid) // both queued: only one side claims
+                    .sort((a, b) => Math.abs(a.rating - me) - Math.abs(b.rating - me) || a.ts.toMillis() - b.ts.toMillis());
+                for (const c of list) {
+                    try {
+                        return await F.runTransaction(db, async (tx) => {
+                            const ref = F.doc(db, 'arena_queue', c.uid), s = await tx.get(ref);
+                            if (!s.exists() || s.data().status !== 'waiting') throw new Error('taken');
+                            const gRef = F.doc(F.collection(db, 'arena_games'));
+                            const meWhite = Math.random() < 0.5;
+                            tx.update(ref, { status: 'matched', guest: this.uid, room: gRef.id });
+                            tx.set(gRef, {
+                                game: this.olGame, white: meWhite ? this.uid : c.uid, black: meWhite ? c.uid : this.uid,
+                                whiteName: meWhite ? this.profile.name : c.name, blackName: meWhite ? c.name : this.profile.name,
+                                whiteRating: meWhite ? this.profile.rating : c.rating, blackRating: meWhite ? c.rating : this.profile.rating,
+                                moves: [], status: 'active', created: F.serverTimestamp(), updated: F.serverTimestamp(),
+                                seenW: F.serverTimestamp(), seenB: F.serverTimestamp(), v: ARENA_PROTO
+                            });
+                            return gRef.id;
+                        });
+                    } catch (e) { /* taken by someone else; try next */ }
+                }
+                return null;
+            },
+            stopSearch(matched) {
+                this.sTimers.forEach(clearInterval); this.sTimers = [];
+                if (this.qUnsub) { this.qUnsub(); this.qUnsub = null; }
+                if (this.F && (this.waiting || matched)) this.F.deleteDoc(this.F.doc(this.db, 'arena_queue', this.uid)).catch(() => {});
+                this.searching = false; this.waiting = false;
+                renderOnline();
+            },
+            cancel() { this.cancelled = true; this.stopSearch(false); soundFX.playSelect(); },
+
+            /* ---------- match ---------- */
+            async join(gid) {
+                this.leaveGame();
+                await this.load();
+                this.gid = gid; this.first = true; this.over = false; this.remoteQueue = []; this.pendingFinish = null; this.claimable = false; this.creatingNext = false;
+                lsSet('arena.activeGame', gid);
+                const F = this.F, ref = F.doc(this.db, 'arena_games', gid);
+                this.unsub.push(F.onSnapshot(ref, (s) => { if (this.gid === gid) this.onGame(s.data()); }, (e) => console.warn('game listen', e)));
+                // safety net: if the live listener is slow to deliver the first snapshot, fetch once directly
+                setTimeout(async () => { if (this.gid === gid && this.first) { try { const s = await F.getDoc(ref); if (this.gid === gid && this.first) this.onGame(s.data()); } catch (e) { console.warn(e); } } }, 3000);
+                this.timers.push(setInterval(() => this.heartbeat(), 10000));
+            },
+            leaveGame() {
+                this.unsub.forEach(u => { try { u(); } catch (e) { /* noop */ } }); this.unsub = [];
+                this.timers.forEach(clearInterval); this.timers = [];
+                this.active = false; this.gid = null; this.doc = null; this.color = null; this.remoteQueue = []; this.pendingFinish = null;
+                updateOnlineBar();
+            },
+            start(d) {
+                this.active = true; this.over = false;
+                this.color = d.white === this.uid ? 'w' : 'b';
+                this.oppName = this.color === 'w' ? d.blackName : d.whiteName;
+                this.oppRating = this.color === 'w' ? d.blackRating : d.whiteRating;
+                this.myRating = this.color === 'w' ? d.whiteRating : d.blackRating;
+                this.internal = true;
+                setPlayMode('online');
+                if (gameMode !== d.game) setGameMode(d.game); else newGame();
+                this.internal = false;
+                this.replay(d.moves);
+                gameStarted = true;
+                closeOnline(true);
+                if (titleOpen) closeTitle();
+                viewBase = this.color === 'b' ? Math.PI : 0;
+                cameraControl.targetTheta = viewBase;
+                cursor.c = 4; cursor.r = this.color === 'w' ? 6 : 1; updateCursorVisual();
+                updateUI(); updateOnlineBar();
+                showCombatTelemetry('VS ' + this.oppName, this.color === 'w' ? 'YOU PLAY WHITE' : 'YOU PLAY BLACK', 1800);
+                soundFX.playCrown();
+                if (d.status === 'over') this.finish(d);
+            },
+            onGame(d) {
+                if (!d) return;
+                this.doc = d;
+                if (this.first) { this.first = false; this.start(d); return; }
+                const have = moveHistory().length + this.remoteQueue.length;
+                for (let i = have; i < d.moves.length; i++) this.remoteQueue.push(d.moves[i]);
+                if (d.status === 'over') {
+                    if (!this.over) this.finish(d);
+                    this.rematchCheck(d);
+                }
+                this.checkAway();
+                updateOnlineBar();
+            },
+            encode(res) { return isChess() ? res.from + res.to + (res.promotion || '') : [res.from, ...res.path].join(':'); },
+            applyEngine(m) {
+                if (isChess()) return chess.move({ from: m.slice(0, 2), to: m.slice(2, 4), promotion: m[4] || undefined });
+                const parts = m.split(':');
+                const mv = checkers.moves().find(x => x.from === parts[0] && x.path.join(':') === parts.slice(1).join(':'));
+                return mv ? checkers.move(mv) : null;
+            },
+            replay(moves) {
+                chess.reset(); checkers.reset();
+                for (const m of moves) if (!this.applyEngine(m)) { console.warn('bad move in record', m); break; }
+                selectedSquare = null; legalMovesForSelected = [];
+                syncBoardFromState();
+            },
+            resync() { abortAnimations(); this.remoteQueue = []; if (this.doc) this.replay(this.doc.moves); },
+            pump() {
+                if (!this.active || isAnimating) return;
+                if (this.remoteQueue.length) {
+                    const m = this.remoteQueue.shift();
+                    const res = this.applyEngine(m);
+                    if (!res) return this.resync();
+                    selectedSquare = null; legalMovesForSelected = [];
+                    if (isChess()) executeAnimatedMove(res); else executeCheckersMove(res);
+                    soundFX.playSelect();
+                } else if (this.pendingFinish) {
+                    const d = this.pendingFinish; this.pendingFinish = null; this.finish(d);
+                }
+            },
+            canMove() { return !this.inMatch() || (currentTurn() === this.color && !this.remoteQueue.length && !this.pendingFinish && !!this.doc && moveHistory().length === this.doc.moves.length); },
+            async localMove(res) {
+                if (!this.inMatch() || !this.doc) return;
+                const F = this.F;
+                const moves = [...this.doc.moves, this.encode(res)];
+                const upd = { moves, updated: F.serverTimestamp(), [this.color === 'w' ? 'seenW' : 'seenB']: F.serverTimestamp() };
+                let result = null, reason = null;
+                if (isChess()) {
+                    if (chess.in_checkmate()) { result = res.color; reason = 'mate'; }
+                    else if (chess.game_over()) { result = 'd'; reason = 'draw'; }
+                } else if (!checkers.hasMoves()) { result = res.color; reason = 'sweep'; }
+                else if (checkers.isDraw()) { result = 'd'; reason = 'draw'; }
+                if (result) { upd.status = 'over'; upd.result = result; upd.reason = reason; }
+                this.doc = { ...this.doc, moves };
+                try { await F.updateDoc(F.doc(this.db, 'arena_games', this.gid), upd); }
+                catch (e) { console.warn('move rejected', e); showCombatTelemetry('SYNC', 'MOVE REJECTED', 1200, true); setTimeout(() => this.resyncFromServer(), 400); }
+            },
+            async resyncFromServer() {
+                const F = this.F, s = await F.getDoc(F.doc(this.db, 'arena_games', this.gid));
+                if (s.exists()) { this.doc = s.data(); this.resync(); }
+            },
+            heartbeat() {
+                if (!this.inMatch()) return;
+                const F = this.F;
+                F.updateDoc(F.doc(this.db, 'arena_games', this.gid), { [this.color === 'w' ? 'seenW' : 'seenB']: F.serverTimestamp() }).catch(() => {});
+                this.checkAway();
+            },
+            checkAway() {
+                if (!this.inMatch() || !this.doc) return;
+                const opp = this.color === 'w' ? this.doc.seenB : this.doc.seenW;
+                this.claimable = !!(opp && opp.toMillis && Date.now() - opp.toMillis() > 65000);
+                updateOnlineBar();
+            },
+            async resign() {
+                if (!this.inMatch()) return;
+                const F = this.F;
+                try { await F.updateDoc(F.doc(this.db, 'arena_games', this.gid), { status: 'over', result: this.color === 'w' ? 'b' : 'w', reason: 'resign', updated: F.serverTimestamp() }); }
+                catch (e) { console.warn(e); }
+            },
+            async claim() {
+                if (!this.inMatch() || !this.claimable) return;
+                const F = this.F;
+                try { await F.updateDoc(F.doc(this.db, 'arena_games', this.gid), { status: 'over', result: this.color, reason: 'abandon', updated: F.serverTimestamp() }); }
+                catch (e) { console.warn(e); showCombatTelemetry('NOT YET', 'OPPONENT STILL CONNECTED', 1200, true); }
+            },
+            finish(d) {
+                if (this.over) return;
+                if (this.remoteQueue.length || isAnimating) { this.pendingFinish = d; return; }
+                this.over = true; this.claimable = false;
+                lsSet('arena.activeGame', null);
+                const score = d.result === 'd' ? 0.5 : d.result === this.color ? 1 : 0;
+                const exp = 1 / (1 + Math.pow(10, (this.oppRating - this.myRating) / 400));
+                const delta = Math.max(-32, Math.min(32, Math.round(32 * (score - exp))));
+                this.lastDelta = delta;
+                const key = 'arena.rated.' + this.gid;
+                if (!lsGet(key) && this.profile) {
+                    lsSet(key, '1');
+                    const p = this.profile;
+                    p.rating = Math.max(100, Math.min(4000, p.rating + delta));
+                    p.games += 1;
+                    if (score === 1) p.w += 1; else if (score === 0) p.l += 1; else p.d += 1;
+                    this.saveProfile().catch(e => console.warn('profile', e));
+                }
+                const why = { mate: 'CHECKMATE', sweep: 'NO MOVES LEFT', draw: 'DRAW', resign: 'RESIGNATION', abandon: 'OPPONENT LEFT' }[d.reason] || '';
+                const title = score === 1 ? 'VICTORY' : score === 0 ? 'DEFEAT' : 'DRAW';
+                gameOverShown = true;
+                modalState = 'over';
+                $('gameover-title').textContent = title;
+                $('gameover-subtitle').textContent = `${why} · ${delta >= 0 ? '+' : ''}${delta} ELO`;
+                $('gameover-orb').className = 'orb ' + d.result;
+                $('btn-modal-new').innerHTML = '<span class="pb a">A</span>REMATCH';
+                $('btn-modal-find').style.display = '';
+                setTimeout(() => {
+                    modalOverlay.classList.add('open');
+                    promotionCard.style.display = 'none'; gameoverCard.style.display = '';
+                }, 700);
+                updateUI(); updateOnlineBar();
+                soundFX.playCrown();
+            },
+            async rematch() {
+                if (!this.doc || !this.over) return;
+                const F = this.F;
+                $('btn-modal-new').innerHTML = '<span class="pb a">A</span>WAITING…';
+                try { await F.updateDoc(F.doc(this.db, 'arena_games', this.gid), { [this.color === 'w' ? 'rematchW' : 'rematchB']: true }); } catch (e) { console.warn(e); }
+            },
+            async rematchCheck(d) {
+                const mine = this.color === 'w' ? d.rematchW : d.rematchB, theirs = this.color === 'w' ? d.rematchB : d.rematchW;
+                if (theirs && !mine && modalState === 'over') $('btn-modal-new').innerHTML = '<span class="pb a">A</span>ACCEPT REMATCH';
+                if (d.next) { closeModal(); return this.join(d.next); }
+                if (d.rematchW && d.rematchB && this.color === 'w' && !this.creatingNext) {
+                    this.creatingNext = true;
+                    const F = this.F, gRef = F.doc(F.collection(this.db, 'arena_games'));
+                    const oppNew = Math.max(100, Math.min(4000, this.oppRating - (this.lastDelta || 0)));
+                    try {
+                        await F.setDoc(gRef, {
+                            game: d.game, white: d.black, black: d.white, whiteName: d.blackName, blackName: this.profile.name,
+                            whiteRating: oppNew, blackRating: this.profile.rating, moves: [], status: 'active',
+                            created: F.serverTimestamp(), updated: F.serverTimestamp(), seenW: F.serverTimestamp(), seenB: F.serverTimestamp(), prev: this.gid, v: ARENA_PROTO
+                        });
+                        await F.updateDoc(F.doc(this.db, 'arena_games', this.gid), { next: gRef.id });
+                    } catch (e) { console.warn('rematch', e); this.creatingNext = false; }
+                }
+            },
+
+            /* ---------- lobby data ---------- */
+            async leaderboard() {
+                const F = this.F;
+                const s = await F.getDocs(F.query(F.collection(this.db, 'arena_players'), F.orderBy('rating', 'desc'), F.limit(30)));
+                return s.docs.map(x => x.data()).filter(p => p.games > 0).slice(0, 10);
+            },
+            async recent() {
+                const F = this.F, col = F.collection(this.db, 'arena_games');
+                const [a, b] = await Promise.all([
+                    F.getDocs(F.query(col, F.where('white', '==', this.uid), F.limit(12))),
+                    F.getDocs(F.query(col, F.where('black', '==', this.uid), F.limit(12)))
+                ]);
+                return [...a.docs, ...b.docs].map(x => ({ id: x.id, ...x.data() }))
+                    .sort((x, y) => (y.created ? y.created.toMillis() : 0) - (x.created ? x.created.toMillis() : 0)).slice(0, 6);
+            }
+        };
+
+        // ---- Lobby screen ----
+        function olStatus(t, bad) { const el = $('ol-status'); if (el) { el.textContent = t; el.classList.toggle('bad', !!bad); } }
+        async function openOnline(game) {
+            Online.open = true; Online.olGame = game || gameMode;
+            titleEl.classList.add('off'); hudEl.classList.add('off');
+            $('online-screen').classList.remove('off');
+            renderOnline();
+            try {
+                await Online.load();
+                $('ol-name').value = Online.profile.name;
+                renderOnline();
+                refreshLobby();
+                const resumeId = lsGet('arena.activeGame');
+                if (resumeId) {
+                    const s = await Online.F.getDoc(Online.F.doc(Online.db, 'arena_games', resumeId));
+                    const ok = s.exists() && s.data().status === 'active';
+                    $('ol-resume').classList.toggle('hidden', !ok);
+                    if (!ok) lsSet('arena.activeGame', null);
+                }
+            } catch (e) { console.warn(e); olStatus('CLOUD UNREACHABLE', true); }
+        }
+        function closeOnline(toGame) {
+            Online.open = false;
+            $('online-screen').classList.add('off');
+            if (!toGame) openTitle();
+        }
+        async function refreshLobby() {
+            try {
+                const [board, recent] = await Promise.all([Online.leaderboard(), Online.recent()]);
+                $('ol-board').innerHTML = board.length ? board.map((p, i) => `<li class="${p.uid === Online.uid ? 'me' : ''}"><span class="rk">${i + 1}</span><span class="nm">${p.name}</span><span class="rt">${p.rating}</span></li>`).join('')
+                    : '<li class="empty">BE THE FIRST</li>';
+                $('ol-recent').innerHTML = recent.length ? recent.map(g => {
+                    const me = g.white === Online.uid ? 'w' : 'b', opp = me === 'w' ? g.blackName : g.whiteName;
+                    const r = g.status !== 'over' ? 'LIVE' : g.result === 'd' ? 'DRAW' : g.result === me ? 'WIN' : 'LOSS';
+                    return `<li class="${r.toLowerCase()}"><span class="gl">${g.game === 'chess' ? '♚' : '⛂'}</span><span class="nm">${opp}</span><span class="res">${r}</span></li>`;
+                }).join('') : '<li class="empty">NO MATCHES YET</li>';
+            } catch (e) { console.warn('lobby', e); }
+        }
+        function renderOnline() {
+            const g = Online.olGame;
+            document.querySelectorAll('.ol-game button').forEach(b => b.classList.toggle('active', b.dataset.game === g));
+            const p = Online.profile;
+            $('ol-rating').textContent = p ? p.rating : '----';
+            $('ol-wld').textContent = p ? `${p.w}W ${p.l}L ${p.d}D` : '';
+            const s = Online.searching;
+            $('online-screen').classList.toggle('searching', s);
+            $('ol-find-label').textContent = s ? 'CANCEL' : 'FIND MATCH';
+            if (s) {
+                const t = Math.floor((Date.now() - Online.searchStart) / 1000);
+                $('ol-timer').textContent = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`;
+                $('ol-qtext').textContent = Online.waiting ? (Online.queueSize ? `${Online.queueSize} IN QUEUE` : 'WAITING FOR CHALLENGER') : 'SEARCHING';
+            }
+        }
+        function onlineAction(a) {
+            if (a === 'left' || a === 'right' || a === 'swap') { if (!Online.searching) { Online.olGame = Online.olGame === 'chess' ? 'checkers' : 'chess'; renderOnline(); soundFX.playSelect(); } }
+            else if (a === 'confirm') { Online.searching ? Online.cancel() : Online.find(Online.olGame); }
+            else if (a === 'back' || a === 'menu') { if (Online.searching) Online.cancel(); else closeOnline(false); }
+        }
+        $('ol-find').addEventListener('click', () => onlineAction('confirm'));
+        $('ol-close').addEventListener('click', () => onlineAction('back'));
+        $('ol-resume').addEventListener('click', () => { const id = lsGet('arena.activeGame'); if (id) Online.join(id); });
+        document.querySelectorAll('.ol-game button').forEach(b => b.addEventListener('click', () => { if (!Online.searching) { Online.olGame = b.dataset.game; renderOnline(); } }));
+        $('ol-name').addEventListener('change', (e) => Online.rename(e.target.value).then(() => { e.target.value = Online.profile ? Online.profile.name : e.target.value; refreshLobby(); }));
+        $('ol-name').addEventListener('input', (e) => { const c = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 9); if (c !== e.target.value) e.target.value = c; });
+
+        // ---- In-game online bar ----
+        let resignArmed = 0;
+        function updateOnlineBar() {
+            const bar = $('online-bar');
+            if (!bar) return;
+            const on = Online.active;
+            bar.classList.toggle('hidden', !on);
+            if (!on) return;
+            const myTurn = Online.inMatch() && currentTurn() === Online.color;
+            $('ob-text').textContent = Online.over ? 'MATCH OVER' : myTurn ? 'YOUR MOVE' : `${Online.oppName}'S MOVE`;
+            bar.classList.toggle('turn', myTurn);
+            $('btn-resign').classList.toggle('hidden', !Online.inMatch());
+            $('btn-claim').classList.toggle('hidden', !Online.claimable);
+            ['btn-undo', 'btn-new', 'btn-mode', 'btn-demo'].forEach(id => { $(id).disabled = Online.inMatch(); });
+        }
+        $('btn-resign').addEventListener('click', () => {
+            if (Date.now() - resignArmed < 3000) { resignArmed = 0; Online.resign(); }
+            else { resignArmed = Date.now(); showCombatTelemetry('RESIGN?', 'PRESS AGAIN', 1500, true); }
+        });
+        $('btn-claim').addEventListener('click', () => Online.claim());
+        $('btn-modal-find').addEventListener('click', () => { closeModal(); Online.leaveGame(); openOnline(gameMode).then(() => Online.find(Online.olGame)); });
+        setInterval(updateOnlineBar, 2000);
+
+
+        /***********************************************************************
          * 10. MAIN LOOP
          ***********************************************************************/
         const clock = new THREE.Clock();
@@ -2126,6 +2679,7 @@
             const elapsedTime = clock.getElapsedTime();
 
             pollGamepad(dt);
+            Online.pump();
             if (titleOpen) cameraControl.targetTheta += dt * 0.12;
             cameraControl.update(dt);
 
@@ -2302,7 +2856,7 @@
         });
 
         // Test/automation hook
-        window.__arena = { handleAction, startFromTitle, handleSquare, triggerDemoKnockDown, chess, checkers, setGameMode, newGame, triggerAutomatonMove, executeCheckersMove, executeAnimatedMove, get state() { return { gameMode, isAnimating, playVsAI, pieces: Object.keys(pieceMeshes).length }; } };
+        window.__arena = { Online, openOnline, setPlayMode, handleAction, startFromTitle, handleSquare, triggerDemoKnockDown, chess, checkers, setGameMode, newGame, triggerAutomatonMove, executeCheckersMove, executeAnimatedMove, get state() { return { gameMode, isAnimating, playVsAI, pieces: Object.keys(pieceMeshes).length }; } };
     </script>
 </body>
 </html>

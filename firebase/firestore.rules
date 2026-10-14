@@ -4,6 +4,7 @@ rules_version = '2';
 // Every phone / browser signs in anonymously; it can only read and write its own device save and logs.
 // Scores are public to read (global leaderboard) and append-only, with shape + range checks.
 // IO-COMBAT online PvP: matchmaking queue + WebRTC signalling rooms (pvp_queue, pvp_rooms).
+// WIZARD'S ARENA online PvP: profiles + Elo, queue, turn-based games (arena_players, arena_queue, arena_games).
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
@@ -92,6 +93,95 @@ service cloud.firestore {
         allow create: if inRoom() && request.resource.data.from == request.auth.uid && request.resource.data.keys().hasOnly(['from', 'c', 'at']);
         allow delete: if signedIn() && resource.data.from == request.auth.uid;
       }
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // WIZARD'S ARENA · ONLINE PvP (GME-2026-10-013) · chess + checkers, turn-based.
+    // Profiles + Elo (arena_players), matchmaking queue (arena_queue), games with full move list (arena_games).
+    function gameOk(g) { return g == 'chess' || g == 'checkers'; }
+    function ratingOk(r) { return r is int && r >= 100 && r <= 4000; }
+
+    // public profile + rating (doc id = anonymous uid)
+    match /arena_players/{uid} {
+      function p() { return request.resource.data; }
+      function shapeOk() {
+        return p().keys().hasOnly(['uid', 'name', 'rating', 'w', 'l', 'd', 'games', 'updated', 'v'])
+          && p().uid == uid && cleanTag(p().name) && ratingOk(p().rating)
+          && p().w is int && p().l is int && p().d is int && p().games is int
+          && p().w + p().l + p().d == p().games
+          && smallStr(p().v, 16) && p().updated == request.time;
+      }
+      allow read: if true;
+      allow create: if own(uid) && shapeOk() && p().games == 0 && p().rating == 1000;
+      // rename keeps rating; a finished game moves rating by at most 40 and adds exactly one game
+      allow update: if own(uid) && shapeOk()
+        && ((p().games == resource.data.games && p().rating == resource.data.rating
+             && p().w == resource.data.w && p().l == resource.data.l && p().d == resource.data.d)
+          || (p().games == resource.data.games + 1 && math.abs(p().rating - resource.data.rating) <= 40));
+      allow delete: if false;
+    }
+
+    // one queue entry per player (doc id = anonymous uid)
+    match /arena_queue/{uid} {
+      allow read: if signedIn();
+      allow create, update: if own(uid)
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'game', 'rating', 'v', 'ts', 'status'])
+        && request.resource.data.uid == uid && cleanTag(request.resource.data.name)
+        && gameOk(request.resource.data.game) && ratingOk(request.resource.data.rating)
+        && smallStr(request.resource.data.v, 16) && request.resource.data.status == 'waiting'
+        && request.resource.data.ts == request.time;
+      allow update: if signedIn() && !own(uid) && resource.data.status == 'waiting'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'guest', 'room'])
+        && request.resource.data.status == 'matched' && request.resource.data.guest == request.auth.uid
+        && smallStr(request.resource.data.room, 64);
+      allow delete: if own(uid);
+    }
+
+    // a match: players, ratings at start, every move in order, result
+    match /arena_games/{gid} {
+      function nd() { return request.resource.data; }
+      function od() { return resource.data; }
+      function isW() { return signedIn() && request.auth.uid == od().white; }
+      function isB() { return signedIn() && request.auth.uid == od().black; }
+      function changed() { return nd().diff(od()).affectedKeys(); }
+      function resultOk() { return nd().result in ['w', 'b', 'd'] && smallStr(nd().reason, 16); }
+      function moveOk() {
+        return changed().hasOnly(['moves', 'updated', 'status', 'result', 'reason', 'seenW', 'seenB'])
+          && nd().moves is list && nd().moves.size() == od().moves.size() + 1 && nd().moves.size() <= 800
+          && (od().moves.size() == 0 || nd().moves[0:od().moves.size()] == od().moves)
+          && nd().moves[od().moves.size()] is string && nd().moves[od().moves.size()].size() <= 40
+          && ((od().moves.size() % 2 == 0 && isW()) || (od().moves.size() % 2 == 1 && isB()))
+          && nd().updated == request.time
+          && (nd().status == 'active' || (nd().status == 'over' && resultOk()));
+      }
+      function endOk() {
+        return changed().hasOnly(['status', 'result', 'reason', 'updated']) && nd().status == 'over' && resultOk()
+          && nd().updated == request.time
+          && ((nd().reason == 'resign' && ((isW() && nd().result == 'b') || (isB() && nd().result == 'w')))
+            || (nd().reason == 'abandon' && ((isW() && nd().result == 'w' && request.time > od().seenB + duration.value(60, 's'))
+                                          || (isB() && nd().result == 'b' && request.time > od().seenW + duration.value(60, 's')))));
+      }
+      function beatOk() {
+        return (isW() && changed().hasOnly(['seenW']) && nd().seenW == request.time)
+          || (isB() && changed().hasOnly(['seenB']) && nd().seenB == request.time);
+      }
+      function rematchOk() {
+        return (isW() && changed().hasOnly(['rematchW']) && nd().rematchW == true)
+          || (isB() && changed().hasOnly(['rematchB']) && nd().rematchB == true)
+          || ((isW() || isB()) && changed().hasOnly(['next']) && od().rematchW == true && od().rematchB == true && smallStr(nd().next, 64));
+      }
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && nd().keys().hasOnly(['game', 'white', 'black', 'whiteName', 'blackName', 'whiteRating', 'blackRating', 'moves', 'status', 'created', 'updated', 'seenW', 'seenB', 'prev', 'v'])
+        && (nd().white == request.auth.uid || nd().black == request.auth.uid) && nd().white != nd().black
+        && smallStr(nd().white, 128) && smallStr(nd().black, 128)
+        && gameOk(nd().game) && cleanTag(nd().whiteName) && cleanTag(nd().blackName)
+        && ratingOk(nd().whiteRating) && ratingOk(nd().blackRating)
+        && nd().moves is list && nd().moves.size() == 0 && nd().status == 'active'
+        && nd().created == request.time && smallStr(nd().v, 16);
+      allow update: if (od().status == 'active' && (moveOk() || endOk() || beatOk()))
+                    || (od().status == 'over' && rematchOk());
+      allow delete: if false;
     }
 
     match /{document=**} { allow read, write: if false; }
