@@ -1,0 +1,92 @@
+{
+  "realmTitle": "PAWN* // OXEN SOVEREIGN REALM \u2014 VBLOCKS APEX v11",
+  "firebaseProject": "io-man",
+  "databaseRegion": "europe-west1",
+  "databaseUrl": "https://io-man-default-rtdb.europe-west1.firebasedatabase.app",
+  "sanctuaryForcefield": {
+    "center": {
+      "x": 0,
+      "z": 0
+    },
+    "radiusMeters": 32,
+    "pvpEnabled": false,
+    "creepRepulsion": true,
+    "ancestralRegenPerSec": 15
+  },
+  "graphicsDefaults": {
+    "unrealBloomStrength": 0.42,
+    "unrealBloomRadius": 0.42,
+    "unrealBloomThreshold": 0.86,
+    "fogDensity": 0.0042,
+    "activeChunkBubbleRadius": 2,
+    "skyShaderMode": 0
+  },
+  "bossAltar": {
+    "x": 0,
+    "z": -105,
+    "summitElevation": 14.5,
+    "respawnSeconds": 150
+  },
+  "rivalCitadels": {
+    "fixed": [
+      {
+        "key": "g0",
+        "x": 86,
+        "z": 24,
+        "clan": "WARLORD KROM'GAR CITADEL"
+      },
+      {
+        "key": "g1",
+        "x": -88,
+        "z": -18,
+        "clan": "ASHEN RIFT IRON BASTION"
+      },
+      {
+        "key": "g2",
+        "x": 64,
+        "z": -74,
+        "clan": "GRIMTOTEM CRAG FORTRESS"
+      }
+    ],
+    "respawnSeconds": 300
+  },
+  "biomes": [
+    {
+      "id": "TOWN_MESA",
+      "name": "Red Cloud Mesa (Thunderhoof Enclave)",
+      "elevation": 3.2
+    },
+    {
+      "id": "PLAINS",
+      "name": "Endless Mulgore Hunting Plains",
+      "elevation": 0.0
+    },
+    {
+      "id": "BOSS_CRAGS",
+      "name": "Stonetalon World Boss Summit",
+      "elevation": 14.5
+    },
+    {
+      "id": "CRYSTAL_OASIS",
+      "name": "Shimmering Crystal Oasis",
+      "elevation": 1.8
+    },
+    {
+      "id": "ASHEN_RIFT",
+      "name": "Ashen Volcanic Rift",
+      "elevation": 2.2
+    }
+  ],
+  "realms": [
+    "ionity-fun",
+    "pawn-centurion",
+    "ionity-today"
+  ],
+  "databasePaths": {
+    "players": "players/{uid}",
+    "presence": "presence/{realm}/oxen/{uid}",
+    "world": "world/{realm}/oxen/{mobs|structures|core|waveMeta|bossMeta|rivalMeta|bounty}",
+    "chat": "chat/{realm}",
+    "leaderboard": "leaderboard/{uid}"
+  }
+}
