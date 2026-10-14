@@ -23,6 +23,12 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -178,6 +184,7 @@
             <div class="md-surface rounded-2xl px-3 py-2 pointer-events-auto flex items-center gap-2 sm:gap-3 flex-wrap">
                 <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-amber-500/40"><span class="text-amber-400 font-bold text-xs">🪙</span><span id="hud-zart" class="text-xs mono-tag font-extrabold text-amber-300">180 ZAR-T</span></div>
                 <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-emerald-500/40" title="Skinned hides"><span class="text-xs">🦌</span><span id="hud-hides" class="text-xs mono-tag font-extrabold text-emerald-300">0 HIDES</span></div>
+                <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-lime-500/40" title="Harvested resources: wood / stone / ore (press F at trees, boulders, ore veins)"><span id="hud-res" class="text-xs mono-tag font-bold text-lime-300">🪵0 🪨0 ⛏️0</span></div>
                 <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-cyan-500/40" title="Sovereign Core & wave timer"><span class="text-xs">💎</span><span id="hud-core-hp" class="text-xs mono-tag font-bold text-cyan-300">CORE 100%</span><span id="hud-wave-timer" class="text-[10px] mono-tag text-rose-400 ml-1">(WAVE --s)</span></div>
                 <div class="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-900 border border-slate-600" title="Players online in this realm"><span class="text-xs">👥</span><span id="hud-online" class="text-xs mono-tag font-bold text-slate-200">1 ONLINE</span></div>
                 <button id="btn-open-town" class="md-btn px-2.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/60 text-xs font-bold text-amber-200 cursor-pointer">🏘️ TOWN (V)</button>
@@ -246,11 +253,12 @@
     <div id="build-drawer" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-20 pointer-events-auto hidden">
         <div class="md-surface rounded-2xl px-4 py-2.5 border border-cyan-400/60 flex items-center gap-3 shadow-2xl flex-wrap justify-center">
             <span class="text-xs mono-tag font-bold text-cyan-300">BASE BUILDER:</span>
-            <button data-build="wall" class="btn-build-struct md-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-white">🧱 Totem Barricade (40)</button>
-            <button data-build="turret" class="btn-build-struct md-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-500/50 text-xs font-bold text-cyan-200">⚡ Arcane Spirit Tower (85)</button>
-            <button data-build="gen" class="btn-build-struct md-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/50 text-xs font-bold text-amber-200">⛏️ ZAR-T Harvester (100)</button>
+            <button data-build="wall" class="btn-build-struct md-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-bold text-white">🧱 Barricade · 🪵12 + 20Z</button>
+            <button data-build="turret" class="btn-build-struct md-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-cyan-500/50 text-xs font-bold text-cyan-200">⚡ Spirit Tower · 🪨10 ⛏️4 + 40Z</button>
+            <button data-build="gen" class="btn-build-struct md-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/50 text-xs font-bold text-amber-200">⛏️ Harvester · 🪨8 🪵6 + 50Z</button>
+            <button data-build="totem" class="btn-build-struct md-btn px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-purple-500/50 text-xs font-bold text-purple-200">🗿 War Totem · 🪵10 🪨10 ⛏️6 + 80Z</button>
             <button id="btn-spawn-wave-now" class="md-btn px-3 py-1.5 rounded-xl bg-rose-600/80 hover:bg-rose-500 text-xs font-extrabold text-white">⚔️ CALL CREEP WAVE NOW</button>
-            <span class="text-[10px] mono-tag text-slate-400">builds in front of you · shared with the realm</span>
+            <span class="text-[10px] mono-tag text-slate-400">builds in front of you · shared · enemies can target &amp; destroy them</span>
         </div>
     </div>
 
@@ -268,13 +276,17 @@
         <div class="max-w-[1540px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
             <div class="md-surface rounded-2xl px-3.5 py-2 pointer-events-auto hidden lg:flex flex-col min-w-[270px]">
                 <div class="flex items-center justify-between"><span class="text-[10px] mono-tag font-bold text-amber-400">CHIEFTAIN QUEST LOG</span><span id="quest-progress" class="text-[10px] mono-tag text-cyan-300">ACTIVE</span></div>
-                <div id="quest-text" class="text-xs text-slate-200 font-medium mt-0.5">Slay Beasts on the Plains, Loot Armor [F], Skin Hides [K], &amp; Buy a Town Lodge [V].</div>
+                <div id="quest-title" class="text-xs text-amber-200 font-extrabold mt-0.5">—</div>
+                <div id="quest-text" class="text-xs text-slate-200 font-medium">—</div>
+                <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden mt-1"><div id="quest-bar" class="h-full bg-amber-400 transition-all" style="width:0%"></div></div>
             </div>
             <div class="md-surface rounded-2xl px-3 py-2 pointer-events-auto flex items-center gap-2">
                 <div id="skill-1" data-slot="1" class="action-slot" title="Key 1"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-slate-400">1</span><span id="skill-1-icon" class="text-lg">🌿</span><span id="skill-1-name" class="text-[9px] mono-tag text-slate-200 font-bold truncate max-w-[48px]">Wrath</span><div class="cd" id="cd-1"></div></div>
                 <div id="skill-2" data-slot="2" class="action-slot" title="Key 2"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-slate-400">2</span><span id="skill-2-icon" class="text-lg">💚</span><span id="skill-2-name" class="text-[9px] mono-tag text-slate-200 font-bold truncate max-w-[48px]">Rejuv</span><div class="cd" id="cd-2"></div></div>
                 <div id="skill-3" data-slot="3" class="action-slot" title="Key 3"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-slate-400">3</span><span id="skill-3-icon" class="text-lg">✨</span><span id="skill-3-name" class="text-[9px] mono-tag text-slate-200 font-bold truncate max-w-[48px]">Starfall</span><div class="cd" id="cd-3"></div></div>
                 <div id="skill-4" data-slot="4" class="action-slot" title="Key 4"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-slate-400">4</span><span id="skill-4-icon" class="text-lg">🐻</span><span id="skill-4-name" class="text-[9px] mono-tag text-slate-200 font-bold truncate max-w-[48px]">BearForm</span><div class="cd" id="cd-4"></div></div>
+                <div id="skill-5" data-slot="5" class="action-slot" title="Unlocks at level 3 (Key 5)"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-slate-400">5</span><span id="skill-5-icon" class="text-lg">🔒</span><span id="skill-5-name" class="text-[9px] mono-tag text-slate-200 font-bold truncate max-w-[48px]">Lv3</span><div class="cd" id="cd-5"></div></div>
+                <div id="skill-6" data-slot="6" class="action-slot" title="Unlocks at level 6 (Key 6)"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-slate-400">6</span><span id="skill-6-icon" class="text-lg">🔒</span><span id="skill-6-name" class="text-[9px] mono-tag text-slate-200 font-bold truncate max-w-[48px]">Lv6</span><div class="cd" id="cd-6"></div></div>
                 <div class="h-9 w-[1px] bg-slate-700 mx-1"></div>
                 <div id="btn-jump" class="action-slot border-amber-400/50" title="Jump (SPACE)"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-amber-300">SPC</span><span class="text-lg">🦘</span><span class="text-[9px] mono-tag text-amber-200 font-bold">Jump</span></div>
                 <div id="btn-bar-loot" class="action-slot border-cyan-400/50" title="Loot (F)"><span class="absolute top-1 left-1.5 text-[9px] mono-tag text-cyan-300">F</span><span class="text-lg">🎒</span><span class="text-[9px] mono-tag text-cyan-200 font-bold">Loot</span></div>
@@ -330,7 +342,7 @@
             if (snap.exists()) {
                 const d = snap.val();
                 Object.assign(hero, { name: d.name, classType: d.classType || 'druid', isOxen: d.isOxen !== false, level: d.level || 1, xp: d.xp || 0, xpNext: d.xpNext || 100, maxHp: d.maxHp || 260, zart: d.zart ?? 180, hides: d.hides || 0, kills: d.kills || 0, totalXp: d.totalXp || 0, bonusDmg: d.bonusDmg || 0, passiveZartPer10s: d.passiveZartPer10s || 0, plots: d.plots || {} });
-                hero.hp = hero.maxHp; if (d.armor) hero.armor = Object.assign({ helm:0, chest:0, legs:0 }, d.armor);
+                hero.hp = hero.maxHp; if (d.armor) hero.armor = Object.assign({ helm:0, chest:0, legs:0 }, d.armor); if (d.res) hero.res = Object.assign({ wood: 0, stone: 0, ore: 0 }, d.res); if (d.quest) hero.quest = d.quest;
                 $('input-hero-name').value = hero.name; selectClassCard(hero.classType); setRig(hero.isOxen); if (d.realm) $('realm-select').value = d.realm;
                 $('auth-status').textContent += ' · ☁ cloud save loaded';
             } else { const base = (user.displayName || 'Thunderhoof').replace(/[^A-Za-z0-9_]/g, '_').slice(0, 14); $('input-hero-name').value = base + '_' + Math.floor(Math.random()*99); }
@@ -361,7 +373,8 @@
         if (dist < 42) { const t = (dist - 28) / 14, st = t * t * (3 - 2 * t), outer = pseudoNoise2D(x, z) * 1.6; if (isSouthRamp) return 3.2 * (1 - st) + outer * st; return 3.2 * (1 - st) + outer * st + Math.sin(x * 0.35) * Math.cos(z * 0.35) * 1.1 * Math.sin(t * Math.PI); }
         let h = pseudoNoise2D(x, z) * 2.2;
         const ridge = Math.sin(x * 0.018) * Math.sin(z * 0.018);
-        if (ridge > 0.25) { const mf = (ridge - 0.25) / 0.75; h += Math.pow(mf, 1.5) * 26.0; h += Math.round(Math.sin(x * 0.19 + z * 0.19) * 2.2) * 1.1; }
+        if (ridge > 0.25) { const mf = (ridge - 0.25) / 0.75; h += Math.pow(mf, 1.5) * 34.0; h += Math.round(Math.sin(x * 0.19 + z * 0.19) * 2.2) * 1.1; }
+        const lake = Math.sin(x * 0.011 + 1.3) * Math.cos(z * 0.011 - 0.7); if (lake < -0.72 && ridge < 0.1) h -= (-(lake + 0.72) / 0.28) * 3.2;
         return h;
     }
 
@@ -371,14 +384,19 @@
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 420);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
     container.appendChild(renderer.domElement);
+    let composer = null;
+    try { if (THREE.EffectComposer && THREE.UnrealBloomPass) { composer = new THREE.EffectComposer(renderer); composer.addPass(new THREE.RenderPass(scene, camera)); const bloom = new THREE.UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.38, 0.55, 0.86); composer.addPass(bloom); window.__bloom = bloom; } } catch (e) { composer = null; console.warn('bloom unavailable', e); }
     scene.add(new THREE.HemisphereLight(0x9ec5ff, 0x4a3a28, 0.95));
     const sunLight = new THREE.DirectionalLight(0xffe9c4, 1.7); sunLight.position.set(60, 95, 45); sunLight.castShadow = true; sunLight.shadow.mapSize.width = 2048; sunLight.shadow.mapSize.height = 2048; sunLight.shadow.camera.near = 10; sunLight.shadow.camera.far = 260;
     const sd = 85; sunLight.shadow.camera.left = -sd; sunLight.shadow.camera.right = sd; sunLight.shadow.camera.top = sd; sunLight.shadow.camera.bottom = -sd; sunLight.shadow.bias = -0.0005; scene.add(sunLight); scene.add(sunLight.target);
 
-    const CHUNK_SIZE = 60, CHUNK_SEGMENTS = 32, activeChunks = new Map();
-    const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.86, metalness: 0.08, flatShading: true });
+    const CHUNK_SIZE = 60, CHUNK_SEGMENTS = 44, activeChunks = new Map(); const harvestNodes = [];
+    function makeDetailTexture() { const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d'); x.fillStyle = '#9a9a9a'; x.fillRect(0, 0, 256, 256); for (let i = 0; i < 9000; i++) { const v = 120 + Math.random() * 110; x.fillStyle = `rgb(${v},${v},${v})`; x.fillRect(Math.random() * 256, Math.random() * 256, 1 + Math.random() * 2, 1 + Math.random() * 2); } for (let i = 0; i < 60; i++) { x.strokeStyle = `rgba(60,60,60,${Math.random() * .35})`; x.lineWidth = 1 + Math.random() * 2; x.beginPath(); x.moveTo(Math.random() * 256, Math.random() * 256); x.lineTo(Math.random() * 256, Math.random() * 256); x.stroke(); } const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(10, 10); t.anisotropy = 8; return t; }
+    const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, map: makeDetailTexture(), roughness: 0.92, metalness: 0.04 });
+    const leafMat = new THREE.MeshStandardMaterial({ color: 0x3f7d2a, roughness: 0.85, flatShading: true }), autumnMat = new THREE.MeshStandardMaterial({ color: 0xc2702a, roughness: 0.85, flatShading: true }), oreMat = new THREE.MeshStandardMaterial({ color: 0x2b2f3a, roughness: 0.4, metalness: 0.8 }), oreGlowMat = new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00f0ff, emissiveIntensity: 1.2 });
+    const terrainColor = (vx, vz, vy) => { const c = new THREE.Color(); const dt = Math.hypot(vx, vz), n = (pseudoNoise2D(vx * 2.3, vz * 2.3) + 1.75) / 3.5; if (dt < 29) c.setHex(0x6b4a2b).lerp(new THREE.Color(0x8a5d33), n); else if (vy > 15) c.setHex(0xdfe7f0).lerp(new THREE.Color(0xb8c6d6), n); else if (vy > 9) c.setHex(0x6b7280).lerp(new THREE.Color(0x4b5563), n); else if (vy > 5.5) c.setHex(0x7a7f6a).lerp(new THREE.Color(0x5e6b3a), n); else if (vy < -1.2) c.setHex(0x3b5e2b).lerp(new THREE.Color(0x2f4d24), n); else c.setHex(0x4e8a2f).lerp(new THREE.Color(0x7aa83a), n); if (dt > 29 && dt < 44) c.lerp(new THREE.Color(0x7a5a3a), 0.5 * (1 - (dt - 29) / 15)); return c; };
     const pineLeavesMat = new THREE.MeshStandardMaterial({ color: 0x1e4620, roughness: 0.8, flatShading: true });
     const trunkMat = new THREE.MeshStandardMaterial({ color: 0x4a3219, roughness: 0.9 });
     const rockMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.75, flatShading: true });
@@ -389,18 +407,26 @@
         const pos = geo.attributes.position, colors = [], color = new THREE.Color(), ox = cx * CHUNK_SIZE, oz = cz * CHUNK_SIZE;
         for (let i = 0; i < pos.count; i++) {
             const vx = pos.getX(i) + ox, vz = pos.getZ(i) + oz, vy = getTerrainHeight(vx, vz); pos.setY(i, vy);
-            const dt = Math.hypot(vx, vz);
-            if (dt < 29) color.setHex(0x654321); else if (vy > 14.5) color.setHex(0xe2e8f0); else if (vy > 5.8) color.setHex(0x64748b); else { const tint = (Math.sin(vx * 0.09) + 1) * 0.5; color.setHex(tint > 0.5 ? 0x2e5a27 : 0x3f6a2e); }
-            colors.push(color.r, color.g, color.b);
+            const col = terrainColor(vx, vz, vy); colors.push(col.r, col.g, col.b);
         }
         geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3)); geo.computeVertexNormals();
         const mesh = new THREE.Mesh(geo, terrainMat); mesh.position.set(ox, 0, oz); mesh.receiveShadow = true; chunkGroup.add(mesh);
-        for (let i = 0; i < 9; i++) {
-            const s1 = Math.sin(cx * 91.7 + cz * 37.3 + i * 19.1) * 43758.5453, fx = (s1 - Math.floor(s1)) - 0.5, s2 = Math.cos(cx * 41.2 + cz * 83.9 + i * 29.7) * 23421.631, fz = (s2 - Math.floor(s2)) - 0.5;
-            const wx = ox + fx * CHUNK_SIZE * 0.9, wz = oz + fz * CHUNK_SIZE * 0.9; if (Math.hypot(wx, wz) < 42) continue;
-            const wy = getTerrainHeight(wx, wz);
-            if (wy < 5.5) { const tree = new THREE.Group(); tree.position.set(wx, wy, wz); const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 2.4, 6), trunkMat); trunk.position.y = 1.2; trunk.castShadow = true; tree.add(trunk); const c1 = new THREE.Mesh(new THREE.ConeGeometry(1.7, 3.4, 7), pineLeavesMat); c1.position.y = 3.2; c1.castShadow = true; tree.add(c1); const c2 = new THREE.Mesh(new THREE.ConeGeometry(1.25, 2.6, 7), pineLeavesMat); c2.position.y = 4.8; c2.castShadow = true; tree.add(c2); chunkGroup.add(tree); }
-            else { const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6, 0), rockMat); rock.position.set(wx, wy + 0.6, wz); rock.scale.set(1.4, 0.9, 1.2); rock.castShadow = true; rock.receiveShadow = true; chunkGroup.add(rock); }
+        for (let i = 0; i < 16; i++) {
+            const s1 = Math.sin(cx * 91.7 + cz * 37.3 + i * 19.1) * 43758.5453, fx = (s1 - Math.floor(s1)) - 0.5, s2 = Math.cos(cx * 41.2 + cz * 83.9 + i * 29.7) * 23421.631, fz = (s2 - Math.floor(s2)) - 0.5, s3 = Math.sin(cx * 7.1 + cz * 13.7 + i * 3.3) * 9871.1, kind = s3 - Math.floor(s3);
+            const wx = ox + fx * CHUNK_SIZE * 0.92, wz = oz + fz * CHUNK_SIZE * 0.92; if (Math.hypot(wx, wz) < 42) continue;
+            const wy = getTerrainHeight(wx, wz); const sc = 0.8 + kind * 0.9;
+            if (wy < 5.5) {
+                const tree = new THREE.Group(); tree.position.set(wx, wy, wz); tree.scale.setScalar(sc);
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.45, 2.6, 7), trunkMat); trunk.position.y = 1.3; trunk.castShadow = true; tree.add(trunk);
+                if (kind < 0.5) { const c1 = new THREE.Mesh(new THREE.ConeGeometry(1.7, 3.4, 7), pineLeavesMat); c1.position.y = 3.2; c1.castShadow = true; const c2 = new THREE.Mesh(new THREE.ConeGeometry(1.25, 2.6, 7), pineLeavesMat); c2.position.y = 4.8; c2.castShadow = true; tree.add(c1, c2); }
+                else { const m = kind < 0.8 ? leafMat : autumnMat; for (let k = 0; k < 3; k++) { const b = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5 + k * .2, 0), m); b.position.set((k - 1) * .9, 3.4 + k * .5, (k % 2) * .8 - .4); b.castShadow = true; tree.add(b); } }
+                chunkGroup.add(tree); harvestNodes.push({ type: 'wood', x: wx, z: wz, y: wy, mesh: tree, ready: 0 });
+            } else if (wy > 9 && kind > 0.55) {
+                const ore = new THREE.Group(); ore.position.set(wx, wy, wz); const base = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5, 0), oreMat); base.position.y = .7; base.scale.set(1.3, .9, 1.2); base.castShadow = true; ore.add(base); for (let k = 0; k < 4; k++) { const g = new THREE.Mesh(new THREE.OctahedronGeometry(.25, 0), oreGlowMat); g.position.set((Math.random() - .5) * 1.6, .6 + Math.random() * .9, (Math.random() - .5) * 1.4); ore.add(g); }
+                chunkGroup.add(ore); harvestNodes.push({ type: 'ore', x: wx, z: wz, y: wy, mesh: ore, ready: 0 });
+            } else {
+                const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6, 0), rockMat); rock.position.set(wx, wy + 0.6, wz); rock.scale.set(1.4 * sc, 0.9 * sc, 1.2 * sc); rock.rotation.y = kind * 6; rock.castShadow = true; rock.receiveShadow = true; chunkGroup.add(rock); harvestNodes.push({ type: 'stone', x: wx, z: wz, y: wy, mesh: rock, ready: 0 });
+            }
         }
         addGrassToChunk(cx, cz, chunkGroup); scene.add(chunkGroup); activeChunks.set(key, chunkGroup);
     }
@@ -472,15 +498,18 @@
     }
 
     /* 6. HERO STATE */
-    const hero = { name: 'Thunderhoof_76', classType: 'druid', isOxen: true, level: 1, xp: 0, xpNext: 100, hp: 260, maxHp: 260, mp: 100, maxMp: 100, zart: 180, hides: 0, kills: 0, totalXp: 0, pos: new THREE.Vector3(0, 3.2, 0), velY: 0, isGrounded: true, jumpsRemaining: 2, facingYaw: 0, inBearForm: false, bonusDmg: 0, passiveZartPer10s: 0, armor: { helm: 0, chest: 0, legs: 0 }, plots: {}, mesh: null, wolfPetMesh: null, dead: false, cd: [0,0,0,0] };
-    const SKILL_CD = { druid: [1.0, 8, 6, 2], warrior: [1.2, 6, 7, 14], mage: [1.1, 8, 5, 16], hunter: [1.0, 7, 5, 10] };
+    const hero = { name: 'Thunderhoof_76', classType: 'druid', isOxen: true, level: 1, xp: 0, xpNext: 100, hp: 260, maxHp: 260, mp: 100, maxMp: 100, zart: 180, hides: 0, kills: 0, totalXp: 0, pos: new THREE.Vector3(0, 3.2, 0), velY: 0, isGrounded: true, jumpsRemaining: 2, facingYaw: 0, inBearForm: false, bonusDmg: 0, passiveZartPer10s: 0, armor: { helm: 0, chest: 0, legs: 0 }, plots: {}, mesh: null, wolfPetMesh: null, dead: false, cd: [0,0,0,0,0,0], res: { wood: 0, stone: 0, ore: 0 }, quest: { idx: 0, p: 0, done: false }, stats: { killsByKind: {} } };
+    const SKILL_CD = { druid: [1.0, 8, 6, 2, 9, 20], warrior: [1.2, 6, 7, 14, 10, 22], mage: [1.1, 8, 5, 16, 6, 24], hunter: [1.0, 7, 5, 10, 8, 20] };
+    const UNLOCKS = { druid: [{ lvl: 3, icon: '🌱', name: 'Entangle' }, { lvl: 6, icon: '🌪️', name: 'Hurricane' }], warrior: [{ lvl: 3, icon: '🛡️', name: 'ShieldWall' }, { lvl: 6, icon: '💥', name: 'Earthquake' }], mage: [{ lvl: 3, icon: '🔮', name: 'ArcBarrage' }, { lvl: 6, icon: '🧊', name: 'Blizzard' }], hunter: [{ lvl: 3, icon: '🌋', name: 'Volley' }, { lvl: 6, icon: '🦅', name: 'Eagle' }] };
+    function spellPower() { return (32 + hero.level * 8 + hero.bonusDmg) * (1 + (hero.level - 1) * 0.06) * (hero.plots.forge ? 1.25 : 1); }
+    function refreshSkillBar() { CLASS_SKILL_BARS[hero.classType].forEach((s, i) => { $(`skill-${i + 1}-icon`).textContent = s.icon; $(`skill-${i + 1}-name`).textContent = s.name; }); UNLOCKS[hero.classType].forEach((u, i) => { const ok = hero.level >= u.lvl; $(`skill-${i + 5}-icon`).textContent = ok ? u.icon : '🔒'; $(`skill-${i + 5}-name`).textContent = ok ? u.name : 'Lv' + u.lvl; $(`skill-${i + 5}`).style.opacity = ok ? 1 : .45; }); }
     function equipArmorPiece(slot, tier) {
         if (tier <= hero.armor[slot]) { hero.zart += tier * 18; spawnFloatingText(hero.pos, `+${tier * 18} ZAR-T (Salvage)`, '#fbbf24'); updateAllHUD(); saveProgress(false); return; }
         hero.armor[slot] = tier; const spec = ARMOR_TIERS[tier]; applyArmorToRig(hero.mesh, hero.armor);
         $('slot-' + slot).textContent = spec.name; $('hud-armor-dr').textContent = `${getHeroDamageReduction()}% DR`;
         spawnFloatingText(hero.pos, `EQUIPPED ${spec.name.toUpperCase()} ${slot.toUpperCase()}!`, '#00f0ff'); updateAllHUD(); pushPresence(true); saveProgress(true);
     }
-    function getHeroDamageReduction() { return Math.min(75, ARMOR_TIERS[hero.armor.helm].dr + ARMOR_TIERS[hero.armor.chest].dr + ARMOR_TIERS[hero.armor.legs].dr + (hero.inBearForm ? 20 : 0)); }
+    function getHeroDamageReduction() { return Math.min(85, ARMOR_TIERS[hero.armor.helm].dr + ARMOR_TIERS[hero.armor.chest].dr + ARMOR_TIERS[hero.armor.legs].dr + (hero.inBearForm ? 20 : 0) + (hero.shieldUntil && Date.now() < hero.shieldUntil ? 40 : 0)); }
     function spawnFloatingText(worldPos, text, color = '#ffffff') {
         const proj = worldPos.clone(); proj.y += 2.8; proj.project(camera); if (proj.z > 1) return;
         const div = document.createElement('div'); div.className = 'floating-dmg text-sm sm:text-base'; div.style.left = `${(proj.x * 0.5 + 0.5) * innerWidth}px`; div.style.top = `${(-proj.y * 0.5 + 0.5) * innerHeight}px`; div.style.color = color; div.textContent = text;
@@ -540,14 +569,14 @@
     function faceTarget(t) { if (!t) return; hero.facingYaw = Math.atan2(hero.pos.x - t.mesh.position.x, hero.pos.z - t.mesh.position.z); hero.mesh.rotation.y = hero.facingYaw + Math.PI; }
     // Casting
     let casting = null;
-    function startCast(label, dur, color, onDone) { if (casting) return false; casting = { t: 0, dur, onDone, color }; const w = $('castbar-wrap'); $('castbar-label').textContent = label.toUpperCase(); $('castbar-fill').style.background = color; w.classList.remove('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = -2.4; u.rightArmPivot.rotation.x = -2.4; casting.glow = new THREE.PointLight(new THREE.Color(color).getHex(), 2.2, 10); casting.glow.position.set(0, 3.4, 0); hero.mesh.add(casting.glow); return true; }
-    function updateCast(dt) { if (!casting) return; casting.t += dt; const p = Math.min(1, casting.t / casting.dur); $('castbar-fill').style.width = `${p * 100}%`; $('castbar-pct').textContent = `${Math.round(p * 100)}%`; if (Math.random() < .7) addTrail(hero.mesh.localToWorld(new THREE.Vector3(.5 + (Math.random() - .5) * .6, 3.2 + Math.random() * .6, .4)), new THREE.Color(casting.color).getHex(), .6); if (p >= 1) { const c = casting; casting = null; hero.mesh.remove(c.glow); $('castbar-wrap').classList.add('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = 0; u.rightArmPivot.rotation.x = -1.3; setTimeout(() => { if (hero.mesh) hero.mesh.userData.rightArmPivot.rotation.x = 0; }, 220); c.onDone(); } }
+    function startCast(label, dur, color, onDone) { if (casting) return false; casting = { t: 0, dur, onDone, color, start: performance.now() }; const w = $('castbar-wrap'); $('castbar-label').textContent = label.toUpperCase(); $('castbar-fill').style.background = color; w.classList.remove('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = -2.4; u.rightArmPivot.rotation.x = -2.4; casting.glow = new THREE.PointLight(new THREE.Color(color).getHex(), 2.2, 10); casting.glow.position.set(0, 3.4, 0); hero.mesh.add(casting.glow); return true; }
+    function updateCast(dt) { if (!casting) return; casting.t = (performance.now() - casting.start) / 1000; const p = Math.min(1, casting.t / casting.dur); $('castbar-fill').style.width = `${p * 100}%`; $('castbar-pct').textContent = `${Math.round(p * 100)}%`; if (Math.random() < .7) addTrail(hero.mesh.localToWorld(new THREE.Vector3(.5 + (Math.random() - .5) * .6, 3.2 + Math.random() * .6, .4)), new THREE.Color(casting.color).getHex(), .6); if (p >= 1) { const c = casting; casting = null; hero.mesh.remove(c.glow); $('castbar-wrap').classList.add('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = 0; u.rightArmPivot.rotation.x = -1.3; setTimeout(() => { if (hero.mesh) hero.mesh.userData.rightArmPivot.rotation.x = 0; }, 220); c.onDone(); } }
     function cancelCast() { if (!casting) return; hero.mesh.remove(casting.glow); casting = null; $('castbar-wrap').classList.add('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = 0; u.rightArmPivot.rotation.x = 0; spawnFloatingText(hero.pos, 'Cast interrupted', '#94a3b8'); }
 
     /* 7. SHARED WORLD: BEASTS, CREEPS, STRUCTURES, CORE (Realtime Database) */
     const worldMobs = {}, activeProjectiles = [], playerStructures = {}, remotePlayers = {};
     let selectedTarget = null, coreState = null, waveMeta = null, skinningActive = false, sectorRefs = [];
-    const MOB_TEMPLATES = { strider: { name: 'Prairie Plainstrider', color: 0xd97706, scale: 1.0, hp: 95, dmg: 12, hideName: 'Plainstrider Pelt' }, kodo: { name: 'Woolly Thunder-Kodo', color: 0x57534e, scale: 1.55, hp: 185, dmg: 20, hideName: 'Thick Kodo Hide' }, cougar: { name: 'Crag Mountain Cougar', color: 0xb45309, scale: 1.1, hp: 130, dmg: 17, hideName: 'Mountain Lion Fang-Pelt' }, creep: { name: 'Bloodtotem Creep Raider', color: 0x991b1b, scale: 1.15, hp: 120, dmg: 15, hideName: 'Raider War-Hide' } };
+    const MOB_TEMPLATES = { kodo_alpha: { name: 'Thunderhoof Alpha Kodo', color: 0x3b3b3b, scale: 2.4, hp: 1400, dmg: 38, hideName: 'Alpha Kodo Hide', elite: true }, cougar_matriarch: { name: 'Stonetalon Matriarch', color: 0x7c2d12, scale: 1.8, hp: 900, dmg: 30, hideName: 'Matriarch Pelt', elite: true }, strider: { name: 'Prairie Plainstrider', color: 0xd97706, scale: 1.0, hp: 95, dmg: 12, hideName: 'Plainstrider Pelt' }, kodo: { name: 'Woolly Thunder-Kodo', color: 0x57534e, scale: 1.55, hp: 185, dmg: 20, hideName: 'Thick Kodo Hide' }, cougar: { name: 'Crag Mountain Cougar', color: 0xb45309, scale: 1.1, hp: 130, dmg: 17, hideName: 'Mountain Lion Fang-Pelt' }, creep: { name: 'Bloodtotem Creep Raider', color: 0x991b1b, scale: 1.15, hp: 120, dmg: 15, hideName: 'Raider War-Hide' } };
     function createBeastMesh(tpl, isCreep = false) {
         const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: isCreep ? 0x991b1b : tpl.color, roughness: 0.65, flatShading: true });
         const body = new THREE.Mesh(new THREE.BoxGeometry(1.1 * tpl.scale, 0.9 * tpl.scale, 1.75 * tpl.scale), mat); body.position.y = 0.85 * tpl.scale; body.castShadow = true; g.add(body);
@@ -567,8 +596,8 @@
         listen(worldRef('mobs'), 'value', snap => {
             const data = snap.val() || {};
             Object.entries(data).forEach(([id, m]) => {
-                const tpl = MOB_TEMPLATES[m.kind] || MOB_TEMPLATES.strider;
-                if (!worldMobs[id]) { const mesh = createBeastMesh(tpl, m.creep); mesh.position.set(m.x, getTerrainHeight(m.x, m.z), m.z); scene.add(mesh); worldMobs[id] = { id, mesh, x: m.x, z: m.z, tx: m.x, tz: m.z, tpl, name: tpl.name, dmg: tpl.dmg, hideName: tpl.hideName, isCreep: !!m.creep, attackCd: 0, yaw: 0 }; }
+                const tpl = Object.assign({ kind: m.kind }, MOB_TEMPLATES[m.kind] || MOB_TEMPLATES.strider);
+                if (!worldMobs[id]) { const mesh = createBeastMesh(tpl, m.creep); mesh.position.set(m.x, getTerrainHeight(m.x, m.z), m.z); scene.add(mesh); if (tpl.elite) { const crown = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xf59e0b, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); crown.scale.set(4, 4, 1); crown.position.y = 2.2 * tpl.scale + 1.5; mesh.add(crown); } worldMobs[id] = { id, mesh, x: m.x, z: m.z, tx: m.x, tz: m.z, tpl, name: tpl.name, dmg: tpl.dmg, hideName: tpl.hideName, isCreep: !!m.creep, elite: !!tpl.elite, attackCd: 0, yaw: 0 }; }
                 const mo = worldMobs[id]; const wasAlive = !(mo.state || '').startsWith('DEAD');
                 mo.tx = m.x; mo.tz = m.z; mo.hp = m.hp; mo.maxHp = m.maxHp; mo.state = m.state; mo.lootedBy = m.lootedBy || {}; mo.skinnedBy = m.skinnedBy || {}; mo.killer = m.killer; mo.diedAt = m.diedAt || 0;
                 const dead = (m.state || '').startsWith('DEAD');
@@ -582,10 +611,10 @@
         listen(worldRef('structures'), 'value', snap => {
             const data = snap.val() || {};
             Object.entries(data).forEach(([id, s]) => {
-                if (!playerStructures[id]) { const g = makeStructureMesh(s.type); g.position.set(s.x, getTerrainHeight(s.x, s.z), s.z); g.rotation.y = s.rot || 0; scene.add(g); playerStructures[id] = { id, mesh: g, type: s.type, x: s.x, z: s.z, fireCd: 0 }; }
-                playerStructures[id].hp = s.hp; playerStructures[id].maxHp = s.maxHp; playerStructures[id].owner = s.owner;
+                if (!playerStructures[id]) { const g = makeStructureMesh(s.type); g.position.set(s.x, getTerrainHeight(s.x, s.z), s.z); g.rotation.y = s.rot || 0; scene.add(g); playerStructures[id] = { id, mesh: g, type: s.type, x: s.x, z: s.z, fireCd: 0, struct: true, name: ({ wall: 'Totem Barricade', turret: 'Spirit Tower', gen: 'ZAR-T Harvester', totem: 'War Totem' })[s.type], tpl: { scale: 1.4 }, lootedBy: {}, skinnedBy: {} }; }
+                playerStructures[id].hp = s.hp; playerStructures[id].maxHp = s.maxHp; playerStructures[id].owner = s.owner; playerStructures[id].ownerName = s.ownerName;
             });
-            Object.keys(playerStructures).forEach(id => { if (!data[id]) { scene.remove(playerStructures[id].mesh); delete playerStructures[id]; } });
+            Object.keys(playerStructures).forEach(id => { if (!data[id]) { spawnShatter(playerStructures[id].mesh.position.clone(), 0x7c3aed); scene.remove(playerStructures[id].mesh); if (selectedTarget && selectedTarget.id === id) setTarget(null); delete playerStructures[id]; } });
         });
         listen(worldRef('core'), 'value', s => { coreState = s.val(); updateAllHUD(); });
         listen(worldRef('waveMeta'), 'value', s => { waveMeta = s.val(); });
@@ -612,13 +641,18 @@
     }
     function saveProgress(force) {
         if (!currentUser || !gameStarted) return; const now = performance.now(); if (!force && now - lastSave < 4000) { dirtySave = true; return; } lastSave = now; dirtySave = false;
-        db.ref('players/' + currentUser.uid).set({ name: hero.name, className: hero.classType, classType: hero.classType, isOxen: hero.isOxen, level: hero.level, xp: hero.xp, xpNext: hero.xpNext, maxHp: hero.maxHp, zart: hero.zart, hides: hero.hides, kills: hero.kills, totalXp: hero.totalXp, armor: hero.armor, plots: hero.plots, bonusDmg: hero.bonusDmg, passiveZartPer10s: hero.passiveZartPer10s, realm, updated: SV() });
+        db.ref('players/' + currentUser.uid).set({ name: hero.name, className: hero.classType, classType: hero.classType, isOxen: hero.isOxen, level: hero.level, xp: hero.xp, xpNext: hero.xpNext, maxHp: hero.maxHp, zart: hero.zart, hides: hero.hides, kills: hero.kills, totalXp: hero.totalXp, armor: hero.armor, plots: hero.plots, bonusDmg: hero.bonusDmg, passiveZartPer10s: hero.passiveZartPer10s, res: hero.res, quest: hero.quest, realm, updated: SV() });
         db.ref('leaderboard/' + currentUser.uid).set({ uid: currentUser.uid, name: hero.name, cls: hero.classType, level: hero.level, kills: hero.kills, score: hero.totalXp + hero.kills * 50, realm });
     }
     function systemChat(text) { if (currentUser) db.ref(`chat/${realm}`).push({ uid: currentUser.uid, name: 'SYS', sys: true, text, ts: SV() }); }
     $('chat-form').addEventListener('submit', e => { e.preventDefault(); const inp = $('chat-input'), t = inp.value.trim(); if (!t || !currentUser) return; db.ref(`chat/${realm}`).push({ uid: currentUser.uid, name: hero.name, text: t.slice(0, 240), ts: SV() }); inp.value = ''; inp.blur(); });
 
+    function damageStructure(st, amount) {
+        if (st.owner === currentUser.uid) return; spawnFloatingText(st.mesh.position, `-${Math.round(amount)}`, '#c084fc'); spawnSparks(st.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 0xc084fc, 8); sfx.playHit();
+        worldRef(`structures/${st.id}`).transaction(cur => { if (!cur) return cur; cur.hp = Math.max(0, cur.hp - amount); cur.lastAttacker = hero.name; return cur.hp === 0 ? null : cur; }, (e, c, snap) => { if (c && snap && !snap.exists()) { systemChat(`💥 ${hero.name} destroyed ${st.ownerName || 'a rival'}'s ${st.name}!`); hero.zart += 25; updateAllHUD(); } });
+    }
     function damageMob(mob, amount, isCrit = false) {
+        if (mob.struct) return damageStructure(mob, amount);
         if ((mob.state || '').startsWith('DEAD')) return; selectedTarget = mob; sfx.playHit();
         spawnFloatingText(mob.mesh.position, `${isCrit ? '💥 ' : ''}-${Math.round(amount)}`, isCrit ? '#f59e0b' : '#ffffff');
         worldRef(`mobs/${mob.id}`).transaction(cur => { if (!cur || (cur.state || '').startsWith('DEAD')) return cur; cur.hp = Math.max(0, cur.hp - amount); if (!cur.creep) cur.state = 'CHASE'; if (cur.hp <= 0) { cur.state = 'DEAD_LOOTABLE'; cur.killer = currentUser.uid; cur.diedAt = Date.now(); } return cur; },
@@ -626,11 +660,19 @@
         updateTargetFrame();
     }
     function onKill(mob) {
-        const xp = mob.isCreep ? 35 : 45; hero.xp += xp; hero.totalXp += xp; hero.kills++;
-        while (hero.xp >= hero.xpNext) { hero.level++; hero.xp -= hero.xpNext; hero.xpNext = Math.round(hero.xpNext * 1.35); hero.maxHp += 35; hero.hp = hero.maxHp; spawnFloatingText(hero.pos, `✨ LEVEL UP! LV ${hero.level}`, '#00f0ff'); if (hero.level % 5 === 0) systemChat(`${hero.name} reached Level ${hero.level}!`); }
+        const xp = (mob.isCreep ? 35 : 45) * (mob.elite ? 5 : 1); hero.xp += xp; if (mob.elite) { hero.zart += 120; spawnFloatingText(mob.mesh.position, '👑 ELITE SLAIN +120 ZAR-T', '#f59e0b'); systemChat(`${hero.name} slew the elite ${mob.name}!`); } hero.totalXp += xp; hero.kills++;
+        while (hero.xp >= hero.xpNext) { hero.level++; hero.xp -= hero.xpNext; hero.xpNext = Math.round(hero.xpNext * 1.35); hero.maxHp += 35; hero.hp = hero.maxHp; spawnFloatingText(hero.pos, `✨ LEVEL UP! LV ${hero.level} · +6% spell power`, '#00f0ff'); spawnRing(hero.pos, 0x00f0ff, 1.2, .9); spawnFlash(hero.pos.clone().add(new THREE.Vector3(0, 2, 0)), 0x00f0ff, 10, .6); const u = UNLOCKS[hero.classType].find(x => x.lvl === hero.level); if (u) { setTimeout(() => spawnFloatingText(hero.pos, `🔓 NEW SPELL: ${u.name.toUpperCase()} (key ${u.lvl === 3 ? 5 : 6})`, '#f59e0b'), 600); systemChat(`${hero.name} unlocked ${u.name}!`); } refreshSkillBar(); if (hero.level % 5 === 0) systemChat(`${hero.name} reached Level ${hero.level}!`); }
+        questEvent('kill', mob.isCreep ? 'creep' : mob.tpl.kind); if (mob.elite) questEvent('elite', mob.tpl.kind);
         updateAllHUD(); saveProgress(false);
     }
     function findNearestCorpse() { let best = null, bd = 7.5; Object.values(worldMobs).forEach(m => { if ((m.state || '').startsWith('DEAD') && !m.skinnedBy[currentUser.uid]) { const d = hero.pos.distanceTo(m.mesh.position); if (d < bd) { bd = d; best = m; } } }); return best; }
+    function interactF() {
+        if (hero.pos.distanceTo(chieftain.position) < 5 && hero.quest.done) { turnInQuest(); return; }
+        const corpse = findNearestCorpse(); if (corpse) { tryLootNearestCorpse(); return; }
+        const node = nearestNode(); if (node) { tryHarvest(node); return; }
+        if (hero.pos.distanceTo(chieftain.position) < 5) { const q = currentQuest(); spawnFloatingText(hero.pos, q ? `Chieftain: "${q.desc}"` : 'Chieftain: You have done well, Sovereign.', '#fbbf24'); return; }
+        tryLootNearestCorpse();
+    }
     function tryLootNearestCorpse() {
         const c = findNearestCorpse(); if (!c) { spawnFloatingText(hero.pos, 'No unlooted corpse nearby', '#94a3b8'); return; }
         if (c.lootedBy[currentUser.uid]) { spawnFloatingText(c.mesh.position, 'Already Looted — Press [K] to Skin!', '#10b981'); return; }
@@ -643,13 +685,82 @@
         if (skinningActive) return; const c = findNearestCorpse(); if (!c) { spawnFloatingText(hero.pos, 'Move closer to a slain beast to Skin', '#94a3b8'); return; }
         if (!c.lootedBy[currentUser.uid]) tryLootNearestCorpse();
         skinningActive = true; sfx.playSkinning(); const wrap = $('castbar-wrap'), fill = $('castbar-fill'), pct = $('castbar-pct'); $('castbar-label').textContent = `SKINNING ${c.hideName.toUpperCase()}...`; wrap.classList.remove('hidden');
-        let p = 0; const t = setInterval(() => { p += 10; fill.style.width = `${p}%`; pct.textContent = `${p}%`; if (p >= 100) { clearInterval(t); wrap.classList.add('hidden'); skinningActive = false; c.skinnedBy[currentUser.uid] = true; worldRef(`mobs/${c.id}/skinnedBy/${currentUser.uid}`).set(true); hero.hides += 1; sfx.playLoot(); spawnFloatingText(hero.pos, `🦌 SKINNED: +1 ${c.hideName}!`, '#10b981'); updateAllHUD(); saveProgress(false); } }, 95);
+        let p = 0; const t = setInterval(() => { p += 10; fill.style.width = `${p}%`; pct.textContent = `${p}%`; if (p >= 100) { clearInterval(t); wrap.classList.add('hidden'); skinningActive = false; c.skinnedBy[currentUser.uid] = true; worldRef(`mobs/${c.id}/skinnedBy/${currentUser.uid}`).set(true); hero.hides += 1; sfx.playLoot(); spawnFloatingText(hero.pos, `🦌 SKINNED: +1 ${c.hideName}!`, '#10b981'); questEvent('skin'); updateAllHUD(); saveProgress(false); } }, 95);
+    }
+
+
+    /* 7b. QUEST CHAIN (Chieftain Thunderhoof), HARVESTING, SPAWN ZONES */
+    const QUESTS = [
+        { id: 'q1', title: 'Welcome to the Mesa', desc: 'Slay 4 Prairie Plainstriders on the plains south of town.', type: 'kill', kind: 'strider', n: 4, reward: { zart: 60, xp: 80 } },
+        { id: 'q2', title: 'The Tanner\'s Request', desc: 'Skin 3 beasts [K] and bring the hides back.', type: 'skin', n: 3, reward: { zart: 80, xp: 100, armor: ['legs', 1] } },
+        { id: 'q3', title: 'Timber & Stone', desc: 'Harvest 8 wood from trees and 6 stone from boulders [F].', type: 'harvest', n: 14, reward: { zart: 70, xp: 120 } },
+        { id: 'q4', title: 'Hold the South Gate', desc: 'Build 2 structures near the Sovereign Core [B].', type: 'build', n: 2, reward: { zart: 120, xp: 150, armor: ['helm', 2] } },
+        { id: 'q5', title: 'Kodo Stampede', desc: 'Slay 5 Woolly Thunder-Kodos out on the eastern plains.', type: 'kill', kind: 'kodo', n: 5, reward: { zart: 150, xp: 220 } },
+        { id: 'q6', title: 'Bloodtotem Raiders', desc: 'Repel 8 Bloodtotem Creep Raiders during a wave.', type: 'kill', kind: 'creep', n: 8, reward: { zart: 180, xp: 260, armor: ['chest', 2] } },
+        { id: 'q7', title: 'Crags of Stonetalon', desc: 'Climb the mountains and slay 4 Crag Mountain Cougars.', type: 'kill', kind: 'cougar', n: 4, reward: { zart: 200, xp: 320 } },
+        { id: 'q8', title: 'Veins of the Deep', desc: 'Mine 10 ore from the glowing veins on the peaks.', type: 'harvestore', n: 10, reward: { zart: 220, xp: 340 } },
+        { id: 'q9', title: 'The Alpha', desc: 'Hunt down a rare elite beast (👑) roaming the realm.', type: 'elite', n: 1, reward: { zart: 400, xp: 600, armor: ['chest', 3] } },
+        { id: 'q10', title: 'Sovereign of the Plains', desc: 'Slay 20 beasts of any kind. Endless glory awaits.', type: 'kill', n: 20, reward: { zart: 500, xp: 900, armor: ['helm', 3] } }
+    ];
+    function currentQuest() { return QUESTS[Math.min(hero.quest.idx, QUESTS.length - 1)]; }
+    function questEvent(type, kind, amount = 1) {
+        if (!gameStarted) return; const q = currentQuest(); if (hero.quest.done || hero.quest.idx >= QUESTS.length) return;
+        let match = false;
+        if (q.type === 'kill' && type === 'kill' && (!q.kind || q.kind === kind) && kind !== 'creep' || (q.type === 'kill' && q.kind === 'creep' && type === 'kill' && kind === 'creep')) match = true;
+        if (q.type === 'skin' && type === 'skin') match = true; if (q.type === 'harvest' && type === 'harvest' && kind !== 'ore') match = true; if (q.type === 'harvestore' && type === 'harvest' && kind === 'ore') match = true;
+        if (q.type === 'build' && type === 'build') match = true; if (q.type === 'elite' && type === 'elite') match = true;
+        if (!match) return; hero.quest.p = Math.min(q.n, hero.quest.p + amount); updateQuestHUD();
+        if (hero.quest.p >= q.n) { hero.quest.done = true; spawnFloatingText(hero.pos, `📜 QUEST COMPLETE — return to Chieftain Thunderhoof [F]`, '#fbbf24'); sfx.playLoot(); }
+        saveProgress(false);
+    }
+    function turnInQuest() {
+        const q = currentQuest(); if (!hero.quest.done) return false;
+        hero.zart += q.reward.zart; hero.xp += q.reward.xp; hero.totalXp += q.reward.xp; if (q.reward.armor) equipArmorPiece(q.reward.armor[0], q.reward.armor[1]);
+        spawnFloatingText(hero.pos, `🎁 +${q.reward.zart} ZAR-T · +${q.reward.xp} XP`, '#fbbf24'); spawnFlash(chieftain.position.clone().add(new THREE.Vector3(0, 3, 0)), 0xfbbf24, 10, .6); sfx.playLoot();
+        systemChat(`${hero.name} completed "${q.title}" for Chieftain Thunderhoof.`);
+        hero.quest = { idx: hero.quest.idx + 1, p: 0, done: false };
+        while (hero.xp >= hero.xpNext) { hero.level++; hero.xp -= hero.xpNext; hero.xpNext = Math.round(hero.xpNext * 1.35); hero.maxHp += 35; hero.hp = hero.maxHp; spawnFloatingText(hero.pos, `✨ LEVEL UP! LV ${hero.level}`, '#00f0ff'); refreshSkillBar(); }
+        updateAllHUD(); saveProgress(true); return true;
+    }
+    function updateQuestHUD() {
+        const q = currentQuest(); if (!q || hero.quest.idx >= QUESTS.length) { $('quest-title').textContent = 'All chieftain quests complete'; $('quest-text').textContent = 'Roam the endless plains, raid rival bases, hunt elites.'; $('quest-bar').style.width = '100%'; return; }
+        $('quest-title').textContent = `${hero.quest.idx + 1}/${QUESTS.length} · ${q.title}`; $('quest-text').textContent = hero.quest.done ? '✅ Return to Chieftain Thunderhoof at the totem [F]' : `${q.desc} (${hero.quest.p}/${q.n})`; $('quest-bar').style.width = `${(hero.quest.p / q.n) * 100}%`; $('quest-progress').textContent = hero.quest.done ? 'TURN IN' : 'ACTIVE';
+    }
+    // Chieftain NPC
+    const chieftain = createStickOxenCharacter({ isOxen: true, classType: 'druid', tint: 0x6b3a1a }); chieftain.position.set(4, getTerrainHeight(4, -4), -4); chieftain.rotation.y = Math.PI; scene.add(chieftain); applyArmorToRig(chieftain, { helm: 3, chest: 3, legs: 3 });
+    const questMark = new THREE.Sprite(new THREE.SpriteMaterial({ map: (() => { const c = document.createElement('canvas'); c.width = 64; c.height = 128; const x = c.getContext('2d'); x.fillStyle = '#fbbf24'; x.font = '900 110px Inter, sans-serif'; x.textAlign = 'center'; x.shadowColor = '#000'; x.shadowBlur = 8; x.fillText('!', 32, 104); return new THREE.CanvasTexture(c); })(), transparent: true, depthWrite: false })); questMark.scale.set(1.2, 2.4, 1); questMark.position.y = 4.4; chieftain.add(questMark);
+    const chieftainTag = document.createElement('div'); chieftainTag.className = 'name-tag'; chieftainTag.innerHTML = '<span style="color:#fbbf24">Chieftain Thunderhoof</span> <span style="color:#94a3b8">Quest Giver</span>'; $('name-tags').appendChild(chieftainTag);
+    // Harvesting
+    let harvesting = false;
+    function nearestNode() { let best = null, bd = 4.2; for (const n of harvestNodes) { if (n.ready > Date.now()) continue; const d = Math.hypot(n.x - hero.pos.x, n.z - hero.pos.z); if (d < bd) { bd = d; best = n; } } return best; }
+    function tryHarvest(n) {
+        if (harvesting || casting) return; harvesting = true; const label = { wood: 'CHOPPING TIMBER', stone: 'QUARRYING STONE', ore: 'MINING ORE' }[n.type];
+        startCast(label, 1.5, n.type === 'ore' ? '#00f0ff' : (n.type === 'wood' ? '#a3e635' : '#cbd5e1'), () => { harvesting = false; const amt = 2 + Math.floor(Math.random() * 3); hero.res[n.type] += amt; n.ready = Date.now() + 60000; n.mesh.traverse(o => { if (o.material && !o.userData.dim) { o.userData.dim = true; o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = .35; } }); setTimeout(() => n.mesh.traverse(o => { if (o.material && o.userData.dim) { o.material.opacity = 1; o.material.transparent = false; o.userData.dim = false; } }), 60000); spawnSparks(new THREE.Vector3(n.x, n.y + 1, n.z), n.type === 'ore' ? 0x00f0ff : 0xa3e635, 10); sfx.playLoot(); spawnFloatingText(hero.pos, `+${amt} ${n.type.toUpperCase()}`, '#a3e635'); questEvent('harvest', n.type, amt); updateAllHUD(); saveProgress(false); });
+        setTimeout(() => { if (!casting) harvesting = false; }, 1700);
+    }
+    // Host spawn manager: beasts around every player on the endless map, by zone, with rare elites
+    let lastSpawnTick = 0;
+    function spawnManager(now) {
+        if (now - lastSpawnTick < 4000) return; lastSpawnTick = now;
+        const players = [hero.pos, ...Object.values(remotePlayers).map(p => new THREE.Vector3(p.x, p.y, p.z))], mobsArr = Object.values(worldMobs), upd = {}; let total = mobsArr.length;
+        mobsArr.forEach(m => { if (m.isCreep || (m.state || '').startsWith('DEAD')) return; const near = players.some(p => Math.hypot(p.x - m.tx, p.z - m.tz) < 170); if (!near) { upd[m.id] = null; total--; } });
+        players.forEach(p => {
+            const nearby = mobsArr.filter(m => !m.isCreep && !(m.state || '').startsWith('DEAD') && Math.hypot(p.x - m.tx, p.z - m.tz) < 75).length;
+            for (let i = nearby; i < 9 && total < 48; i++) {
+                const a = Math.random() * 6.28, d = 30 + Math.random() * 45, x = Math.round(p.x + Math.cos(a) * d), z = Math.round(p.z + Math.sin(a) * d); if (Math.hypot(x, z) < 44) continue;
+                const h = getTerrainHeight(x, z), dist = Math.hypot(x, z); let kind = h > 7 ? 'cougar' : (dist > 130 ? 'kodo' : (Math.random() < .35 ? 'kodo' : 'strider'));
+                if (Math.random() < 0.04) kind = h > 7 ? 'cougar_matriarch' : 'kodo_alpha';
+                const tpl = MOB_TEMPLATES[kind]; upd['s' + now.toString(36) + Math.floor(Math.random() * 999)] = { kind, x, z, hp: tpl.hp, maxHp: tpl.hp, state: 'WANDER', creep: false, wander: Math.random() * 6.28 }; total++;
+            }
+        });
+        if (Object.keys(upd).length) worldRef('mobs').update(upd);
     }
 
     /* 8. SKILLS */
     const CLASS_SKILL_BARS = { druid: [{ icon: '🌿', name: 'Wrath' }, { icon: '💚', name: 'Rejuv' }, { icon: '✨', name: 'Starfall' }, { icon: '🐻', name: 'BearForm' }], warrior: [{ icon: '⚔️', name: 'Cleave' }, { icon: '💨', name: 'Charge' }, { icon: '🌩️', name: 'Thunder' }, { icon: '🌪️', name: 'Whirlwind' }], mage: [{ icon: '🔥', name: 'Fireball' }, { icon: '❄️', name: 'FrostNova' }, { icon: '⚡', name: 'Blink' }, { icon: '☄️', name: 'Meteor' }], hunter: [{ icon: '🏹', name: 'AimShot' }, { icon: '💣', name: 'ExplTrap' }, { icon: '🎯', name: 'MultiShot' }, { icon: '🐺', name: 'CallWolf' }] };
     function aliveMobs() { return Object.values(worldMobs).filter(m => !(m.state || '').startsWith('DEAD')); }
     function findNearestLivingMob(maxRange = 28) {
+        if (selectedTarget && selectedTarget.struct && playerStructures[selectedTarget.id] && hero.pos.distanceTo(selectedTarget.mesh.position) <= maxRange) return selectedTarget;
         if (selectedTarget && worldMobs[selectedTarget.id] && !(selectedTarget.state || '').startsWith('DEAD') && hero.pos.distanceTo(selectedTarget.mesh.position) <= maxRange) return selectedTarget;
         let best = null, bd = maxRange; aliveMobs().forEach(m => { const d = hero.pos.distanceTo(m.mesh.position); if (d < bd) { bd = d; best = m; } }); return best;
     }
@@ -661,15 +772,15 @@
     const SPELL_COLORS = { druid: 0x22c55e, warrior: 0xf43f5e, mage: 0xf97316, hunter: 0xfacc15 };
     function triggerClassSkill(slot) {
         if (hero.dead || !hero.mesh || casting) return; if (hero.cd[slot - 1] > 0) return;
-        const c = hero.classType, col = SPELL_COLORS[c], basePower = (32 + hero.level * 8 + hero.bonusDmg) * (hero.plots.forge ? 1.25 : 1);
+        const c = hero.classType, col = SPELL_COLORS[c], basePower = spellPower();
         const begin = () => { hero.cd[slot - 1] = SKILL_CD[c][slot - 1]; sfx.playSpell(); };
         const aoe = (range, mult, crit, color) => { let n = 0; aliveMobs().forEach(m => { if (hero.pos.distanceTo(m.mesh.position) < range) { damageMob(m, basePower * mult, crit); spawnSparks(m.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), color, 8); n++; } }); spawnRing(hero.pos, color, range / 7, .8); spawnFlash(hero.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), color, 10, .4); camShake = Math.max(camShake, .4); return n; };
         const meleeSwing = () => { const u = hero.mesh.userData; u.rightArmPivot.rotation.x = -2.2; u.rightArmPivot.rotation.z = .6; setTimeout(() => { if (!hero.mesh) return; u.rightArmPivot.rotation.x = 0.9; u.rightArmPivot.rotation.z = 0; setTimeout(() => { if (hero.mesh) u.rightArmPivot.rotation.x = 0; }, 160); }, 110); };
         if (slot === 1) {
             const t = findNearestLivingMob(c === 'warrior' ? 7.5 : 30); if (!t) { spawnFloatingText(hero.pos, 'No target in range!', '#94a3b8'); return; }
             setTarget(t); faceTarget(t);
-            if (c === 'warrior' || hero.inBearForm) { begin(); meleeSwing(); setTimeout(() => { if (worldMobs[t.id]) { damageMob(t, basePower * 1.25, true); spawnSparks(t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), col, 14, 1.2); spawnFlash(t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), col, 4, .25); camShake = Math.max(camShake, .3); } }, 140); }
-            else { const names = { druid: 'Wrath', mage: 'Fireball', hunter: 'Aimed Shot' }; startCast(names[c], c === 'hunter' ? .5 : .7, '#' + col.toString(16).padStart(6, '0'), () => { begin(); if (!worldMobs[t.id]) return; faceTarget(t); fireSpellProjectile(t, col, basePower, Math.random() < .2); }); }
+            if (c === 'warrior' || hero.inBearForm) { begin(); meleeSwing(); setTimeout(() => { if (worldMobs[t.id] || playerStructures[t.id]) { damageMob(t, basePower * 1.25, true); spawnSparks(t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), col, 14, 1.2); spawnFlash(t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), col, 4, .25); camShake = Math.max(camShake, .3); } }, 140); }
+            else { const names = { druid: 'Wrath', mage: 'Fireball', hunter: 'Aimed Shot' }; startCast(names[c], c === 'hunter' ? .5 : .7, '#' + col.toString(16).padStart(6, '0'), () => { begin(); if (!worldMobs[t.id] && !playerStructures[t.id]) return; faceTarget(t); fireSpellProjectile(t, col, basePower, Math.random() < .2); }); }
         } else if (slot === 2) {
             if (c === 'druid') { startCast('Rejuvenation', .9, '#4ade80', () => { begin(); hero.hp = Math.min(hero.maxHp, hero.hp + 85); spawnFloatingText(hero.pos, '+85 NATURE REJUVENATION', '#4ade80'); spawnFalling(hero.pos, 0x4ade80, 6, 6, 1.5, () => {}); spawnRing(hero.pos, 0x4ade80, .6, .9); }); }
             else if (c === 'warrior') { const t = findNearestLivingMob(24); if (!t) { spawnFloatingText(hero.pos, 'No target to charge!', '#94a3b8'); return; } begin(); setTarget(t); faceTarget(t); const from = hero.pos.clone(); hero.pos.lerp(t.mesh.position, 0.78); hero.pos.y = getTerrainHeight(hero.pos.x, hero.pos.z); for (let i = 0; i < 12; i++) addTrail(from.clone().lerp(hero.pos, i / 12).add(new THREE.Vector3(0, 1.5, 0)), col, 1.8); meleeSwing(); damageMob(t, basePower * 1.1, true); spawnRing(hero.pos, col, .8, .5); camShake = .5; spawnFloatingText(hero.pos, '💨 INTERCEPT CHARGE!', '#f43f5e'); }
@@ -680,6 +791,19 @@
             else if (c === 'druid') { startCast('Starfall', 1.0, '#a78bfa', () => { begin(); const targets = aliveMobs().filter(m => hero.pos.distanceTo(m.mesh.position) < 18); spawnFalling(hero.pos, 0xa78bfa, Math.max(4, targets.length + 2), 26, 10, p => { spawnFlash(p, 0xa78bfa, 7, .35); spawnRing(p, 0xa78bfa, .9, .6); camShake = Math.max(camShake, .35); aliveMobs().forEach(m => { if (m.mesh.position.distanceTo(p) < 5) damageMob(m, basePower * .6, true); }); }); spawnFloatingText(hero.pos, '✨ STARFALL!', '#a78bfa'); }); }
             else if (c === 'warrior') { begin(); meleeSwing(); setTimeout(() => { if (aoe(14, 1.2, true, 0xf43f5e) === 0) spawnFloatingText(hero.pos, 'THUNDER CLAP!', '#f43f5e'); camShake = .8; }, 160); }
             else { const t = findNearestLivingMob(30); if (!t) { spawnFloatingText(hero.pos, 'No target in range!', '#94a3b8'); return; } startCast('Multi-Shot', .5, '#facc15', () => { begin(); faceTarget(t); const list = aliveMobs().filter(m => hero.pos.distanceTo(m.mesh.position) < 30).sort((a, b) => hero.pos.distanceTo(a.mesh.position) - hero.pos.distanceTo(b.mesh.position)).slice(0, 3); list.forEach((m, i) => setTimeout(() => worldMobs[m.id] && fireSpellProjectile(m, 0xfacc15, basePower * .85, i === 0), i * 120)); spawnFloatingText(hero.pos, '🎯 MULTI-SHOT!', '#facc15'); }); }
+        } else if (slot >= 5) {
+            const u = UNLOCKS[c][slot - 5]; if (hero.level < u.lvl) { spawnFloatingText(hero.pos, `🔒 ${u.name} unlocks at level ${u.lvl}`, '#94a3b8'); return; }
+            if (slot === 5) {
+                if (c === 'druid') startCast('Entangle', .6, '#84cc16', () => { begin(); aoe(14, 0.7, false, 0x84cc16); aliveMobs().forEach(m => { if (hero.pos.distanceTo(m.mesh.position) < 14) worldRef(`mobs/${m.id}/state`).set('ROOTED'); }); spawnFloatingText(hero.pos, '🌱 ROOTS BURST FROM THE EARTH', '#84cc16'); });
+                else if (c === 'warrior') { begin(); hero.shieldUntil = Date.now() + 6000; spawnFlash(hero.pos.clone().add(new THREE.Vector3(0, 1.6, 0)), 0x38bdf8, 8, .5); spawnRing(hero.pos, 0x38bdf8, .7, .6); spawnFloatingText(hero.pos, '🛡️ SHIELD WALL (+40% DR, 6s)', '#38bdf8'); }
+                else if (c === 'mage') { const t = findNearestLivingMob(30); if (!t) { spawnFloatingText(hero.pos, 'No target in range!', '#94a3b8'); return; } startCast('Arcane Barrage', .8, '#c084fc', () => { begin(); faceTarget(t); for (let i = 0; i < 5; i++) setTimeout(() => (worldMobs[t.id] || playerStructures[t.id]) && fireSpellProjectile(t, 0xc084fc, basePower * .55, i === 4), i * 110); }); }
+                else { startCast('Volley', .7, '#fb923c', () => { begin(); const p0 = selectedTarget && !selectedTarget.struct && worldMobs[selectedTarget.id] ? selectedTarget.mesh.position.clone() : hero.pos.clone().add(new THREE.Vector3(-Math.sin(hero.facingYaw) * 10, 0, -Math.cos(hero.facingYaw) * 10)); spawnFalling(p0, 0xfb923c, 10, 18, 7, p => { spawnFlash(p, 0xfb923c, 3, .25); aliveMobs().forEach(m => { if (m.mesh.position.distanceTo(p) < 3.5) damageMob(m, basePower * .45, false); }); }); spawnFloatingText(hero.pos, '🌋 ARROW VOLLEY!', '#fb923c'); }); }
+            } else {
+                if (c === 'druid') startCast('Hurricane', 1.2, '#22d3ee', () => { begin(); let ticks = 0; const hv = setInterval(() => { if (++ticks > 6 || !hero.mesh) return clearInterval(hv); aoe(16, 0.45, false, 0x22d3ee); for (let i = 0; i < 8; i++) addTrail(hero.pos.clone().add(new THREE.Vector3(Math.cos(ticks + i) * (4 + i), 1 + i * .4, Math.sin(ticks + i) * (4 + i))), 0x22d3ee, 2); }, 500); spawnFloatingText(hero.pos, '🌪️ HURRICANE!', '#22d3ee'); });
+                else if (c === 'warrior') { begin(); meleeSwing(); setTimeout(() => { aoe(22, 2.2, true, 0xf59e0b); camShake = 1.3; spawnFalling(hero.pos, 0x78716c, 12, 10, 12, p => spawnRing(p, 0x78716c, .5, .4)); spawnFloatingText(hero.pos, '💥 EARTHQUAKE!', '#f59e0b'); }, 200); }
+                else if (c === 'mage') startCast('Blizzard', 1.3, '#bae6fd', () => { begin(); const p0 = selectedTarget && worldMobs[selectedTarget.id] ? selectedTarget.mesh.position.clone() : hero.pos.clone().add(new THREE.Vector3(-Math.sin(hero.facingYaw) * 12, 0, -Math.cos(hero.facingYaw) * 12)); spawnFalling(p0, 0xbae6fd, 18, 22, 9, p => { spawnFlash(p, 0xbae6fd, 3, .25); aliveMobs().forEach(m => { if (m.mesh.position.distanceTo(p) < 4) damageMob(m, basePower * .5, false); }); }); spawnFloatingText(hero.pos, '🧊 BLIZZARD!', '#bae6fd'); });
+                else { begin(); const list = aliveMobs().filter(m => hero.pos.distanceTo(m.mesh.position) < 34).slice(0, 6); const eagle = new THREE.Mesh(new THREE.ConeGeometry(.5, 2, 4), new THREE.MeshBasicMaterial({ color: 0xfef3c7 })); eagle.rotation.x = Math.PI / 2; eagle.position.copy(hero.pos).add(new THREE.Vector3(0, 9, 0)); scene.add(eagle); fxRings.push({ mesh: eagle, age: 0, max: 2.2, flash: true, size: 1 }); list.forEach((m, i) => setTimeout(() => { if (worldMobs[m.id]) { fireSpellProjectile(m, 0xfef3c7, basePower * 1.1, true, eagle.position); } }, i * 220)); spawnFloatingText(hero.pos, '🦅 EAGLE STRIKE!', '#fef3c7'); }
+            }
         } else if (slot === 4) {
             if (c === 'druid') { begin(); hero.inBearForm = !hero.inBearForm; hero.mesh.userData.bipedGroup.visible = !hero.inBearForm; hero.mesh.userData.bearGroup.visible = hero.inBearForm; sfx.playRoar(); spawnFlash(hero.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), 0xf59e0b, 9, .5); spawnRing(hero.pos, 0xf59e0b, .9, .7); spawnFloatingText(hero.pos, hero.inBearForm ? '🐻 DIRE BEAR FORM (+20% ARMOR)' : '🐂 OXEN CASTER FORM', '#f59e0b'); pushPresence(true); }
             else if (c === 'hunter') { begin(); if (!hero.wolfPetMesh) { hero.wolfPetMesh = createBeastMesh({ color: 0x38bdf8, scale: 0.72 }); hero.wolfPetMesh.position.copy(hero.pos); scene.add(hero.wolfPetMesh); spawnFlash(hero.pos.clone().add(new THREE.Vector3(2, 1, 0)), 0x38bdf8, 6, .5); spawnFloatingText(hero.pos, '🐺 SPIRIT WOLF COMPANION SUMMONED!', '#38bdf8'); } else { const t = findNearestLivingMob(20); if (t) { setTarget(t); hero.wolfPetMesh.position.copy(t.mesh.position).add(new THREE.Vector3(1.2, 0, 0)); damageMob(t, basePower * 1.6, true); spawnSparks(t.mesh.position.clone().add(new THREE.Vector3(0, 1, 0)), 0x38bdf8, 14); } spawnFloatingText(hero.pos, '🐺 Spirit Wolf Ferocious Bite!', '#38bdf8'); } }
@@ -694,12 +818,18 @@
         const g = new THREE.Group();
         if (type === 'wall') { const w = new THREE.Mesh(new THREE.BoxGeometry(3.6, 2.4, 0.8), rockMat); w.position.y = 1.2; w.castShadow = true; g.add(w); }
         else if (type === 'turret') { const b = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.95, 2.8, 8), trunkMat); b.position.y = 1.4; const c = new THREE.Mesh(new THREE.OctahedronGeometry(0.55, 0), new THREE.MeshBasicMaterial({ color: 0x00f0ff })); c.position.y = 3.2; g.add(b, c); g.userData.crystal = c; }
+        else if (type === 'totem') { const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.65, 5.5, 8), trunkMat); pole.position.y = 2.75; pole.castShadow = true; const face = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.2, 0.9), new THREE.MeshStandardMaterial({ color: 0x7c3aed, emissive: 0x7c3aed, emissiveIntensity: .5 })); face.position.y = 4.2; const eye = new THREE.Mesh(new THREE.SphereGeometry(.2, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf43f5e })); eye.position.set(0, 4.4, .5); const aura = new THREE.PointLight(0x7c3aed, 1.5, 16); aura.position.y = 4.5; g.add(pole, face, eye, aura); g.userData.crystal = face; }
         else { const rig = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.1, 1.8, 6), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.7, roughness: 0.3 })); rig.position.y = 0.9; g.add(rig); }
+        g.traverse(o => { if (o.isMesh) o.userData.structure = true; });
         return g;
     }
+    const BUILD_COST = { wall: { zart: 20, wood: 12 }, turret: { zart: 40, stone: 10, ore: 4 }, gen: { zart: 50, stone: 8, wood: 6 }, totem: { zart: 80, wood: 10, stone: 10, ore: 6 } };
     function buildStructureAtHero(type) {
-        const costs = { wall: 40, turret: 85, gen: 100 }, hp = { wall: 600, turret: 350, gen: 300 }, cost = costs[type];
+        const c = BUILD_COST[type], hp = { wall: 600, turret: 350, gen: 300, totem: 900 }, cost = c.zart;
+        const missing = Object.entries(c).filter(([k, v]) => k !== 'zart' && hero.res[k] < v).map(([k, v]) => `${v - hero.res[k]} ${k}`);
+        if (missing.length) { spawnFloatingText(hero.pos, `Need ${missing.join(', ')} — harvest with [F]`, '#f43f5e'); return; }
         if (hero.zart < cost) { spawnFloatingText(hero.pos, `Need ${cost} ZAR-T!`, '#f43f5e'); return; }
+        Object.entries(c).forEach(([k, v]) => { if (k !== 'zart') hero.res[k] -= v; }); questEvent('build');
         if (Object.keys(playerStructures).length >= 60) { spawnFloatingText(hero.pos, 'Realm build limit reached (60)', '#f43f5e'); return; }
         hero.zart -= cost; sfx.playLoot();
         const bx = hero.pos.x - Math.sin(hero.facingYaw) * 3.2, bz = hero.pos.z - Math.cos(hero.facingYaw) * 3.2;
@@ -718,7 +848,7 @@
         const players = [hero.pos, ...Object.values(remotePlayers).map(p => new THREE.Vector3(p.x, p.y, p.z))];
         const corePos = new THREE.Vector3(CORE_POS.x, 0, CORE_POS.z), upd = {}; let coreDmg = 0; const structDmg = {};
         Object.values(worldMobs).forEach(m => {
-            if ((m.state || '').startsWith('DEAD')) { if (m.diedAt && now - m.diedAt > 45000) { upd[m.id] = null; if (!m.isCreep) { const a = Math.random() * Math.PI * 2, d = 48 + Math.random() * 45, kinds = ['strider', 'kodo', 'cougar'], k = kinds[Math.floor(Math.random() * 3)]; upd['b' + now.toString(36) + Math.floor(Math.random() * 99)] = { kind: k, x: Math.round(Math.cos(a) * d), z: Math.round(Math.sin(a) * d), hp: MOB_TEMPLATES[k].hp, maxHp: MOB_TEMPLATES[k].hp, state: 'WANDER', creep: false, wander: Math.random() * 6.28 }; } } return; }
+            if ((m.state || '').startsWith('DEAD')) { if (m.diedAt && now - m.diedAt > 45000) upd[m.id] = null; return; }
             let nx = m.tx, nz = m.tz, state = m.state;
             let nearest = null, nd = 1e9; players.forEach(p => { const d = Math.hypot(p.x - m.tx, p.z - m.tz); if (d < nd) { nd = d; nearest = p; } });
             if (m.isCreep) {
@@ -729,11 +859,13 @@
                 const d = Math.hypot(target.x - m.tx, target.z - m.tz);
                 if (d > (target.reach || reach)) { nx += (target.x - m.tx) / d * 5.2 * 0.25; nz += (target.z - m.tz) / d * 5.2 * 0.25; }
                 else if (target.core) coreDmg += m.dmg * 0.05; else if (target.s) structDmg[target.s.id] = (structDmg[target.s.id] || 0) + m.dmg * 0.08;
-            } else if (state === 'CHASE') { if (nd > 32) state = 'WANDER'; else if (nd > 2.4) { nx += (nearest.x - m.tx) / nd * 6.5 * 0.25; nz += (nearest.z - m.tz) / nd * 6.5 * 0.25; } }
+            } else if (state === 'ROOTED') { if (Math.random() < 0.12) state = 'CHASE'; }
+            else if (state === 'CHASE') { if (nd > 32) state = 'WANDER'; else if (nd > 2.4) { nx += (nearest.x - m.tx) / nd * 6.5 * 0.25; nz += (nearest.z - m.tz) / nd * 6.5 * 0.25; } }
             else { m.wander = (m.wander || 0) + (Math.random() - 0.5) * 0.25; nx += Math.sin(m.wander) * 1.6 * 0.25; nz += Math.cos(m.wander) * 1.6 * 0.25; if (nearest && nd < 6 && !m.isCreep && m.tpl.name !== 'Prairie Plainstrider') state = 'CHASE'; }
             if (Math.abs(nx - m.tx) > 0.01 || Math.abs(nz - m.tz) > 0.01 || state !== m.state) { upd[`${m.id}/x`] = Math.round(nx * 10) / 10; upd[`${m.id}/z`] = Math.round(nz * 10) / 10; upd[`${m.id}/state`] = state; }
         });
         if (Object.keys(upd).length) worldRef('mobs').update(upd);
+        spawnManager(now);
         if (coreDmg > 0) worldRef('core').transaction(cur => { if (!cur || (cur.downUntil && now < cur.downUntil)) return cur; cur.hp = Math.max(0, cur.hp - coreDmg); if (cur.hp === 0) cur.downUntil = now + 60000; return cur; }, (e, c, s) => { if (c && s && s.val() && s.val().hp === 0) systemChat('💎 THE SOVEREIGN CORE HAS FALLEN — rebooting in 60s.'); });
         Object.entries(structDmg).forEach(([id, dmg]) => worldRef(`structures/${id}`).transaction(cur => { if (!cur) return cur; cur.hp = Math.max(0, cur.hp - dmg); return cur.hp === 0 ? null : cur; }));
         if (coreState && coreState.downUntil && now > coreState.downUntil) worldRef('core').update({ hp: 1500, maxHp: 1500, downUntil: 0 });
@@ -746,7 +878,7 @@
     window.addEventListener('keydown', e => {
         if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) { if (e.key === 'Escape') document.activeElement.blur(); return; }
         const k = e.key.toLowerCase(); keys[k] = true; if (!gameStarted) return;
-        if (e.code === 'Space') { e.preventDefault(); triggerHeroJump(); } else if (k === 'tab') { e.preventDefault(); cycleTarget(); } else if (k === 'x') { setTarget(null); } else if (['1', '2', '3', '4'].includes(k)) triggerClassSkill(parseInt(k, 10)); else if (k === 'f') tryLootNearestCorpse(); else if (k === 'k') trySkinNearestCorpse(); else if (k === 'b') $('build-drawer').classList.toggle('hidden'); else if (k === 'v') toggleModal('town-modal'); else if (k === 'l') toggleModal('lb-modal'); else if (k === 'enter') { e.preventDefault(); $('chat-input').focus(); } else if (k === '=' || k === '+') cam.dist = Math.max(6, cam.dist - 2.0); else if (k === '-') cam.dist = Math.min(42, cam.dist + 2.0); else if (e.key === 'Escape') { ['town-modal', 'lb-modal'].forEach(id => { $(id).classList.add('hidden'); $(id).classList.remove('flex'); }); }
+        if (e.code === 'Space') { e.preventDefault(); triggerHeroJump(); } else if (k === 'tab') { e.preventDefault(); cycleTarget(); } else if (k === 'x') { setTarget(null); } else if (['1', '2', '3', '4', '5', '6'].includes(k)) triggerClassSkill(parseInt(k, 10)); else if (k === 'f') interactF(); else if (k === 'k') trySkinNearestCorpse(); else if (k === 'b') $('build-drawer').classList.toggle('hidden'); else if (k === 'v') toggleModal('town-modal'); else if (k === 'l') toggleModal('lb-modal'); else if (k === 'enter') { e.preventDefault(); $('chat-input').focus(); } else if (k === '=' || k === '+') cam.dist = Math.max(6, cam.dist - 2.0); else if (k === '-') cam.dist = Math.min(42, cam.dist + 2.0); else if (e.key === 'Escape') { ['town-modal', 'lb-modal'].forEach(id => { $(id).classList.add('hidden'); $(id).classList.remove('flex'); }); }
     });
     window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
     function triggerHeroJump() { if (hero.dead || hero.jumpsRemaining <= 0) return; hero.velY = 12.8; hero.isGrounded = false; hero.jumpsRemaining--; sfx.playJump(); }
@@ -756,23 +888,23 @@
     window.addEventListener('mouseup', e => { if (cam.isRightDragging && cam.moved < 6 && e.button === 0 && gameStarted) clickTarget(e.clientX, e.clientY); cam.isRightDragging = false; });
     renderer.domElement.addEventListener('wheel', e => { cam.dist = Math.max(6, Math.min(44, cam.dist + e.deltaY * 0.018)); }, { passive: true });
     let lastTouchDist = 0; renderer.domElement.addEventListener('touchmove', e => { if (e.touches.length === 2) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); if (lastTouchDist) cam.dist = Math.max(6, Math.min(44, cam.dist - (d - lastTouchDist) * 0.08)); lastTouchDist = d; } }, { passive: true }); renderer.domElement.addEventListener('touchend', () => lastTouchDist = 0);
-    function clickTarget(cx, cy) { const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1), camera); const hits = rc.intersectObjects(Object.values(worldMobs).map(m => m.mesh), true); if (!hits.length) return; let o = hits[0].object; while (o.parent && o.parent !== scene) o = o.parent; const m = Object.values(worldMobs).find(x => x.mesh === o); if (m) setTarget(m); }
+    function clickTarget(cx, cy) { const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1), camera); const hits = rc.intersectObjects([...Object.values(worldMobs).map(m => m.mesh), ...Object.values(playerStructures).map(s => s.mesh)], true); if (!hits.length) return; let o = hits[0].object; while (o.parent && o.parent !== scene) o = o.parent; const m = Object.values(worldMobs).find(x => x.mesh === o) || Object.values(playerStructures).find(x => x.mesh === o); if (m) { if (m.struct && m.owner === currentUser.uid) { spawnFloatingText(m.mesh.position, 'Your own structure', '#94a3b8'); return; } setTarget(m); } }
 
     /* 12. UI */
     function toggleModal(id) { const m = $(id), hidden = m.classList.contains('hidden'); m.classList.toggle('hidden', !hidden); m.classList.toggle('flex', hidden); }
     function updateAllHUD() {
         $('hud-hero-name').textContent = hero.name; $('hud-level').textContent = `LV ${hero.level}`;
         $('hud-hp-bar').style.width = `${(hero.hp / hero.maxHp) * 100}%`; $('hud-hp-text').textContent = `${Math.round(hero.hp)} / ${hero.maxHp} HP`; $('hud-xp-bar').style.width = `${Math.min(100, hero.xp / hero.xpNext * 100)}%`;
-        $('hud-zart').textContent = `${hero.zart} ZAR-T`; $('hud-hides').textContent = `${hero.hides} HIDES`;
+        $('hud-zart').textContent = `${hero.zart} ZAR-T`; $('hud-hides').textContent = `${hero.hides} HIDES`; $('hud-res').textContent = `🪵${hero.res.wood} 🪨${hero.res.stone} ⛏️${hero.res.ore}`; updateQuestHUD();
         const cs = coreState || { hp: 1500, maxHp: 1500 }; $('hud-core-hp').textContent = cs.downUntil && Date.now() < cs.downUntil ? 'CORE DOWN' : `CORE ${Math.round((cs.hp / cs.maxHp) * 100)}%`;
         ['helm', 'chest', 'legs'].forEach(s => { $('slot-' + s).textContent = ARMOR_TIERS[hero.armor[s]].name; }); $('hud-armor-dr').textContent = `${getHeroDamageReduction()}% DR`;
         const dt = Math.hypot(hero.pos.x, hero.pos.z); $('hud-zone-name').textContent = dt < 30 ? 'RED CLOUD MESA (THUNDERHOOF TOWN)' : (hero.pos.y > 7.5 ? 'STONETALON HIGH MOUNTAIN CRAGS' : 'ENDLESS MULGORE HUNTING PLAINS');
         document.querySelectorAll('.btn-buy-plot').forEach(b => { if (hero.plots[b.dataset.plot]) { b.textContent = 'OWNED ✓'; b.disabled = true; b.classList.add('opacity-50'); } });
     }
     function updateTargetFrame() {
-        const f = $('target-frame'); if (!selectedTarget || !worldMobs[selectedTarget.id] || selectedTarget.skinnedBy[currentUser.uid]) { f.classList.add('hidden'); f.classList.remove('flex'); return; }
+        const f = $('target-frame'); if (!selectedTarget || (!worldMobs[selectedTarget.id] && !playerStructures[selectedTarget.id]) || (selectedTarget.skinnedBy || {})[currentUser.uid]) { f.classList.add('hidden'); f.classList.remove('flex'); return; }
         f.classList.remove('hidden'); f.classList.add('flex'); $('target-name').textContent = selectedTarget.name.toUpperCase();
-        $('target-status').textContent = ((selectedTarget.state || '').startsWith('DEAD') ? 'CORPSE (LOOT [F] / SKIN [K])' : (selectedTarget.isCreep ? 'CREEP INVADER' : 'WILD BEAST')) + ' · ' + Math.round(hero.pos.distanceTo(selectedTarget.mesh.position)) + 'm';
+        $('target-status').textContent = ((selectedTarget.state || '').startsWith('DEAD') ? 'CORPSE (LOOT [F] / SKIN [K])' : (selectedTarget.struct ? (selectedTarget.ownerName || 'ENEMY') + ' STRUCTURE' : selectedTarget.elite ? '👑 RARE ELITE' : (selectedTarget.isCreep ? 'CREEP INVADER' : 'WILD BEAST'))) + ' · ' + Math.round(hero.pos.distanceTo(selectedTarget.mesh.position)) + 'm';
         $('target-hp-bar').style.width = `${(selectedTarget.hp / selectedTarget.maxHp) * 100}%`; $('target-hp-text').textContent = `${Math.round(selectedTarget.hp)} / ${selectedTarget.maxHp}`;
     }
     function selectClassCard(cls) { document.querySelectorAll('.class-card').forEach(c => { const on = c.dataset.class === cls; c.classList.toggle('border-amber-400', on); c.classList.toggle('bg-slate-900/90', on); c.classList.toggle('border-slate-700/80', !on); c.classList.toggle('bg-slate-900/70', !on); }); hero.classType = cls; }
@@ -791,10 +923,10 @@
         Object.keys(hero.plots).forEach(p => constructPurchasedTownBuilding(p));
         $('char-select-modal').classList.add('hidden'); sfx.playLoot();
         try { await seedWorldIfEmpty(); bindWorld(); } catch (e) { spawnFloatingText(hero.pos, 'World sync error: ' + e.message, '#f43f5e'); }
-        gameStarted = true; updateAllHUD(); saveProgress(true); systemChat(`${hero.name} the ${hero.classType} entered Red Cloud Mesa.`);
+        gameStarted = true; updateAllHUD(); updateQuestHUD(); saveProgress(true); systemChat(`${hero.name} the ${hero.classType} entered Red Cloud Mesa.`);
     });
     document.querySelectorAll('.action-slot[data-slot]').forEach(el => el.addEventListener('click', () => triggerClassSkill(parseInt(el.dataset.slot, 10))));
-    $('btn-jump').addEventListener('click', triggerHeroJump); $('btn-bar-loot').addEventListener('click', tryLootNearestCorpse); $('btn-bar-skin').addEventListener('click', trySkinNearestCorpse); $('btn-context-loot').addEventListener('click', tryLootNearestCorpse); $('btn-context-skin').addEventListener('click', trySkinNearestCorpse);
+    $('btn-jump').addEventListener('click', triggerHeroJump); $('btn-bar-loot').addEventListener('click', interactF); $('btn-bar-skin').addEventListener('click', trySkinNearestCorpse); $('btn-context-loot').addEventListener('click', tryLootNearestCorpse); $('btn-context-skin').addEventListener('click', trySkinNearestCorpse);
     $('btn-open-town').addEventListener('click', () => toggleModal('town-modal')); $('btn-close-town').addEventListener('click', () => toggleModal('town-modal')); $('btn-leaderboard').addEventListener('click', () => toggleModal('lb-modal')); $('btn-close-lb').addEventListener('click', () => toggleModal('lb-modal'));
     $('btn-toggle-build').addEventListener('click', () => $('build-drawer').classList.toggle('hidden'));
     document.querySelectorAll('.btn-build-struct').forEach(btn => btn.addEventListener('click', () => buildStructureAtHero(btn.dataset.build)));
@@ -806,7 +938,7 @@
     $('btn-sell-hides').addEventListener('click', () => { if (hero.hides <= 0) { spawnFloatingText(hero.pos, 'No Skinned Hides to sell yet!', '#94a3b8'); return; } const pay = hero.hides * 35; hero.zart += pay; hero.hides = 0; sfx.playLoot(); spawnFloatingText(hero.pos, `+${pay} ZAR-T (Sold Hides)`, '#10b981'); updateAllHUD(); saveProgress(true); });
     $('btn-buy-sovereign').addEventListener('click', () => { if (hero.zart < 150) { spawnFloatingText(hero.pos, 'Need 150 ZAR-T!', '#f43f5e'); return; } hero.zart -= 150; const slots = ['helm', 'chest', 'legs']; equipArmorPiece(slots.find(s => hero.armor[s] < 3) || slots[Math.floor(Math.random() * 3)], 3); sfx.playLoot(); });
     $('cam-rot-left').addEventListener('click', () => { cam.yaw += 0.35; }); $('cam-rot-right').addEventListener('click', () => { cam.yaw -= 0.35; }); $('cam-tilt-up').addEventListener('click', () => { cam.pitch = Math.min(1.3, cam.pitch + 0.15); }); $('cam-tilt-down').addEventListener('click', () => { cam.pitch = Math.max(0.15, cam.pitch - 0.15); }); $('cam-zoom-in').addEventListener('click', () => { cam.dist = Math.max(6, cam.dist - 3); }); $('cam-zoom-out').addEventListener('click', () => { cam.dist = Math.min(44, cam.dist + 3); });
-    window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); });
+    window.addEventListener('resize', () => { camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth, innerHeight); if (composer) composer.setSize(innerWidth, innerHeight); });
     window.addEventListener('beforeunload', () => { if (gameStarted) saveProgress(true); });
 
     /* 13. MAIN LOOP */
@@ -814,7 +946,7 @@
     function animate() {
         requestAnimationFrame(animate);
         const dt = Math.min(clock.getDelta(), 0.05), elapsed = clock.getElapsedTime();
-        if (!hero.mesh) { renderer.render(scene, camera); return; }
+        if (!hero.mesh) { if (composer) composer.render(); else renderer.render(scene, camera); return; }
         if (keys['q']) cam.yaw += 1.8 * dt; if (keys['e']) cam.yaw -= 1.8 * dt; if (keys['r']) cam.pitch = Math.min(1.32, cam.pitch + 1.1 * dt); if (keys['t']) cam.pitch = Math.max(0.14, cam.pitch - 1.1 * dt);
         let mf = 0, mr = 0; if (gameStarted && !hero.dead) { if (keys['w'] || keys['arrowup']) mf += 1; if (keys['s'] || keys['arrowdown']) mf -= 1; if (keys['d'] || keys['arrowright']) mr += 1; if (keys['a'] || keys['arrowleft']) mr -= 1; }
         const moving = mf !== 0 || mr !== 0;
@@ -826,9 +958,9 @@
         if (hero.pos.y <= groundY) { hero.pos.y = groundY; hero.velY = 0; hero.isGrounded = true; hero.jumpsRemaining = 2; }
         hero.mesh.position.copy(hero.pos); updateEndlessWorldChunks(hero.pos.x, hero.pos.z);
         sunLight.position.set(hero.pos.x + 60, 95, hero.pos.z + 45); sunLight.target.position.set(hero.pos.x, 0, hero.pos.z); sunLight.target.updateMatrixWorld();
-        for (let i = 0; i < 4; i++) { if (hero.cd[i] > 0) { hero.cd[i] -= dt; const el = $('cd-' + (i + 1)); el.style.display = hero.cd[i] > 0 ? 'flex' : 'none'; el.textContent = hero.cd[i].toFixed(1); } }
+        for (let i = 0; i < 6; i++) { if (hero.cd[i] > 0) { hero.cd[i] -= dt; const el = $('cd-' + (i + 1)); el.style.display = hero.cd[i] > 0 ? 'flex' : 'none'; el.textContent = hero.cd[i].toFixed(1); } }
         if (hero.wolfPetMesh) { const wx = hero.pos.x + Math.cos(hero.facingYaw) * 2.4, wz = hero.pos.z - Math.sin(hero.facingYaw) * 2.4; hero.wolfPetMesh.position.x += (wx - hero.wolfPetMesh.position.x) * 0.1; hero.wolfPetMesh.position.z += (wz - hero.wolfPetMesh.position.z) * 0.1; hero.wolfPetMesh.position.y = getTerrainHeight(hero.wolfPetMesh.position.x, hero.wolfPetMesh.position.z); hero.wolfPetMesh.rotation.y = hero.mesh.rotation.y; }
-        for (let i = activeProjectiles.length - 1; i >= 0; i--) { const p = activeProjectiles[i]; if (!p.targetMob || !worldMobs[p.targetMob.id] || (p.targetMob.state || '').startsWith('DEAD')) { scene.remove(p.mesh); activeProjectiles.splice(i, 1); continue; } const tc = p.targetMob.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), dir = tc.clone().sub(p.mesh.position), d = dir.length(); if (d < 1.1) { spawnFlash(tc, p.color || 0x00f0ff, 5); spawnSparks(tc, p.color || 0x00f0ff, 12); if (!p.turret) damageMob(p.targetMob, p.dmg, p.isCrit); else turretHit(p.targetMob, p.dmg); scene.remove(p.mesh); activeProjectiles.splice(i, 1); } else { dir.normalize(); p.mesh.position.addScaledVector(dir, p.speed * dt); addTrail(p.mesh.position, p.color || 0x00f0ff, 1.4); } }
+        for (let i = activeProjectiles.length - 1; i >= 0; i--) { const p = activeProjectiles[i]; if (!p.targetMob || (!worldMobs[p.targetMob.id] && !playerStructures[p.targetMob.id]) || (p.targetMob.state || '').startsWith('DEAD')) { scene.remove(p.mesh); activeProjectiles.splice(i, 1); continue; } const tc = p.targetMob.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), dir = tc.clone().sub(p.mesh.position), d = dir.length(); if (d < 1.1) { spawnFlash(tc, p.color || 0x00f0ff, 5); spawnSparks(tc, p.color || 0x00f0ff, 12); if (!p.turret) damageMob(p.targetMob, p.dmg, p.isCrit); else turretHit(p.targetMob, p.dmg); scene.remove(p.mesh); activeProjectiles.splice(i, 1); } else { dir.normalize(); p.mesh.position.addScaledVector(dir, p.speed * dt); addTrail(p.mesh.position, p.color || 0x00f0ff, 1.4); } }
         Object.values(worldMobs).forEach(m => {
             m.x += (m.tx - m.x) * Math.min(1, dt * 6); m.z += (m.tz - m.z) * Math.min(1, dt * 6); const gy = getTerrainHeight(m.x, m.z); m.mesh.position.set(m.x, (m.state || '').startsWith('DEAD') ? gy + 0.35 : gy, m.z);
             if ((m.state || '').startsWith('DEAD')) return;
@@ -838,7 +970,8 @@
         });
         Object.values(playerStructures).forEach(s => { if (s.type !== 'turret') return; if (s.mesh.userData.crystal) s.mesh.userData.crystal.rotation.y += dt * 2; if (!isHost) return; s.fireCd = Math.max(0, s.fireCd - dt); if (s.fireCd <= 0) { const t = aliveMobs().find(m => (m.isCreep || m.state === 'CHASE') && m.mesh.position.distanceTo(s.mesh.position) < 22); if (t) { s.fireCd = 1.4; fireSpellProjectile(t, 0x00f0ff, 28, false, s.mesh.position); activeProjectiles[activeProjectiles.length - 1].turret = true; } } });
         Object.values(remotePlayers).forEach(p => { p.x += (p.tx - p.x) * Math.min(1, dt * 8); p.y += (p.ty - p.y) * Math.min(1, dt * 8); p.z += (p.tz - p.z) * Math.min(1, dt * 8); const mv = Math.hypot(p.tx - p.x, p.tz - p.z) > 0.05; p.mesh.position.set(p.x, p.y, p.z); p.mesh.rotation.y = (p.tyaw || 0) + Math.PI; const u = p.mesh.userData, sw = mv ? Math.sin(elapsed * 11) * 0.65 : 0; u.leftLegPivot.rotation.x = sw; u.rightLegPivot.rotation.x = -sw; const v = new THREE.Vector3(p.x, p.y + 3.4, p.z).project(camera); p.tag.style.left = `${(v.x * .5 + .5) * innerWidth}px`; p.tag.style.top = `${(v.y * -.5 + .5) * innerHeight}px`; p.tag.style.display = v.z < 1 ? 'block' : 'none'; });
-        const nc = findNearestCorpse(), ctx = $('context-prompt'); if (nc) { ctx.classList.remove('hidden'); ctx.classList.add('flex'); $('context-title').textContent = nc.lootedBy[currentUser.uid] ? `${nc.name.toUpperCase()} — READY TO SKIN` : `${nc.name.toUpperCase()} — LOOT READY`; } else { ctx.classList.add('hidden'); ctx.classList.remove('flex'); }
+        const nc = findNearestCorpse(), ctx = $('context-prompt'), nn = nc ? null : nearestNode(), nearChief = hero.pos.distanceTo(chieftain.position) < 5; if (nc) { ctx.classList.remove('hidden'); ctx.classList.add('flex'); $('context-icon').textContent = '🎒'; $('context-title').textContent = nc.lootedBy[currentUser.uid] ? `${nc.name.toUpperCase()} — READY TO SKIN` : `${nc.name.toUpperCase()} — LOOT READY`; $('context-desc').textContent = 'Press [F] to Loot Armor/ZAR-T • Press [K] to Skin Hide'; } else if (nearChief) { ctx.classList.remove('hidden'); ctx.classList.add('flex'); $('context-icon').textContent = '📜'; $('context-title').textContent = hero.quest.done ? 'CHIEFTAIN THUNDERHOOF — TURN IN QUEST' : 'CHIEFTAIN THUNDERHOOF'; $('context-desc').textContent = hero.quest.done ? 'Press [F] to claim your reward' : 'Press [F] to hear the current task'; } else if (nn) { ctx.classList.remove('hidden'); ctx.classList.add('flex'); $('context-icon').textContent = { wood: '🪵', stone: '🪨', ore: '⛏️' }[nn.type]; $('context-title').textContent = `${nn.type.toUpperCase()} NODE`; $('context-desc').textContent = 'Press [F] to harvest (1.5s)'; } else { ctx.classList.add('hidden'); ctx.classList.remove('flex'); }
+        { const v = new THREE.Vector3(chieftain.position.x, chieftain.position.y + 5.6, chieftain.position.z).project(camera); chieftainTag.style.left = `${(v.x * .5 + .5) * innerWidth}px`; chieftainTag.style.top = `${(v.y * -.5 + .5) * innerHeight}px`; chieftainTag.style.display = v.z < 1 && hero.pos.distanceTo(chieftain.position) < 40 ? 'block' : 'none'; questMark.visible = hero.quest.idx < QUESTS.length; questMark.material.color.setHex(hero.quest.done ? 0xfbbf24 : 0x9ca3af); questMark.position.y = 4.4 + Math.sin(elapsed * 3) * .2; }
         if (gameStarted) { const now = Date.now(); waveUiTimer += dt; if (waveUiTimer > 1) { waveUiTimer = 0; const creepsAlive = aliveMobs().filter(m => m.isCreep).length; $('hud-wave-timer').textContent = creepsAlive ? `(${creepsAlive} RAIDERS!)` : `(WAVE ${Math.max(0, Math.ceil(((waveMeta ? waveMeta.nextAt : now) - now) / 1000))}s)`; }
             passiveIncomeTimer += dt; if (passiveIncomeTimer >= 10) { passiveIncomeTimer = 0; const gens = Object.values(playerStructures).filter(s => s.type === 'gen' && s.owner === currentUser.uid).length * 8; const inc = hero.passiveZartPer10s + gens; if (inc > 0) { hero.zart += inc; spawnFloatingText(hero.pos, `+${inc} ZAR-T (income)`, '#fbbf24'); updateAllHUD(); saveProgress(false); } }
             if (isHost && now - lastHostTick > 250) { lastHostTick = now; try { hostTick(now); } catch (e) { console.warn('host tick', e); } }
@@ -846,8 +979,8 @@
         if (sovereignCoreMesh) { sovereignCoreMesh.rotation.y = elapsed * 1.4; sovereignCoreMesh.position.y = 2.6 + Math.sin(elapsed * 2.5) * 0.22; sovereignCoreMesh.visible = !(coreState && coreState.downUntil && Date.now() < coreState.downUntil); }
         const camX = hero.pos.x + cam.dist * Math.cos(cam.pitch) * Math.sin(cam.yaw), camY = hero.pos.y + cam.dist * Math.sin(cam.pitch) + 1.8, camZ = hero.pos.z + cam.dist * Math.cos(cam.pitch) * Math.cos(cam.yaw);
         camera.position.set(camX, Math.max(getTerrainHeight(camX, camZ) + 1.2, camY), camZ); if (camShake > .005) { camera.position.x += (Math.random() - .5) * camShake; camera.position.y += (Math.random() - .5) * camShake; camShake *= .86; } else camShake = 0; camera.lookAt(hero.pos.x, hero.pos.y + 1.8, hero.pos.z);
-        if (selectedTarget && worldMobs[selectedTarget.id]) { const tp = selectedTarget.mesh.position; const deadT = (selectedTarget.state || '').startsWith('DEAD'); targetRing.visible = true; targetRing.position.set(tp.x, getTerrainHeight(tp.x, tp.z) + .1, tp.z); targetRing.rotation.z += dt * 1.5; targetRing.material.color.setHex(deadT ? 0xf59e0b : 0xf43f5e); const s = 1 + Math.sin(elapsed * 5) * .06; targetRing.scale.set(s * selectedTarget.tpl.scale, s * selectedTarget.tpl.scale, 1); targetArrow.visible = true; targetArrow.position.set(tp.x, getTerrainHeight(tp.x, tp.z) + 3.4 + Math.sin(elapsed * 4) * .25, tp.z); targetArrow.rotation.y += dt * 2; targetArrow.material.color.setHex(deadT ? 0xf59e0b : 0xf43f5e); } else { targetRing.visible = false; targetArrow.visible = false; }
-        renderer.render(scene, camera);
+        if (selectedTarget && (worldMobs[selectedTarget.id] || playerStructures[selectedTarget.id])) { const tp = selectedTarget.mesh.position; const deadT = (selectedTarget.state || '').startsWith('DEAD'); targetRing.visible = true; targetRing.position.set(tp.x, getTerrainHeight(tp.x, tp.z) + .1, tp.z); targetRing.rotation.z += dt * 1.5; targetRing.material.color.setHex(deadT ? 0xf59e0b : 0xf43f5e); const s = 1 + Math.sin(elapsed * 5) * .06; targetRing.scale.set(s * selectedTarget.tpl.scale, s * selectedTarget.tpl.scale, 1); targetArrow.visible = true; targetArrow.position.set(tp.x, getTerrainHeight(tp.x, tp.z) + 3.4 + Math.sin(elapsed * 4) * .25, tp.z); targetArrow.rotation.y += dt * 2; targetArrow.material.color.setHex(deadT ? 0xf59e0b : 0xf43f5e); } else { targetRing.visible = false; targetArrow.visible = false; }
+        if (composer) composer.render(); else renderer.render(scene, camera);
     }
     function turretHit(mob, dmg) { worldRef(`mobs/${mob.id}`).transaction(cur => { if (!cur || (cur.state || '').startsWith('DEAD')) return cur; cur.hp = Math.max(0, cur.hp - dmg); if (cur.hp <= 0) { cur.state = 'DEAD_LOOTABLE'; cur.killer = 'turret'; cur.diedAt = Date.now(); } return cur; }); }
 
