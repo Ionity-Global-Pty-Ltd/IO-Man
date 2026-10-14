@@ -1,10 +1,8 @@
 <!DOCTYPE html>
 <!--
 =====================================================================================
- IONITY.FUN - GAME SELECTION HUB  |  Document ID: GME-2026-10-011  |  Version: 1.3.0
- Console-style launcher for the Ionity Global arcade: IO-MAN, IO-COMBAT, PAWN* SOVEREIGN REALM MMO, WIZARD'S ARENA
- Keyboard (arrows / 1-4 / Enter), gamepad (D-pad / stick / A) and touch navigation.
- Served at https://www.ionity.fun/ (landing) and /games/ ; IO-MAN lives at /ioman/.
+ IONITY.FUN - GAME SELECTION HUB  |  Document ID: GME-2026-10-011  |  Version: 1.0.0
+ Launcher for the Ionity Global arcade: IO-MAN, IO-COMBAT, PAWN* SOVEREIGN REALM MMO
 -------------------------------------------------------------------------------------
  Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI (Antwerp Ecosystems Designs Ionity)
  ORCID: 0009-0005-7181-0347 | Established 2018 | Centurion, Gauteng, South Africa
@@ -20,333 +18,128 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IONITY.FUN — Game Selection</title>
-<meta name="description" content="ionity.fun — the Ionity Global arcade. Pick your game: IO-MAN (ASCII beat-em-up), IO-COMBAT (2D fighter), PAWN* Sovereign Realm (isometric .IO MMO ARPG) or Wizard's Arena (3D chess &amp; checkers).">
+<meta name="description" content="ionity.fun — the Ionity Global arcade. Pick your game: IO-MAN (ASCII beat-em-up), IO-COMBAT (2D fighter) PAWN* Sovereign Realm (isometric .IO MMO ARPG with cloud sync) or VBLOCKS Cathedral Chess (3D wizard's chess).">
 <meta name="author" content="Johan Wilhelm van Antwerp">
-<meta name="theme-color" content="#05070c">
+<meta name="theme-color" content="#0d1b2a">
 <meta name="copyright" content="© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd. All rights reserved.">
 <meta name="dc.identifier" content="GME-2026-10-011">
-<link rel="canonical" href="https://www.ionity.fun/">
+<link rel="canonical" href="https://www.ionity.fun/games/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="IONITY.FUN — Game Selection">
-<meta property="og:description" content="Four free browser games by Ionity Global: IO-MAN, IO-COMBAT, the PAWN* Sovereign Realm MMO and Wizard's Arena chess &amp; checkers.">
-<meta property="og:url" content="https://www.ionity.fun/">
+<meta property="og:description" content="Four free browser games by Ionity Global: IO-MAN, IO-COMBAT, PAWN* Sovereign Realm MMO and VBLOCKS Cathedral Chess.">
+<meta property="og:url" content="https://www.ionity.fun/games/">
 <meta property="og:image" content="https://www.ionity.fun/banners/ioman_og_1200x630.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Crect width=%2764%27 height=%2764%27 rx=%2710%27 fill=%27%230d1b2a%27/%3E%3Ctext x=%2732%27 y=%2743%27 font-family=%27monospace%27 font-size=%2730%27 font-weight=%27700%27 fill=%27%2300c6ff%27 text-anchor=%27middle%27%3EIO%3C/text%3E%3Crect x=%2710%27 y=%2750%27 width=%2744%27 height=%274%27 fill=%27%2300c6ff%27/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#05070c; --txt:#eef3fa; --dim:#8090a8; --line:rgba(255,255,255,.1);
-    --cy:#00c6ff; --gold:#F59E0B; --green:#22c55e;
-    --c:var(--cy);
-  }
+  :root { --bg:#0d1b2a; --cy:#00c6ff; --cy2:#00F0FF; --gold:#F59E0B; --green:#10B981; --red:#EF4444; --txt:#E2E8F0; --dim:#7a90a8; }
   * { box-sizing:border-box; }
-  html,body { margin:0; height:100%; background:var(--bg); color:var(--txt); font-family:'Rajdhani','Segoe UI',sans-serif; font-weight:600; overflow:hidden; -webkit-tap-highlight-color:transparent; }
-  .ms { font-family:'Material Symbols Rounded'; font-weight:normal; font-style:normal; font-size:22px; line-height:1; display:inline-block; }
-
-  /* ---------- Hero backdrop (crossfading art) ---------- */
-  .bg { position:fixed; inset:0; z-index:0; }
-  .bg .layer { position:absolute; inset:0; background-size:cover; background-position:center; opacity:0; transform:scale(1.06); transition:opacity .7s ease, transform 6s ease-out; }
-  .bg .layer.on { opacity:1; transform:scale(1); }
-  .bg::after { content:''; position:absolute; inset:0;
-    background:
-      linear-gradient(90deg, rgba(5,7,12,.96) 0%, rgba(5,7,12,.82) 32%, rgba(5,7,12,.25) 65%, rgba(5,7,12,.55) 100%),
-      linear-gradient(0deg, rgba(5,7,12,1) 0%, rgba(5,7,12,.6) 28%, transparent 55%),
-      linear-gradient(180deg, rgba(5,7,12,.85) 0%, transparent 18%); }
-  .tint { position:fixed; inset:0; z-index:0; pointer-events:none; background:radial-gradient(ellipse at 15% 55%, color-mix(in srgb, var(--c) 22%, transparent), transparent 55%); }
-  .scan { position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.4; background:repeating-linear-gradient(to bottom, transparent 0 3px, rgba(0,198,255,.03) 3px 4px); }
-
-  /* ---------- Shell ---------- */
-  .shell { position:relative; z-index:2; height:100%; display:flex; flex-direction:column; padding:18px clamp(16px,4vw,56px) 14px; }
-  .topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-  .brand { display:flex; align-items:center; gap:12px; text-decoration:none; }
-  .brand .mark { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:clamp(20px,2.6vw,28px); letter-spacing:.08em; color:var(--cy); text-shadow:0 0 18px rgba(0,198,255,.55); }
-  .brand .mark span { color:#fff; }
-  .navchips { display:flex; gap:6px; }
-  .navchip { font-family:'Orbitron'; font-size:10px; font-weight:800; letter-spacing:.2em; padding:7px 12px; border-radius:999px; color:var(--dim); text-decoration:none; border:1px solid transparent; }
-  .navchip.on { color:#fff; border-color:rgba(255,255,255,.35); background:rgba(255,255,255,.06); }
-  .navchip:hover { color:#fff; }
-  .status { display:flex; align-items:center; gap:12px; font-family:'Orbitron'; font-size:13px; letter-spacing:.12em; color:#cbd5e1; }
-  .status .ms { font-size:20px; color:var(--dim); }
-  .status .ms.live { color:var(--green); }
-  .iconbtn { all:unset; cursor:pointer; display:grid; place-items:center; width:36px; height:36px; border-radius:50%; }
-  .iconbtn:hover { background:rgba(255,255,255,.08); }
-
-  /* ---------- Hero info ---------- */
-  .hero { flex:1; display:flex; flex-direction:column; justify-content:center; max-width:640px; padding:2vh 0; }
-  .hero > * { transition:opacity .3s ease, transform .45s cubic-bezier(.2,1,.3,1); }
-  .hero.swap > * { opacity:0; transform:translateX(-18px); }
-  .kicker { display:flex; align-items:center; gap:10px; font-family:'Orbitron'; font-size:11px; font-weight:800; letter-spacing:.32em; color:var(--c); }
-  .kicker .num { padding:3px 8px; border-radius:6px; border:1px solid var(--c); }
-  .title { font-family:'Orbitron'; font-weight:900; font-size:clamp(40px,7.2vw,92px); line-height:.95; letter-spacing:.03em; margin:14px 0 10px; color:#fff;
-    text-shadow:0 0 28px color-mix(in srgb, var(--c) 70%, transparent), 0 0 80px color-mix(in srgb, var(--c) 35%, transparent); }
-  .title small { display:block; font-size:.28em; letter-spacing:.32em; color:#cbd5e1; text-shadow:none; margin-top:10px; font-weight:800; }
-  .line { font-size:clamp(16px,1.6vw,19px); color:#b8c4d6; margin:0 0 18px; max-width:520px; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:26px; }
-  .chip { display:inline-flex; align-items:center; gap:6px; font-family:'Orbitron'; font-size:10px; font-weight:800; letter-spacing:.14em; padding:6px 10px; border-radius:8px; background:rgba(255,255,255,.06); border:1px solid var(--line); color:#dbe4f0; }
-  .chip .ms { font-size:15px; color:var(--c); }
-  .actions { display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-  .play { all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:12px; padding:16px 26px 16px 20px; border-radius:16px; font-family:'Orbitron'; font-size:15px; font-weight:900; letter-spacing:.2em; color:#06080d;
-    background:linear-gradient(135deg, #fff, color-mix(in srgb, var(--c) 70%, #fff)); box-shadow:0 0 0 2px color-mix(in srgb, var(--c) 60%, transparent), 0 0 34px color-mix(in srgb, var(--c) 55%, transparent); transition:transform .15s; }
-  .play:hover { transform:translateY(-2px) scale(1.02); }
-  .play:active { transform:scale(.97); }
-  .play .ms { font-size:26px; }
-  .pb { width:22px; height:22px; border-radius:50%; display:inline-grid; place-items:center; font-family:'Orbitron'; font-size:11px; font-weight:900; color:#06080d; background:var(--green); }
-  .play .pb { background:#06080d; color:#fff; }
-  .meta { font-family:'Orbitron'; font-size:11px; letter-spacing:.2em; color:var(--dim); display:flex; gap:14px; }
-  .meta b { color:#e2e8f0; font-weight:800; }
-
-  /* ---------- Shelf ---------- */
-  .shelf-label { font-family:'Orbitron'; font-size:10px; font-weight:800; letter-spacing:.35em; color:var(--dim); margin:0 0 4px 2px; }
-  .shelf { display:flex; gap:16px; padding:16px 10px 20px; margin:0 -10px; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; }
-  .shelf::-webkit-scrollbar { display:none; }
-  .tile { all:unset; cursor:pointer; flex:none; scroll-snap-align:center; position:relative; width:clamp(150px,17vw,236px); aspect-ratio:16/10; border-radius:18px; overflow:hidden;
-    background:#0b1220 center/cover no-repeat; box-shadow:0 0 0 1px var(--line), 0 14px 30px rgba(0,0,0,.55); transition:transform .3s cubic-bezier(.2,1.3,.4,1), box-shadow .3s, filter .3s; filter:saturate(.7) brightness(.7); }
-  .tile::after { content:''; position:absolute; inset:0; background:linear-gradient(0deg, rgba(5,7,12,.92), transparent 60%); }
-  .tile .tn { position:absolute; left:12px; bottom:10px; z-index:2; font-family:'Orbitron'; font-weight:900; font-size:clamp(11px,1.1vw,14px); letter-spacing:.1em; color:#fff; }
-  .tile .tk { position:absolute; top:10px; left:10px; z-index:2; font-family:'Orbitron'; font-size:9px; font-weight:800; width:20px; height:20px; display:grid; place-items:center; border-radius:6px; background:rgba(0,0,0,.55); color:#cbd5e1; border:1px solid rgba(255,255,255,.2); }
-  .tile .tb { position:absolute; top:10px; right:10px; z-index:2; font-family:'Orbitron'; font-size:8px; font-weight:900; letter-spacing:.12em; padding:3px 7px; border-radius:999px; color:#06080d; background:var(--gold); }
-  .tile.focus { transform:translateY(-6px) scale(1.1); filter:none; box-shadow:0 0 0 3px var(--tc), 0 0 34px color-mix(in srgb, var(--tc) 55%, transparent), 0 24px 44px rgba(0,0,0,.7); }
-  .tile.focus .tk { background:var(--tc); color:#06080d; border-color:transparent; }
-  .tile .glint { position:absolute; inset:-40%; z-index:1; background:linear-gradient(115deg, transparent 40%, rgba(255,255,255,.2) 50%, transparent 60%); transform:translateX(-60%); pointer-events:none; }
-  .tile.focus .glint { animation:glint 2.8s ease-in-out infinite; }
-  @keyframes glint { 0%,55% { transform:translateX(-60%); } 85%,100% { transform:translateX(60%); } }
-
-  /* ---------- Bottom legend + legal ---------- */
-  .bottom { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-  .legend { display:flex; align-items:center; gap:18px; font-family:'Orbitron'; font-size:10px; font-weight:800; letter-spacing:.18em; color:#b9c4d6; }
-  .legend span { display:inline-flex; align-items:center; gap:7px; }
-  .kc { font-family:'Orbitron'; font-size:9px; font-weight:800; padding:3px 6px; border-radius:5px; border:1px solid rgba(255,255,255,.35); color:#fff; }
-  .legal { font-family:'JetBrains Mono',monospace; font-size:10px; color:#56637a; text-align:right; line-height:1.6; }
-  .legal a { color:#7dd3fc; text-decoration:none; }
-
-  /* ---------- Launch transition ---------- */
-  .launch { position:fixed; inset:0; z-index:50; pointer-events:none; display:grid; place-items:center; text-align:center; background:radial-gradient(circle at center, color-mix(in srgb, var(--c) 25%, #05070c), #05070c 70%); opacity:0; transition:opacity .45s ease; }
-  .launch.go { opacity:1; pointer-events:auto; }
-  .launch .lt { font-family:'Orbitron'; font-weight:900; font-size:clamp(28px,6vw,64px); letter-spacing:.12em; color:#fff; text-shadow:0 0 30px var(--c); transform:scale(.8); transition:transform .6s cubic-bezier(.2,1.4,.4,1); }
-  .launch.go .lt { transform:scale(1); }
-  .launch .bar { width:min(60vw,320px); height:3px; margin:22px auto 0; background:rgba(255,255,255,.12); border-radius:3px; overflow:hidden; }
-  .launch .bar i { display:block; height:100%; width:0; background:var(--c); box-shadow:0 0 12px var(--c); }
-  .launch.go .bar i { animation:load .8s ease forwards; }
-  @keyframes load { to { width:100%; } }
-
-  @media (max-width:760px) {
-    .navchips, .legend { display:none; }
-    .hero { justify-content:flex-end; padding-bottom:10px; }
-    .bg::after { background:linear-gradient(0deg, rgba(5,7,12,1) 0%, rgba(5,7,12,.85) 45%, rgba(5,7,12,.3) 75%, rgba(5,7,12,.7) 100%); }
-    .legal { text-align:center; width:100%; }
-    .tile.focus { transform:translateY(-4px) scale(1.05); }
-    .line { font-size:15px; }
-  }
-  @media (prefers-reduced-motion:reduce) { * { transition:none !important; animation:none !important; } }
+  html,body { margin:0; min-height:100%; background:var(--bg); color:var(--txt); font-family:'Space Grotesk','Segoe UI',sans-serif; }
+  body { background-image: linear-gradient(to right, rgba(0,198,255,.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(0,198,255,.05) 1px, transparent 1px); background-size:44px 44px; }
+  .scan { position:fixed; inset:0; pointer-events:none; background:linear-gradient(to bottom, transparent 50%, rgba(0,198,255,.025) 51%); background-size:100% 4px; z-index:0; }
+  main { position:relative; z-index:1; max-width:1100px; margin:0 auto; padding:40px 16px 60px; }
+  header { text-align:center; margin-bottom:36px; }
+  .wordmark { font-family:'JetBrains Mono',monospace; font-size:clamp(28px,7vw,64px); font-weight:700; letter-spacing:.08em; color:var(--cy); text-shadow:0 0 24px rgba(0,198,255,.55); margin:0; }
+  .wordmark span { color:#fff; }
+  .tag { font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--dim); letter-spacing:.2em; text-transform:uppercase; margin-top:8px; }
+  .status { display:inline-flex; align-items:center; gap:8px; margin-top:14px; padding:6px 14px; border:1px solid rgba(16,185,129,.4); border-radius:999px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--green); background:rgba(16,185,129,.08); }
+  .status i { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); animation:pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity:.35; } }
+  h2.sel { font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.3em; color:var(--dim); text-align:center; margin:0 0 18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; }
+  .card { position:relative; display:flex; flex-direction:column; min-height:360px; padding:22px; border-radius:18px; border:1px solid rgba(255,255,255,.1); background:rgba(5,9,18,.85); text-decoration:none; color:inherit; overflow:hidden; transition:transform .25s cubic-bezier(.16,1,.3,1), border-color .25s, box-shadow .25s; outline:none; }
+  .card:hover, .card:focus-visible { transform:translateY(-6px); }
+  .card.ioman { --c:var(--cy); } .card.combat { --c:var(--red); } .card.pawn { --c:var(--cy2); } .card.chess { --c:var(--gold); }
+  .card:hover, .card:focus-visible { border-color:var(--c); box-shadow:0 0 40px -8px var(--c), 0 24px 50px rgba(0,0,0,.6); }
+  .card .glow { position:absolute; width:260px; height:260px; border-radius:50%; filter:blur(70px); opacity:.22; background:var(--c); top:-120px; right:-100px; pointer-events:none; }
+  .num { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--c); letter-spacing:.2em; }
+  .art { font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.15; color:var(--c); white-space:pre; margin:14px 0 10px; text-shadow:0 0 12px var(--c); }
+  .art.big { font-size:40px; line-height:1; }
+  .card h3 { margin:0 0 6px; font-size:22px; color:#fff; letter-spacing:.02em; }
+  .card p { margin:0; font-size:14px; line-height:1.5; color:#b6c4d4; flex:1; }
+  .meta { display:flex; flex-wrap:wrap; gap:6px; margin:14px 0; }
+  .meta span { font-family:'JetBrains Mono',monospace; font-size:10px; padding:3px 8px; border-radius:6px; border:1px solid rgba(255,255,255,.12); color:var(--dim); }
+  .meta span.hot { color:var(--c); border-color:var(--c); }
+  .play { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-radius:12px; background:var(--c); color:#06080D; font-family:'JetBrains Mono',monospace; font-weight:700; font-size:13px; letter-spacing:.08em; }
+  .card:hover .play { background:#fff; }
+  .new { position:absolute; top:16px; right:16px; font-family:'JetBrains Mono',monospace; font-size:10px; padding:3px 8px; border-radius:999px; background:var(--gold); color:#06080D; font-weight:700; letter-spacing:.1em; }
+  footer { margin-top:44px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--dim); line-height:1.8; }
+  footer a { color:var(--cy); text-decoration:none; } footer a:hover { text-decoration:underline; }
+  kbd { font-family:'JetBrains Mono',monospace; font-size:10px; padding:1px 5px; border:1px solid rgba(255,255,255,.2); border-radius:4px; color:#fff; }
 </style>
 </head>
 <body>
-<div class="bg" id="bg"></div>
-<div class="tint"></div>
 <div class="scan"></div>
-
-<div class="shell">
-  <header class="topbar">
-    <div style="display:flex;align-items:center;gap:22px">
-      <a class="brand" href="/"><span class="mark">IONITY<span>.FUN</span></span></a>
-      <nav class="navchips"><a class="navchip on" href="/">GAMES</a><a class="navchip" href="https://www.ionity.today" target="_blank" rel="noopener">IONITY.TODAY</a></nav>
-    </div>
-    <div class="status">
-      <span class="ms" id="padIcon" title="Controller">sports_esports</span>
-      <button class="iconbtn" id="sndBtn" title="Sound"><span class="ms" id="sndIcon">volume_up</span></button>
-      <span id="clock">--:--</span>
-    </div>
+<main>
+  <header>
+    <h1 class="wordmark">IONITY<span>.FUN</span></h1>
+    <div class="tag">Ionity Global Arcade · AEDI · South Africa</div>
+    <div class="status"><i></i> <span id="st">SELECT A GAME · PRESS 1 / 2 / 3 / 4</span></div>
   </header>
 
-  <section class="hero" id="hero" aria-live="polite">
-    <div class="kicker"><span class="num" id="hNum">01</span><span id="hTag"></span></div>
-    <h1 class="title" id="hTitle"></h1>
-    <p class="line" id="hLine"></p>
-    <div class="chips" id="hChips"></div>
-    <div class="actions">
-      <button class="play" id="playBtn"><span class="ms">play_arrow</span>PLAY<span class="pb">A</span></button>
-      <div class="meta" id="hMeta"></div>
-    </div>
-  </section>
+  <h2 class="sel">— GAME SELECTION —</h2>
+  <div class="grid">
+    <a class="card ioman" href="/" data-key="1">
+      <div class="glow"></div>
+      <div class="num">01 · ARCADE · BEAT-EM-UP</div>
+      <div class="art">██╗ ██████╗       ███╗   ███╗ █████╗ ███╗   ██╗
+██║██╔═══██╗      ████╗ ████║██╔══██╗████╗  ██║
+██║██║   ██║█████╗██╔████╔██║███████║██╔██╗ ██║
+██║██║   ██║╚════╝██║╚██╔╝██║██╔══██║██║╚██╗██║
+██║╚██████╔╝      ██║ ╚═╝ ██║██║  ██║██║ ╚████║
+╚═╝ ╚═════╝       ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝</div>
+      <h3>IO-MAN — GET OVER IT DOOR</h3>
+      <p>ASCII / ANSI side-scrolling beat-em-up. Nine scrolling stages, warp pipes into the 2D underworld, six companion pals, dino riding, weapons, mini-bosses and the Great Fungus. Single file, no install.</p>
+      <div class="meta"><span class="hot">v5.0</span><span>1 PLAYER</span><span>GAMEPAD</span><span>MOBILE</span><span>CLOUD HALL OF FAME</span></div>
+      <div class="play"><span>PLAY IO-MAN</span><span>→</span></div>
+    </a>
 
-  <div>
-    <div class="shelf-label">LIBRARY · 4</div>
-    <div class="shelf" id="shelf" role="listbox" aria-label="Games"></div>
+    <a class="card combat" href="/combat/" data-key="2">
+      <div class="glow"></div>
+      <div class="num">02 · ARCADE · FIGHTER</div>
+      <div class="art big">⚔ VS ⚔</div>
+      <h3>IO-COMBAT — Grid Tournament</h3>
+      <p>2D arcade fighting game. Six original fighters, an Arcade ladder with a boss, versus AI, two-player local on one keyboard, and a training mode.</p>
+      <div class="meta"><span class="hot">v1.0</span><span>1–2 PLAYERS</span><span>LOCAL VS</span><span>TRAINING</span></div>
+      <div class="play"><span>PLAY IO-COMBAT</span><span>→</span></div>
+    </a>
+
+    <a class="card pawn" href="/pawn/" data-key="3">
+      <div class="glow"></div>
+      <div class="new">NEW · MMO</div>
+      <div class="num">03 · MMO · ISOMETRIC ARPG</div>
+      <div class="art big">♜ PAWN*</div>
+      <h3>PAWN* — Sovereign Realm</h3>
+      <p>Shared-world isometric .IO ARPG. Sign in with Google, pick a hero class, and fight alongside real players across Centurion, the Witwatersrand Mines, the Karoo BESS grid and the Cape Subsea Trench. Live chat, world leaderboard, cloud save.</p>
+      <div class="meta"><span class="hot">MMO · LIVE</span><span>GOOGLE SIGN-IN</span><span>CLOUD SAVE</span><span>REALM CHAT</span><span>LEADERBOARD</span></div>
+      <div class="play"><span>ENTER THE REALM</span><span>→</span></div>
+    </a>
+    <a class="card chess" href="/chess/" data-key="4">
+      <div class="glow"></div>
+      <div class="new">NEW</div>
+      <div class="num">04 · STRATEGY · 3D CHESS</div>
+      <div class="art big">♜ VBLOCKS</div>
+      <h3>VBLOCKS — Cathedral Chess</h3>
+      <p>3D Wizard's Chess in a Gothic cathedral. Full legal 32-piece chess against the Automaton or two-player pass &amp; play, with physical knock-down captures that topple and shatter the taken piece.</p>
+      <div class="meta"><span class="hot">v1.0</span><span>1–2 PLAYERS</span><span>VS AI</span><span>ORBIT CAMERA</span><span>PHYSICS</span></div>
+      <div class="play"><span>PLAY CHESS</span><span>→</span></div>
+    </a>
   </div>
 
-  <footer class="bottom">
-    <div class="legend">
-      <span><span class="kc">◀ ▶</span>SELECT</span>
-      <span><span class="kc">ENTER</span> / <span class="pb">A</span> PLAY</span>
-      <span><span class="kc">1–4</span>QUICK</span>
-    </div>
-    <div class="legal">© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd · TM2 · Policy 986 AED · AED 900<br>
-      <a href="https://www.ionity.today">ionity.today</a> · <a href="https://www.ionity.world">ionity.world</a> · <a href="https://www.ionity.co.za">ionity.co.za</a> · not affiliated with ionity.com</div>
+  <footer>
+    <div><kbd>1</kbd> IO-MAN · <kbd>2</kbd> IO-COMBAT · <kbd>3</kbd> PAWN* MMO · <kbd>4</kbd> VBLOCKS CHESS</div>
+    <div>© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd · All rights reserved · TM2 · Policy 986 AED · License AED 900</div>
+    <div><a href="https://www.ionity.today">www.ionity.today</a> · <a href="https://www.ionity.world">www.ionity.world</a> · <a href="https://www.ionity.co.za">www.ionity.co.za</a> · <a href="mailto:ai@ionity.today">ai@ionity.today</a></div>
+    <div>Ionity refers exclusively to ionity.today / ionity.world / ionity.fun and is not affiliated with ionity.com. · Building Tomorrow, Today.</div>
   </footer>
-</div>
-
-<div class="launch" id="launch"><div><div class="lt" id="launchTitle">IO-MAN</div><div class="bar"><i></i></div></div></div>
-
+</main>
 <script>
-  // ---------------- Game library ----------------
-  const GAMES = [
-    { id:'ioman',  key:'1', href:'/ioman/',        art:'/games/art/ioman.jpg',  color:'#00c6ff', tag:'ARCADE · BEAT-EM-UP', title:'IO-MAN', sub:'GET OVER IT DOOR',
-      line:'ASCII side-scroller. Nine stages, dino rides, the Great Fungus.', chips:[['person','1P'],['sports_esports','GAMEPAD'],['smartphone','MOBILE'],['emoji_events','HALL OF FAME']], ver:'v5.0', players:'1P' },
-    { id:'combat', key:'2', href:'/combat/', art:'/games/art/combat.jpg', color:'#EF4444', tag:'ARCADE · FIGHTER', title:'IO-COMBAT', sub:'GRID TOURNAMENT',
-      line:'Six fighters. Arcade ladder, local versus, online PvP.', chips:[['group','1–2P'],['public','ONLINE PVP'],['sports_esports','GAMEPAD'],['fitness_center','TRAINING']], ver:'v1.2', players:'1–2P' },
-    { id:'pawn',   key:'3', href:'/pawn/',   art:null,             color:'#00F0FF', tag:'MMO · ISOMETRIC ARPG', title:'PAWN*', sub:'SOVEREIGN REALM',
-      line:'Shared-world .IO MMO. Real players, live chat, cloud save.', chips:[['public','MMO · LIVE'],['login','GOOGLE SIGN-IN'],['cloud_done','CLOUD SAVE'],['leaderboard','RANKED']], ver:'v7.0', players:'MMO', badge:'LIVE' },
-    { id:'arena',  key:'4', href:'/arena/',  art:'/games/art/arena.jpg',  color:'#F59E0B', tag:'3D · BOARD · STRATEGY', title:"WIZARD'S ARENA", sub:'CHESS · CHECKERS',
-      line:'Chess & checkers. Ranked online PvP. Every capture is a knock-down.', chips:[['public','ONLINE PVP'],['chess','CHESS'],['grid_on','CHECKERS'],['smart_toy','VS CPU']], ver:'v1.3', players:'1–2P · ONLINE', badge:'PVP' }
-  ];
-
-  // PAWN* has no screenshot yet: paint an isometric realm procedurally
-  function paintPawnArt() {
-    const c = document.createElement('canvas'); c.width = 1280; c.height = 720;
-    const x = c.getContext('2d');
-    const g = x.createRadialGradient(820, 380, 40, 820, 380, 760);
-    g.addColorStop(0, '#0d3b46'); g.addColorStop(.55, '#071a24'); g.addColorStop(1, '#03070c');
-    x.fillStyle = g; x.fillRect(0, 0, 1280, 720);
-    const tw = 84, th = 42, ox = 820, oy = 150;
-    for (let i = 0; i < 11; i++) for (let j = 0; j < 11; j++) {
-      const px = ox + (i - j) * tw / 2, py = oy + (i + j) * th / 2;
-      const d = Math.hypot(i - 5, j - 5);
-      x.beginPath(); x.moveTo(px, py); x.lineTo(px + tw / 2, py + th / 2); x.lineTo(px, py + th); x.lineTo(px - tw / 2, py + th / 2); x.closePath();
-      x.fillStyle = `rgba(0,240,255,${Math.max(0, .14 - d * .012)})`; x.fill();
-      x.strokeStyle = `rgba(0,240,255,${Math.max(.04, .35 - d * .05)})`; x.lineWidth = 1; x.stroke();
-      if ((i * 7 + j * 3) % 13 === 0 && d > 1.5) {
-        const h = 40 + ((i + j) % 4) * 22;
-        x.fillStyle = 'rgba(0,240,255,.16)'; x.fillRect(px - 10, py + th / 2 - h, 20, h);
-        x.fillStyle = '#00F0FF'; x.shadowColor = '#00F0FF'; x.shadowBlur = 18; x.fillRect(px - 3, py + th / 2 - h - 6, 6, 6); x.shadowBlur = 0;
-      }
-    }
-    x.font = '900 300px serif'; x.textAlign = 'center'; x.fillStyle = 'rgba(0,240,255,.9)';
-    x.shadowColor = '#00F0FF'; x.shadowBlur = 60; x.fillText('♜', ox, oy + 330);
-    return c.toDataURL('image/jpeg', .85);
-  }
-
-  // ---------------- Sound (tiny Web Audio UI blips) ----------------
-  const sfx = {
-    on: true, ctx: null,
-    init() { if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) this.ctx = new AC(); } if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); return !!this.ctx; },
-    tone(f0, f1, d, v, type = 'sine') {
-      if (!this.on || !this.init()) return;
-      const t = this.ctx.currentTime, o = this.ctx.createOscillator(), g = this.ctx.createGain();
-      o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + d);
-      g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
-      o.connect(g); g.connect(this.ctx.destination); o.start(t); o.stop(t + d + .02);
-    },
-    tick() { this.tone(880, 1320, .07, .04, 'triangle'); },
-    launch() { this.tone(220, 880, .5, .08, 'sawtooth'); setTimeout(() => this.tone(660, 1760, .35, .05, 'triangle'), 120); }
-  };
-  try { sfx.on = localStorage.getItem('ionity.fun.sound') !== 'off'; } catch (e) {}
-  const sndIcon = document.getElementById('sndIcon');
-  sndIcon.textContent = sfx.on ? 'volume_up' : 'volume_off';
-  document.getElementById('sndBtn').addEventListener('click', () => {
-    sfx.on = !sfx.on; sndIcon.textContent = sfx.on ? 'volume_up' : 'volume_off';
-    try { localStorage.setItem('ionity.fun.sound', sfx.on ? 'on' : 'off'); } catch (e) {}
-    sfx.tick();
-  });
-
-  // ---------------- Build UI ----------------
-  const bg = document.getElementById('bg'), shelf = document.getElementById('shelf'), hero = document.getElementById('hero');
-  const layers = {}, tiles = [];
-  let idx = -1;
-  GAMES.forEach((gm, i) => {
-    if (!gm.art) gm.art = paintPawnArt();
-    const L = document.createElement('div'); L.className = 'layer'; L.style.backgroundImage = `url("${gm.art}")`; bg.appendChild(L); layers[gm.id] = L;
-    const t = document.createElement('button');
-    t.className = 'tile'; t.setAttribute('role', 'option'); t.style.backgroundImage = `url("${gm.art}")`; t.style.setProperty('--tc', gm.color);
-    t.innerHTML = `<span class="glint"></span><span class="tk">${gm.key}</span>${gm.badge ? `<span class="tb">${gm.badge}</span>` : ''}<span class="tn">${gm.title}</span>`;
-    t.addEventListener('mouseenter', () => focusGame(i));
-    t.addEventListener('click', () => (i === idx ? launch() : focusGame(i)));
-    shelf.appendChild(t); tiles.push(t);
-  });
-
-  function render(gm) {
-    document.documentElement.style.setProperty('--c', gm.color);
-    document.getElementById('hNum').textContent = String(GAMES.indexOf(gm) + 1).padStart(2, '0');
-    document.getElementById('hTag').textContent = gm.tag;
-    document.getElementById('hTitle').innerHTML = `${gm.title}<small>${gm.sub}</small>`;
-    document.getElementById('hLine').textContent = gm.line;
-    document.getElementById('hChips').innerHTML = gm.chips.map(([ic, tx]) => `<span class="chip"><span class="ms">${ic}</span>${tx}</span>`).join('');
-    document.getElementById('hMeta').innerHTML = `<span><b>${gm.ver}</b></span><span>${gm.players}</span><span>FREE</span>`;
-  }
-  let swapTimer = null;
-  function focusGame(i, silent) {
-    i = (i + GAMES.length) % GAMES.length;
-    if (i === idx) return;
-    idx = i;
-    const gm = GAMES[idx];
-    tiles.forEach((t, k) => { t.classList.toggle('focus', k === idx); t.setAttribute('aria-selected', k === idx); });
-    Object.entries(layers).forEach(([id, L]) => L.classList.toggle('on', id === gm.id));
-    document.documentElement.style.setProperty('--c', gm.color);
-    if (silent) { render(gm); }
-    else {
-      hero.classList.add('swap');
-      clearTimeout(swapTimer);
-      swapTimer = setTimeout(() => { render(gm); hero.classList.remove('swap'); }, 160);
-      sfx.tick();
-    }
-    tiles[idx].scrollIntoView({ behavior: silent ? 'auto' : 'smooth', inline: 'center', block: 'nearest' });
-    try { localStorage.setItem('ionity.fun.lastGame', idx); } catch (e) {}
-  }
-
-  // ---------------- Launch ----------------
-  let launching = false;
-  function launch() {
-    if (launching || idx < 0) return;
-    launching = true;
-    const gm = GAMES[idx];
-    document.getElementById('launchTitle').textContent = gm.title;
-    document.getElementById('launch').classList.add('go');
-    sfx.launch();
-    setTimeout(() => { location.href = gm.href; }, 850);
-  }
-  addEventListener('pageshow', () => { launching = false; document.getElementById('launch').classList.remove('go'); });
-  document.getElementById('playBtn').addEventListener('click', launch);
-
-  // ---------------- Keyboard ----------------
-  addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') { focusGame(idx + 1); e.preventDefault(); }
-    else if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') { focusGame(idx - 1); e.preventDefault(); }
-    else if (e.key === 'Enter' || e.key === ' ') { launch(); e.preventDefault(); }
-    else { const g = GAMES.findIndex(x => x.key === e.key); if (g >= 0) { focusGame(g); setTimeout(launch, 250); } }
-  });
-
-  // ---------------- Gamepad ----------------
-  const padIcon = document.getElementById('padIcon');
-  const prev = {}; let rep = { dir: 0, t: 0 }, last = performance.now();
-  addEventListener('gamepaddisconnected', () => padIcon.classList.remove('live'));
-  (function poll(now) {
-    const dt = (now - last) / 1000; last = now;
-    const gp = navigator.getGamepads ? [...navigator.getGamepads()].find(p => p && p.connected) : null;
-    if (gp) {
-      padIcon.classList.add('live');
-      const press = i => { const p = !!(gp.buttons[i] && gp.buttons[i].pressed); const edge = p && !prev[i]; prev[i] = p; return edge; };
-      if (press(0) | press(9)) launch();
-      if (press(15) | press(5)) focusGame(idx + 1);
-      if (press(14) | press(4)) focusGame(idx - 1);
-      const ax = gp.axes[0] || 0, dir = ax > .55 ? 1 : ax < -.55 ? -1 : 0;
-      if (dir && dir !== rep.dir) { rep = { dir, t: .35 }; focusGame(idx + dir); }
-      else if (dir && (rep.t -= dt) <= 0) { rep.t = .18; focusGame(idx + dir); }
-      else if (!dir) rep.dir = 0;
-    }
-    requestAnimationFrame(poll);
-  })(performance.now());
-
-  // ---------------- Clock ----------------
-  const clock = document.getElementById('clock');
-  const tickClock = () => { clock.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); };
-  tickClock(); setInterval(tickClock, 15000);
-
-  // ---------------- Boot ----------------
-  let start = 0;
-  try { const s = parseInt(localStorage.getItem('ionity.fun.lastGame'), 10); if (s >= 0 && s < GAMES.length) start = s; } catch (e) {}
-  focusGame(start, true);
+  const cards = [...document.querySelectorAll('.card')];
+  addEventListener('keydown', e => { const c = cards.find(x => x.dataset.key === e.key); if (c) location.href = c.getAttribute('href'); });
+  const st = document.getElementById('st');
+  cards.forEach(c => { c.addEventListener('mouseenter', () => st.textContent = 'LOADING TARGET: ' + c.querySelector('h3').textContent.toUpperCase()); c.addEventListener('mouseleave', () => st.textContent = 'SELECT A GAME · PRESS 1 / 2 / 3 / 4'); });
 </script>
 </body>
 </html>

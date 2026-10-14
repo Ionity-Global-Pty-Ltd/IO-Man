@@ -16,7 +16,8 @@
 | **IO-MAN — Get Over It Door** (this repo) | https://www.ionity.fun | here |
 | **IO-COMBAT — Grid Tournament** · original 2D arcade fighter, IO-MAN is on the roster | https://www.ionity.fun/combat/ | [Ionity-Global-Pty-Ltd/IO-Combat](https://github.com/Ionity-Global-Pty-Ltd/IO-Combat) |
 | **PAWN\* — Sovereign Realm MMO** · isometric .IO ARPG, shared world on Firebase `io-man`, Google sign-in, cloud save | https://www.ionity.fun/pawn/ | `pawn/` (spec in `pawn/README.md`) |
-| **Game selection page** · all three games, keys 1/2/3 | https://www.ionity.fun/games/ | `games/index.html` |
+| **VBLOCKS — Cathedral Chess** · 3D wizard's chess vs the Automaton or 2P, physical knock-down captures | https://www.ionity.fun/chess/ | `chess/index.html` |
+| **Game selection page** · all four games, keys 1/2/3/4 | https://www.ionity.fun/games/ | `games/index.html` |
 
 `combat/` is a deployed copy of IO-Combat `index.html` v1.1.0 + PWA files (sha256 `b3f502d4…fc24`). Update it from the IO-Combat repo.
 

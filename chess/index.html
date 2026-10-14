@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VBLOCKS // IONITY GLOBAL — 3D Wizard's Chess</title>
+    <meta name="description" content="VBLOCKS Cathedral Chess — 3D Wizard's Chess by Ionity Global. Full legal chess vs the Automaton or 2-player pass & play, with physical knock-down captures. Play at ionity.fun/chess.">
+    <link rel="canonical" href="https://www.ionity.fun/chess/">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Chess.js for full legal 32-piece chess rules & AI -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <!-- Google Fonts: Inter & Cinzel for Gothic/Material fusion -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --md-surface: rgba(15, 19, 28, 0.84);
+            --md-surface-elevated: rgba(24, 30, 44, 0.92);
+            --md-border: rgba(56, 189, 248, 0.25);
+            --vblocks-cyan: #00f0ff;
+            --vblocks-gold: #f59e0b;
+        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #07090e; font-family: 'Inter', system-ui, -apple-system, sans-serif; color: #f1f5f9; }
+        #canvas-container { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; }
+        canvas { display: block; width: 100%; height: 100%; outline: none; }
+        .md-surface { background: var(--md-surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--md-border); box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 240, 255, 0.08); }
+        .md-btn { position: relative; overflow: hidden; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .md-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0, 240, 255, 0.22); }
+        .md-btn:active { transform: translateY(0px) scale(0.98); }
+        .vblocks-badge-glow { text-shadow: 0 0 12px rgba(0, 240, 255, 0.75); }
+        .gothic-title { font-family: 'Cinzel', serif; }
+        .mono-tag { font-family: 'JetBrains Mono', monospace; }
+        @keyframes knockdownPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55), 0 0 18px rgba(245, 158, 11, 0.35); }
+            50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0), 0 0 26px rgba(245, 158, 11, 0.65); }
+        }
+        .btn-knockdown-demo { animation: knockdownPulse 2.4s infinite; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="relative select-none">
+
+    <div id="canvas-container"></div>
+
+    <header class="fixed top-0 left-0 right-0 z-20 p-2 sm:p-3 pointer-events-none">
+        <nav class="max-w-[1440px] mx-auto md-surface rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 pointer-events-auto flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+            <div class="flex items-center gap-2.5 shrink-0">
+                <a href="https://github.com/Ionity-Global/ionity-assets-ionity-global-jwva" target="_blank" rel="noopener noreferrer" title="Open Ionity-Global / ionity-assets-ionity-global-jwva Repository" class="group flex items-center gap-2.5 pr-3 border-r border-slate-700/80 hover:border-cyan-400/60 transition-colors">
+                    <div class="w-10 h-10 rounded-xl bg-slate-950/90 border border-cyan-400/50 flex items-center justify-center shadow-inner group-hover:border-cyan-300 group-hover:scale-105 transition-all">
+                        <svg class="w-7 h-7" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <polygon points="32,4 58,18 58,46 32,60 6,46 6,18" stroke="#00F0FF" stroke-width="3" fill="rgba(0,240,255,0.1)"/>
+                            <polygon points="32,10 52,21 52,43 32,54 12,43 12,21" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4 2" fill="none"/>
+                            <path d="M19 22L32 46L45 22" stroke="#00F0FF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M25 22L32 35L39 22" stroke="#F59E0B" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="32" cy="14" r="2.5" fill="#00F0FF"/>
+                        </svg>
+                    </div>
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-extrabold tracking-wider text-sm sm:text-base text-white vblocks-badge-glow">VBLOCKS</span>
+                            <span class="text-[10px] mono-tag font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-400/40">JWVA</span>
+                        </div>
+                        <span class="text-[10px] sm:text-[11px] mono-tag text-slate-400 group-hover:text-cyan-300 transition-colors flex items-center gap-1">
+                            IONITY-GLOBAL // CATHEDRAL CHESS
+                            <svg class="w-3 h-3 inline opacity-75" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        </span>
+                    </div>
+                </a>
+                <div id="turn-badge" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 shrink-0">
+                    <span id="turn-dot" class="w-3 h-3 rounded-full bg-white shadow-[0_0_10px_#fff]"></span>
+                    <div class="flex flex-col">
+                        <span id="turn-text" class="text-xs font-bold tracking-wide text-slate-100">WHITE MARBLE TURN</span>
+                        <span id="game-substatus" class="text-[10px] mono-tag text-cyan-400">VBLOCKS ARENA READY</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <button id="btn-demo-knockdown" class="md-btn btn-knockdown-demo flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-extrabold text-xs sm:text-sm tracking-wide shadow-lg cursor-pointer" title="Trigger an immediate close-up physical Knock-Down & Structural Shatter demonstration">
+                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    <span>DEMO KNOCK-DOWN</span>
+                </button>
+                <button id="btn-mode" class="md-btn flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-cyan-500/30 text-xs font-semibold text-cyan-200 cursor-pointer" title="Switch between 1P vs Automaton AI and 2P Pass & Play">
+                    <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <span id="mode-label">VS AUTOMATON</span>
+                </button>
+                <button id="btn-camera" class="md-btn flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer" title="Cycle Cathedral Camera Perspective">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                    <span id="camera-label" class="hidden md:inline">CAM: ORBIT</span>
+                </button>
+                <button id="btn-undo" class="md-btn flex items-center gap-1 px-2.5 py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-xs font-semibold text-slate-200 cursor-pointer" title="Undo Last Turn">
+                    <svg class="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>
+                    <span class="hidden lg:inline">UNDO</span>
+                </button>
+                <button id="btn-audio" class="md-btn flex items-center justify-center p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-200 cursor-pointer" title="Toggle Cathedral & Stone Impact Acoustics">
+                    <svg id="icon-audio-on" class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+                    <svg id="icon-audio-off" class="w-4 h-4 text-rose-400 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zM17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+                </button>
+                <button id="btn-reset" class="md-btn flex items-center gap-1.5 px-3 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/50 text-xs font-bold text-cyan-200 cursor-pointer" title="Reset 32-Piece Board">
+                    <svg class="w-4 h-4 text-cyan-300" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    <span class="hidden sm:inline">NEW GAME</span>
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <div id="combat-telemetry" class="fixed top-20 left-1/2 -translate-x-1/2 z-20 pointer-events-none transition-all duration-300 opacity-0 -translate-y-2">
+        <div class="md-surface rounded-2xl px-5 py-2.5 border border-amber-400/60 flex items-center gap-3 shadow-2xl">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+            <div class="text-center">
+                <div id="telemetry-title" class="text-xs sm:text-sm font-extrabold tracking-widest uppercase text-amber-300 gothic-title">VBLOCKS PHYSICAL KNOCK-DOWN</div>
+                <div id="telemetry-subtitle" class="text-[11px] mono-tag text-slate-300">RIGID-BODY TOPPLE &amp; STRUCTURAL FRACTURE</div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="fixed bottom-0 left-0 right-0 z-20 p-2 sm:p-3 pointer-events-none">
+        <div class="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="md-surface rounded-xl px-3 py-1.5 pointer-events-auto flex items-center gap-2 min-w-[200px] border border-slate-700/70">
+                <span class="text-[10px] mono-tag uppercase tracking-wider text-slate-400 font-semibold">SHATTERED OBSIDIAN:</span>
+                <div id="captured-black" class="flex items-center gap-0.5 text-sm text-amber-400 min-h-[20px]"></div>
+            </div>
+            <div class="md-surface rounded-xl px-3.5 py-1.5 pointer-events-auto flex items-center gap-3 text-[11px] mono-tag text-slate-300">
+                <a href="/games/" class="text-slate-300 hover:text-cyan-300 font-bold">← GAMES</a>
+                <span class="hidden md:inline text-slate-400">DRAG TO ORBIT • CLICK SQUARE TO COMMAND •</span>
+                <a href="https://github.com/Ionity-Global/ionity-assets-ionity-global-jwva" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:text-cyan-300 font-bold underline decoration-cyan-500/40">VBLOCKS // ionity-assets-ionity-global-jwva</a>
+            </div>
+            <div class="md-surface rounded-xl px-3 py-1.5 pointer-events-auto flex items-center gap-2 min-w-[200px] justify-end border border-slate-700/70">
+                <span class="text-[10px] mono-tag uppercase tracking-wider text-slate-400 font-semibold">SHATTERED MARBLE:</span>
+                <div id="captured-white" class="flex items-center gap-0.5 text-sm text-cyan-300 min-h-[20px]"></div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /* 1. WEB AUDIO SYNTHESIZER */
+        class CathedralAudioEngine {
+            constructor() { this.ctx = null; this.enabled = true; }
+            init() { if (!this.ctx) { const AudioCtx = window.AudioContext || window.webkitAudioContext; if (AudioCtx) this.ctx = new AudioCtx(); } if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); }
+            toggle() { this.enabled = !this.enabled; return this.enabled; }
+            playSelect() {
+                if (!this.enabled) return; this.init(); if (!this.ctx) return;
+                const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(520, now); osc.frequency.exponentialRampToValueAtTime(780, now + 0.14);
+                gain.gain.setValueAtTime(0.08, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.17);
+            }
+            playStoneSlide(duration = 0.42) {
+                if (!this.enabled) return; this.init(); if (!this.ctx) return;
+                const now = this.ctx.currentTime, bufferSize = this.ctx.sampleRate * duration, buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate), data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.45;
+                const noise = this.ctx.createBufferSource(); noise.buffer = buffer;
+                const filter = this.ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.setValueAtTime(160, now); filter.frequency.linearRampToValueAtTime(240, now + duration * 0.7); filter.Q.value = 3.2;
+                const gain = this.ctx.createGain(); gain.gain.setValueAtTime(0.01, now); gain.gain.linearRampToValueAtTime(0.14, now + 0.06); gain.gain.linearRampToValueAtTime(0.08, now + duration - 0.06); gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+                noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination); noise.start(now);
+                setTimeout(() => this.playStoneSettle(), (duration - 0.05) * 1000);
+            }
+            playStoneSettle() {
+                if (!this.enabled || !this.ctx) return;
+                const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(115, now); osc.frequency.exponentialRampToValueAtTime(38, now + 0.14);
+                gain.gain.setValueAtTime(0.24, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now + 0.16);
+            }
+            playKnockdownStrike() {
+                if (!this.enabled) return; this.init(); if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const sub = this.ctx.createOscillator(), subGain = this.ctx.createGain();
+                sub.type = 'sawtooth'; sub.frequency.setValueAtTime(150, now); sub.frequency.exponentialRampToValueAtTime(32, now + 0.28);
+                subGain.gain.setValueAtTime(0.42, now); subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.30);
+                sub.connect(subGain); subGain.connect(this.ctx.destination); sub.start(now); sub.stop(now + 0.31);
+                const crackOsc = this.ctx.createOscillator(), crackGain = this.ctx.createGain();
+                crackOsc.type = 'square'; crackOsc.frequency.setValueAtTime(920, now); crackOsc.frequency.exponentialRampToValueAtTime(180, now + 0.09);
+                crackGain.gain.setValueAtTime(0.22, now); crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.10);
+                crackOsc.connect(crackGain); crackGain.connect(this.ctx.destination); crackOsc.start(now); crackOsc.stop(now + 0.11);
+            }
+            playGroundSlamAndShatter() {
+                if (!this.enabled) return; this.init(); if (!this.ctx) return;
+                const now = this.ctx.currentTime;
+                const slamOsc = this.ctx.createOscillator(), slamGain = this.ctx.createGain();
+                slamOsc.type = 'sine'; slamOsc.frequency.setValueAtTime(95, now); slamOsc.frequency.exponentialRampToValueAtTime(22, now + 0.48);
+                slamGain.gain.setValueAtTime(0.55, now); slamGain.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
+                slamOsc.connect(slamGain); slamGain.connect(this.ctx.destination); slamOsc.start(now); slamOsc.stop(now + 0.52);
+                [0.0, 0.04, 0.09, 0.16, 0.24, 0.34].forEach((offset, idx) => {
+                    const bTime = now + offset, dur = 0.12 + Math.random() * 0.1, bufferSize = Math.floor(this.ctx.sampleRate * dur), buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate), data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.4));
+                    const noise = this.ctx.createBufferSource(); noise.buffer = buffer;
+                    const filter = this.ctx.createBiquadFilter(); filter.type = 'bandpass'; filter.frequency.value = 500 + idx * 260 + Math.random() * 300; filter.Q.value = 2.0;
+                    const gain = this.ctx.createGain(); gain.gain.setValueAtTime(0.28 / (1 + idx * 0.25), bTime); gain.gain.exponentialRampToValueAtTime(0.001, bTime + dur);
+                    noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination); noise.start(bTime);
+                });
+            }
+        }
+        const audioFX = new CathedralAudioEngine();
+
+        /* 2. PROCEDURAL TEXTURES & BRANDING */
+        const SQUARE_SIZE = 2.2;
+        const BOARD_SIZE = SQUARE_SIZE * 8;
+
+        function createTileTexture(isLight, fileIdx, rankIdx) {
+            const canvas = document.createElement('canvas'); canvas.width = 256; canvas.height = 256; const ctx = canvas.getContext('2d');
+            if (isLight) {
+                const grad = ctx.createLinearGradient(0, 0, 256, 256); grad.addColorStop(0, '#eef2f7'); grad.addColorStop(0.5, '#dde5f0'); grad.addColorStop(1, '#cbd5e1'); ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
+                ctx.strokeStyle = 'rgba(100, 116, 139, 0.22)'; ctx.lineWidth = 2;
+                for (let v = 0; v < 5; v++) { ctx.beginPath(); ctx.moveTo((fileIdx * 37 + v * 60) % 256, 0); ctx.bezierCurveTo(80, 90, 170, 160, (rankIdx * 53 + v * 75) % 256, 256); ctx.stroke(); }
+            } else {
+                const grad = ctx.createLinearGradient(0, 0, 256, 256); grad.addColorStop(0, '#111622'); grad.addColorStop(0.5, '#0b0f19'); grad.addColorStop(1, '#161f30'); ctx.fillStyle = grad; ctx.fillRect(0, 0, 256, 256);
+                ctx.strokeStyle = 'rgba(0, 240, 255, 0.12)'; ctx.lineWidth = 1.5;
+                for (let v = 0; v < 4; v++) { ctx.beginPath(); ctx.moveTo(0, (fileIdx * 43 + v * 65) % 256); ctx.quadraticCurveTo(128, 128, 256, (rankIdx * 61 + v * 50) % 256); ctx.stroke(); }
+            }
+            ctx.strokeStyle = isLight ? 'rgba(15, 23, 42, 0.18)' : 'rgba(0, 240, 255, 0.22)'; ctx.lineWidth = 6; ctx.strokeRect(4, 4, 248, 248);
+            ctx.font = '700 16px "JetBrains Mono", monospace'; ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.22)' : 'rgba(0, 240, 255, 0.25)'; ctx.fillText('VBLOCKS', 16, 238);
+            const tex = new THREE.CanvasTexture(canvas); tex.anisotropy = 4; return tex;
+        }
+
+        function createCenterVBlocksMedallionTexture() {
+            const canvas = document.createElement('canvas'); canvas.width = 1024; canvas.height = 1024; const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 1024, 1024); const cx = 512, cy = 512;
+            const radGrad = ctx.createRadialGradient(cx, cy, 60, cx, cy, 490);
+            radGrad.addColorStop(0, 'rgba(10, 17, 30, 0.92)'); radGrad.addColorStop(0.68, 'rgba(8, 14, 26, 0.85)'); radGrad.addColorStop(0.88, 'rgba(0, 240, 255, 0.22)'); radGrad.addColorStop(1, 'rgba(0, 240, 255, 0)');
+            ctx.fillStyle = radGrad; ctx.beginPath(); ctx.arc(cx, cy, 490, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 10; ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(cx, cy, 440, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 5; ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(cx, cy, 405, 0, Math.PI * 2); ctx.stroke();
+            ctx.save(); ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)'; ctx.lineWidth = 18; ctx.beginPath(); ctx.moveTo(260, 250); ctx.lineTo(512, 770); ctx.lineTo(764, 250); ctx.stroke(); ctx.restore();
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 28; ctx.fillStyle = '#ffffff'; ctx.font = '900 132px "Inter", sans-serif'; ctx.fillText('VBLOCKS', cx, cy - 35);
+            ctx.lineWidth = 3; ctx.strokeStyle = '#00f0ff'; ctx.strokeText('VBLOCKS', cx, cy - 35);
+            ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 16; ctx.fillStyle = '#fbbf24'; ctx.font = '800 44px "JetBrains Mono", monospace'; ctx.fillText('IONITY GLOBAL // JWVA', cx, cy + 72);
+            ctx.shadowBlur = 8; ctx.fillStyle = '#67e8f9'; ctx.font = '700 28px "JetBrains Mono", monospace'; ctx.fillText('IONITY-ASSETS-IONITY-GLOBAL-JWVA', cx, cy + 135);
+            ctx.fillStyle = '#38bdf8'; ctx.font = '700 30px "Cinzel", serif'; ctx.fillText('✦ WIZARD\'S CHESS ARENA ✦', cx, cy - 155);
+            const tex = new THREE.CanvasTexture(canvas); tex.anisotropy = 8; return tex;
+        }
+
+        function createPlinthSidePlaqueTexture() {
+            const canvas = document.createElement('canvas'); canvas.width = 2048; canvas.height = 256; const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 2048, 0); grad.addColorStop(0, '#070b12'); grad.addColorStop(0.5, '#0f172a'); grad.addColorStop(1, '#070b12'); ctx.fillStyle = grad; ctx.fillRect(0, 0, 2048, 256);
+            ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 8; ctx.strokeRect(12, 12, 2024, 232);
+            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 3; ctx.strokeRect(26, 26, 1996, 204);
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 22; ctx.fillStyle = '#ffffff'; ctx.font = '900 92px "Inter", sans-serif';
+            ctx.fillText('VBLOCKS  //  IONITY GLOBAL  •  JWVA', 1024, 128);
+            const tex = new THREE.CanvasTexture(canvas); tex.anisotropy = 8; return tex;
+        }
+
+        function createCathedralBannerTexture() {
+            const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 1024; const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 1024); grad.addColorStop(0, '#090d16'); grad.addColorStop(0.5, '#111c2d'); grad.addColorStop(1, '#06080f'); ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 1024);
+            ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 12; ctx.strokeRect(20, 20, 472, 984);
+            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 4; ctx.strokeRect(38, 38, 436, 948);
+            ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 16; ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 25; ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(256, 320); ctx.lineTo(372, 120); ctx.stroke();
+            ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = '900 84px "Inter", sans-serif'; ctx.fillText('VBLOCKS', 256, 460);
+            ctx.fillStyle = '#fbbf24'; ctx.shadowColor = '#f59e0b'; ctx.font = '800 42px "JetBrains Mono", monospace'; ctx.fillText('IONITY GLOBAL', 256, 560);
+            ctx.fillStyle = '#38bdf8'; ctx.font = '700 32px "JetBrains Mono", monospace'; ctx.fillText('ASSETS // JWVA', 256, 630);
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)'; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(110, 920); ctx.quadraticCurveTo(110, 720, 256, 690); ctx.quadraticCurveTo(402, 720, 402, 920); ctx.stroke();
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        /* 3. SCENE, CATHEDRAL & ARENA */
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x06080e); scene.fog = new THREE.FogExp2(0x06080e, 0.0145);
+        const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 200);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
+        container.appendChild(renderer.domElement);
+
+        const camState = { theta: 0, phi: 0.88, radius: 25.5, targetTheta: 0, targetPhi: 0.88, targetRadius: 25.5, lookAt: new THREE.Vector3(0, 0.6, 0), targetLookAt: new THREE.Vector3(0, 0.6, 0), shakeIntensity: 0, presetIndex: 0 };
+        const CAMERA_PRESETS = [
+            { name: 'CAM: WHITE', theta: 0, phi: 0.88, radius: 25.5 },
+            { name: 'CAM: SIDE', theta: Math.PI / 2, phi: 0.82, radius: 26.5 },
+            { name: 'CAM: BLACK', theta: Math.PI, phi: 0.88, radius: 25.5 },
+            { name: 'CAM: TOP', theta: 0, phi: 0.22, radius: 29.0 }
+        ];
+
+        scene.add(new THREE.AmbientLight(0x8fa8c8, 0.68));
+        const mainSpot = new THREE.SpotLight(0xe2f1ff, 1.85); mainSpot.position.set(10, 32, 16); mainSpot.angle = Math.PI / 3; mainSpot.penumbra = 0.65; mainSpot.castShadow = true; mainSpot.shadow.mapSize.width = 2048; mainSpot.shadow.mapSize.height = 2048; mainSpot.shadow.bias = -0.0005; scene.add(mainSpot);
+        const vblocksCoreLight = new THREE.PointLight(0x00f0ff, 1.35, 28); vblocksCoreLight.position.set(0, 3.2, 0); scene.add(vblocksCoreLight);
+        const brazierLights = [];
+        const cornerCoords = [[-13.5, -13.5], [13.5, -13.5], [-13.5, 13.5], [13.5, 13.5]];
+        const holoRings = [];
+
+        function buildGothicCathedralAndBranding() {
+            const cathedralGroup = new THREE.Group();
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 140), new THREE.MeshStandardMaterial({ color: 0x080b12, roughness: 0.35, metalness: 0.45 }));
+            floor.rotation.x = -Math.PI / 2; floor.position.y = -1.2; floor.receiveShadow = true; cathedralGroup.add(floor);
+            const daisMat = new THREE.MeshStandardMaterial({ color: 0x111726, roughness: 0.3, metalness: 0.6 });
+            const dais1 = new THREE.Mesh(new THREE.BoxGeometry(22.4, 0.6, 22.4), daisMat); dais1.position.y = -0.9; dais1.receiveShadow = true; cathedralGroup.add(dais1);
+            const daisTrim = new THREE.Mesh(new THREE.BoxGeometry(22.55, 0.08, 22.55), new THREE.MeshBasicMaterial({ color: 0x00f0ff })); daisTrim.position.y = -0.62; cathedralGroup.add(daisTrim);
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x141b2b, roughness: 0.55, metalness: 0.35 });
+            [[-22, -26], [22, -26], [-26, -10], [26, -10], [-26, 10], [26, 10], [-22, 26], [22, 26]].forEach(([px, pz]) => {
+                const colGroup = new THREE.Group(); colGroup.position.set(px, -1.2, pz);
+                const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.5, 36, 12), pillarMat); shaft.position.y = 18; shaft.castShadow = true; shaft.receiveShadow = true; colGroup.add(shaft);
+                for (let a = 0; a < 4; a++) { const ang = (a * Math.PI) / 2; const sub = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.5, 36, 8), pillarMat); sub.position.set(Math.cos(ang) * 1.2, 18, Math.sin(ang) * 1.2); colGroup.add(sub); }
+                const neonStrip = new THREE.Mesh(new THREE.BoxGeometry(0.18, 24, 0.18), new THREE.MeshBasicMaterial({ color: 0x00f0ff })); neonStrip.position.set(px > 0 ? -1.45 : 1.45, 13, 0); colGroup.add(neonStrip);
+                cathedralGroup.add(colGroup);
+            });
+            const roseGroup = new THREE.Group(); roseGroup.position.set(0, 16, -38);
+            roseGroup.add(new THREE.Mesh(new THREE.TorusGeometry(9.5, 0.55, 12, 48), pillarMat));
+            roseGroup.add(new THREE.Mesh(new THREE.TorusGeometry(8.8, 0.16, 8, 48), new THREE.MeshBasicMaterial({ color: 0x00f0ff })));
+            for (let s = 0; s < 12; s++) { const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.28, 18.5, 0.28), pillarMat); spoke.rotation.z = (s * Math.PI) / 12; roseGroup.add(spoke); }
+            cathedralGroup.add(roseGroup);
+            const bannerMat = new THREE.MeshBasicMaterial({ map: createCathedralBannerTexture(), side: THREE.DoubleSide });
+            [-14, 14].forEach((bx) => { const banner = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 11), bannerMat); banner.position.set(bx, 11.5, -31); cathedralGroup.add(banner); });
+            cornerCoords.forEach(([cx, cz], idx) => {
+                const monolith = new THREE.Group(); monolith.position.set(cx, -1.2, cz);
+                const ped = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 3.6, 6), daisMat); ped.position.y = 1.8; ped.castShadow = true; monolith.add(ped);
+                const pLight = new THREE.PointLight(idx % 2 === 0 ? 0xff9e2c : 0x00f0ff, 1.25, 22); pLight.position.set(cx, 3.8, cz); scene.add(pLight); brazierLights.push({ light: pLight, baseIntensity: 1.25, phase: idx * 1.7 });
+                const holoGroup = new THREE.Group(); holoGroup.position.y = 4.9;
+                holoGroup.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00a8ff, emissiveIntensity: 0.9, roughness: 0.1, metalness: 0.9 })));
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.06, 8, 24), new THREE.MeshBasicMaterial({ color: 0xf59e0b })); ring.rotation.x = Math.PI / 3; holoGroup.add(ring);
+                monolith.add(holoGroup); holoRings.push(holoGroup); cathedralGroup.add(monolith);
+            });
+            scene.add(cathedralGroup);
+        }
+
+        const boardGroup = new THREE.Group(); scene.add(boardGroup);
+        const tileMeshes = [], highlightMeshes = [];
+
+        function buildChessboard() {
+            const plinth = new THREE.Mesh(new THREE.BoxGeometry(BOARD_SIZE + 2.4, 0.95, BOARD_SIZE + 2.4), new THREE.MeshStandardMaterial({ color: 0x0a0f1a, roughness: 0.25, metalness: 0.75 })); plinth.position.y = -0.5; plinth.receiveShadow = true; boardGroup.add(plinth);
+            const plaqueMat = new THREE.MeshBasicMaterial({ map: createPlinthSidePlaqueTexture() });
+            const plaqueW = BOARD_SIZE + 1.8, plaqueH = 0.78, offset = (BOARD_SIZE + 2.42) / 2;
+            const pFront = new THREE.Mesh(new THREE.PlaneGeometry(plaqueW, plaqueH), plaqueMat); pFront.position.set(0, -0.48, offset); boardGroup.add(pFront);
+            const pBack = new THREE.Mesh(new THREE.PlaneGeometry(plaqueW, plaqueH), plaqueMat); pBack.position.set(0, -0.48, -offset); pBack.rotation.y = Math.PI; boardGroup.add(pBack);
+            const pRight = new THREE.Mesh(new THREE.PlaneGeometry(plaqueW, plaqueH), plaqueMat); pRight.position.set(offset, -0.48, 0); pRight.rotation.y = Math.PI / 2; boardGroup.add(pRight);
+            const pLeft = new THREE.Mesh(new THREE.PlaneGeometry(plaqueW, plaqueH), plaqueMat); pLeft.position.set(-offset, -0.48, 0); pLeft.rotation.y = -Math.PI / 2; boardGroup.add(pLeft);
+            const tileGeo = new THREE.BoxGeometry(SQUARE_SIZE * 0.985, 0.22, SQUARE_SIZE * 0.985);
+            for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
+                const isLight = (r + f) % 2 === 0;
+                const tile = new THREE.Mesh(tileGeo, new THREE.MeshStandardMaterial({ map: createTileTexture(isLight, f, r), roughness: isLight ? 0.22 : 0.16, metalness: isLight ? 0.12 : 0.45 }));
+                const pos = boardToWorld(f, r); tile.position.set(pos.x, -0.11, pos.z); tile.receiveShadow = true;
+                tile.userData = { square: String.fromCharCode(97 + f) + (8 - r), file: f, rank: r, isLight };
+                boardGroup.add(tile); tileMeshes.push(tile);
+            }
+            const medallionMesh = new THREE.Mesh(new THREE.PlaneGeometry(SQUARE_SIZE * 4.35, SQUARE_SIZE * 4.35), new THREE.MeshBasicMaterial({ map: createCenterVBlocksMedallionTexture(), transparent: true, opacity: 0.94, depthWrite: false }));
+            medallionMesh.rotation.x = -Math.PI / 2; medallionMesh.position.set(0, 0.012, 0); boardGroup.add(medallionMesh); window.vblocksMedallion = medallionMesh;
+        }
+        function boardToWorld(fileIdx, rankIdx) { return { x: (fileIdx - 3.5) * SQUARE_SIZE, z: (rankIdx - 3.5) * SQUARE_SIZE }; }
+        function squareToCoords(square) { const file = square.charCodeAt(0) - 97; const rank = 8 - parseInt(square[1], 10); return { file, rank, ...boardToWorld(file, rank) }; }
+
+        /* 4. SCULPTED PIECES */
+        const materialsCache = {
+            w: { main: new THREE.MeshStandardMaterial({ color: 0xf4f7fb, roughness: 0.22, metalness: 0.15 }), trim: new THREE.MeshStandardMaterial({ color: 0x00f0ff, emissive: 0x00a8ff, emissiveIntensity: 0.55, roughness: 0.2, metalness: 0.85 }), weapon: new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.18, metalness: 0.75 }) },
+            b: { main: new THREE.MeshStandardMaterial({ color: 0x121824, roughness: 0.14, metalness: 0.65 }), trim: new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.6, roughness: 0.2, metalness: 0.88 }), weapon: new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.15, metalness: 0.85 }) }
+        };
+
+        function createSculptedPiece(type, color) {
+            const root = new THREE.Group(), mats = materialsCache[color], bodyPivot = new THREE.Group(); root.add(bodyPivot);
+            const segments = [];
+            const baseGroup = new THREE.Group();
+            const baseLow = new THREE.Mesh(new THREE.CylinderGeometry(0.76, 0.86, 0.28, 18), mats.main); baseLow.position.y = 0.14; baseLow.castShadow = true; baseLow.receiveShadow = true; baseGroup.add(baseLow);
+            const baseRing = new THREE.Mesh(new THREE.TorusGeometry(0.74, 0.055, 8, 24), mats.trim); baseRing.rotation.x = Math.PI / 2; baseRing.position.y = 0.28; baseGroup.add(baseRing);
+            bodyPivot.add(baseGroup); segments.push({ group: baseGroup, centerOffset: 0.2 });
+            const torsoGroup = new THREE.Group(), headGroup = new THREE.Group(), weaponGroup = new THREE.Group();
+            if (type === 'p') {
+                const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.64, 0.95, 14), mats.main); torso.position.y = 0.75; torso.castShadow = true; torsoGroup.add(torso);
+                const collar = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.05, 8, 18), mats.trim); collar.rotation.x = Math.PI / 2; collar.position.y = 1.22; torsoGroup.add(collar);
+                const helm = new THREE.Mesh(new THREE.OctahedronGeometry(0.42, 1), mats.main); helm.position.y = 1.58; helm.castShadow = true; headGroup.add(helm);
+                const shield = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.12), mats.trim); shield.position.set(0.26, 0.96, 0.44); weaponGroup.add(shield);
+                const spear = new THREE.Mesh(new THREE.ConeGeometry(0.11, 1.35, 6), mats.weapon); spear.position.set(-0.34, 1.25, 0.35); weaponGroup.add(spear);
+            } else if (type === 'r') {
+                const tower = new THREE.Mesh(new THREE.BoxGeometry(0.98, 1.35, 0.98), mats.main); tower.position.y = 0.95; tower.castShadow = true; torsoGroup.add(tower);
+                const battlement = new THREE.Mesh(new THREE.BoxGeometry(1.14, 0.42, 1.14), mats.main); battlement.position.y = 1.82; battlement.castShadow = true; headGroup.add(battlement);
+                const coreTrim = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.1, 1.18), mats.trim); coreTrim.position.y = 1.62; headGroup.add(coreTrim);
+                const ram = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.75, 6), mats.trim); ram.rotation.x = Math.PI / 2; ram.position.set(0, 1.05, 0.62); weaponGroup.add(ram);
+            } else if (type === 'n') {
+                const body = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.68, 1.05, 12), mats.main); body.position.y = 0.8; body.castShadow = true; torsoGroup.add(body);
+                const neck = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.95, 0.68), mats.main); neck.position.set(0, 1.55, 0.12); neck.rotation.x = -0.35; neck.castShadow = true; headGroup.add(neck);
+                const snout = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.75, 6), mats.main); snout.rotation.x = Math.PI / 2 + 0.25; snout.position.set(0, 1.82, 0.52); headGroup.add(snout);
+                const mane = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.95, 0.25), mats.trim); mane.position.set(0, 1.62, -0.22); headGroup.add(mane);
+                const lance = new THREE.Mesh(new THREE.ConeGeometry(0.12, 1.65, 8), mats.trim); lance.rotation.x = Math.PI / 3; lance.position.set(0.42, 1.35, 0.45); weaponGroup.add(lance);
+            } else if (type === 'b') {
+                const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.68, 1.35, 16), mats.main); robe.position.y = 0.95; robe.castShadow = true; torsoGroup.add(robe);
+                const mitre = new THREE.Mesh(new THREE.ConeGeometry(0.44, 0.82, 12), mats.main); mitre.position.y = 1.98; mitre.castShadow = true; headGroup.add(mitre);
+                const halo = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.045, 8, 20), mats.trim); halo.rotation.x = Math.PI / 2; halo.position.y = 1.62; headGroup.add(halo);
+                const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.85, 8), mats.trim); staff.position.set(0.42, 1.2, 0.32); weaponGroup.add(staff);
+            } else if (type === 'q') {
+                const gown = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.74, 1.55, 18), mats.main); gown.position.y = 1.05; gown.castShadow = true; torsoGroup.add(gown);
+                const collar = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.06, 8, 24), mats.trim); collar.rotation.x = Math.PI / 2; collar.position.y = 1.82; torsoGroup.add(collar);
+                const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.36, 0.42, 12), mats.main); crown.position.y = 2.05; headGroup.add(crown);
+                const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), mats.trim); crystal.position.y = 2.58; crystal.name = 'queenCrystal'; headGroup.add(crystal);
+                const scepter = new THREE.Mesh(new THREE.ConeGeometry(0.14, 1.6, 6), mats.trim); scepter.position.set(-0.44, 1.35, 0.35); weaponGroup.add(scepter);
+            } else if (type === 'k') {
+                const armor = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.78, 1.65, 16), mats.main); armor.position.y = 1.1; armor.castShadow = true; torsoGroup.add(armor);
+                const shoulders = new THREE.Mesh(new THREE.BoxGeometry(1.12, 0.32, 0.68), mats.main); shoulders.position.y = 1.78; torsoGroup.add(shoulders);
+                const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.42, 0.45, 8), mats.trim); crown.position.y = 2.15; headGroup.add(crown);
+                const crossV = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.55, 0.16), mats.trim); crossV.position.y = 2.62;
+                const crossH = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.15, 0.16), mats.trim); crossH.position.y = 2.66; headGroup.add(crossV, crossH);
+                const greatsword = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.85, 0.08), mats.trim); greatsword.position.set(0, 1.18, 0.58); weaponGroup.add(greatsword);
+            }
+            const facingAngle = color === 'w' ? Math.PI : 0; bodyPivot.rotation.y = facingAngle;
+            bodyPivot.add(torsoGroup, headGroup, weaponGroup);
+            segments.push({ group: torsoGroup, centerOffset: 0.95 }, { group: headGroup, centerOffset: 1.85 }, { group: weaponGroup, centerOffset: 1.25 });
+            root.userData = { type, color, bodyPivot, segments, weaponGroup, baseFacing: facingAngle, idlePhase: Math.random() * Math.PI * 2 };
+            return root;
+        }
+
+        /* 5. KNOCK-DOWN & SHATTER PHYSICS */
+        const activeDebris = [], activeShockwaves = [];
+        let activeCombatSequence = null;
+
+        function spawnImpactSparks(worldPos, colorHex, count = 22) {
+            const geo = new THREE.OctahedronGeometry(0.09, 0), mat = new THREE.MeshBasicMaterial({ color: colorHex });
+            for (let i = 0; i < count; i++) {
+                const spark = new THREE.Mesh(geo, mat.clone()); spark.position.copy(worldPos);
+                const angle = Math.random() * Math.PI * 2, speed = 2.5 + Math.random() * 6.5;
+                activeDebris.push({ mesh: spark, vel: new THREE.Vector3(Math.cos(angle) * speed, 2.5 + Math.random() * 5.5, Math.sin(angle) * speed), rotVel: new THREE.Vector3(Math.random() * 12, Math.random() * 12, Math.random() * 12), radius: 0.08, life: 0, maxLife: 0.9 + Math.random() * 0.5, bounce: 0.55, friction: 0.88 });
+                scene.add(spark);
+            }
+        }
+        function spawnShockwaveRing(worldPos, colorHex) {
+            const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.48, 32), new THREE.MeshBasicMaterial({ color: colorHex, side: THREE.DoubleSide, transparent: true, opacity: 0.9 }));
+            ring.rotation.x = -Math.PI / 2; ring.position.set(worldPos.x, 0.04, worldPos.z); scene.add(ring); activeShockwaves.push({ mesh: ring, age: 0, maxAge: 0.65 });
+        }
+        function fractureToppledPiece(victimMesh, impactDir) {
+            const { color, segments } = victimMesh.userData, mats = materialsCache[color];
+            const slamOrigin = victimMesh.position.clone(), tipCenter = slamOrigin.clone().add(impactDir.clone().multiplyScalar(1.15)); tipCenter.y = 0.25;
+            segments.forEach((seg, idx) => {
+                const worldPos = new THREE.Vector3(), worldQuat = new THREE.Quaternion(); seg.group.getWorldPosition(worldPos); seg.group.getWorldQuaternion(worldQuat);
+                const chunk = seg.group.clone(true); chunk.position.copy(worldPos); chunk.quaternion.copy(worldQuat); scene.add(chunk);
+                const lateral = new THREE.Vector3(-impactDir.z, 0, impactDir.x).multiplyScalar((Math.random() - 0.5) * 4.2);
+                const vel = impactDir.clone().multiplyScalar(1.8 + idx * 1.45 + Math.random() * 2.2).add(lateral); vel.y = 2.2 + idx * 0.85 + Math.random() * 2.0;
+                activeDebris.push({ mesh: chunk, vel, rotVel: new THREE.Vector3((Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9), radius: 0.22, life: 0, maxLife: 2.8 + Math.random() * 0.8, bounce: 0.36, friction: 0.82 });
+            });
+            const shardGeo = new THREE.DodecahedronGeometry(0.22, 0);
+            for (let i = 0; i < 24; i++) {
+                const shard = new THREE.Mesh(shardGeo, (i % 5 === 0 ? mats.trim : mats.main).clone());
+                shard.scale.set(0.5 + Math.random() * 1.1, 0.4 + Math.random() * 0.9, 0.5 + Math.random() * 1.1);
+                shard.position.copy(tipCenter).add(new THREE.Vector3((Math.random() - 0.5) * 0.9, 0.15 + Math.random() * 0.4, (Math.random() - 0.5) * 0.9)); shard.castShadow = true; scene.add(shard);
+                const spreadAngle = Math.atan2(impactDir.z, impactDir.x) + (Math.random() - 0.5) * 1.65, speed = 2.0 + Math.random() * 6.5;
+                activeDebris.push({ mesh: shard, vel: new THREE.Vector3(Math.cos(spreadAngle) * speed, 1.8 + Math.random() * 4.6, Math.sin(spreadAngle) * speed), rotVel: new THREE.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14), radius: 0.14, life: 0, maxLife: 2.3 + Math.random() * 1.1, bounce: 0.42, friction: 0.84 });
+            }
+            const accentHex = color === 'w' ? 0x00f0ff : 0xf59e0b; spawnShockwaveRing(tipCenter, accentHex); spawnImpactSparks(tipCenter, accentHex, 26);
+        }
+        function startKnockDownSequence({ attackerMesh, defenderMesh, fromPos, toPos, onComplete, isDemo = false }) {
+            const impactVec = new THREE.Vector3(toPos.x - fromPos.x, 0, toPos.z - fromPos.z); if (impactVec.lengthSq() < 0.001) impactVec.set(0, 0, -1);
+            const impactDir = impactVec.clone().normalize(), tipAxis = new THREE.Vector3(impactDir.z, 0, -impactDir.x).normalize();
+            attackerMesh.userData.bodyPivot.rotation.y = Math.atan2(impactDir.x, impactDir.z);
+            const strikePoint = new THREE.Vector3(toPos.x - impactDir.x * 1.05, 0, toPos.z - impactDir.z * 1.05);
+            showCombatTelemetry(isDemo ? 'DEMO KNOCK-DOWN // VBLOCKS PHYSICS' : 'PHYSICAL KNOCK-DOWN STRIKE!', 'STAGE 1: KINETIC LUNGE  •  STAGE 2: RIGID TOPPLE  •  STAGE 3: GROUND SLAM FRACTURE');
+            activeCombatSequence = { stage: 'CHARGE', elapsed: 0, attackerMesh, defenderMesh, fromPos: new THREE.Vector3(fromPos.x, 0, fromPos.z), toPos: new THREE.Vector3(toPos.x, 0, toPos.z), strikePoint, impactDir, tipAxis, tipAngle: 0, tipAngularVel: 2.15, skidDist: 0, strikeTriggered: false, shatterTriggered: false, onComplete };
+        }
+        function updateCombatAndPhysics(dt) {
+            if (activeCombatSequence) {
+                const seq = activeCombatSequence; seq.elapsed += dt;
+                if (seq.stage === 'CHARGE') {
+                    const t = Math.min(seq.elapsed / 0.34, 1);
+                    if (t < 0.35) { const windT = t / 0.35; seq.attackerMesh.position.lerpVectors(seq.fromPos, seq.fromPos.clone().addScaledVector(seq.impactDir, -0.45), windT); seq.attackerMesh.userData.bodyPivot.rotation.x = -0.28 * windT; }
+                    else { const lungeT = (t - 0.35) / 0.65, easeIn = lungeT * lungeT * (2.5 - 1.5 * lungeT); seq.attackerMesh.position.lerpVectors(seq.fromPos.clone().addScaledVector(seq.impactDir, -0.45), seq.strikePoint, easeIn); seq.attackerMesh.userData.bodyPivot.rotation.x = 0.42 * Math.sin(lungeT * Math.PI); }
+                    if (t >= 1 && !seq.strikeTriggered) { seq.strikeTriggered = true; seq.stage = 'TOPPLE'; seq.elapsed = 0; audioFX.playKnockdownStrike(); camState.shakeIntensity = 0.38; spawnImpactSparks(seq.toPos.clone().add(new THREE.Vector3(0, 1.35, 0)), 0xffffff, 18); }
+                } else if (seq.stage === 'TOPPLE') {
+                    if (seq.elapsed < 0.055) { seq.defenderMesh.position.x = seq.toPos.x + (Math.random() - 0.5) * 0.22; seq.defenderMesh.position.z = seq.toPos.z + (Math.random() - 0.5) * 0.22; }
+                    else {
+                        seq.tipAngularVel += 24.5 * Math.sin(Math.max(seq.tipAngle, 0.22)) * dt; seq.tipAngle += seq.tipAngularVel * dt;
+                        seq.skidDist = Math.min(seq.skidDist + 2.6 * dt, 0.72);
+                        seq.defenderMesh.position.copy(seq.toPos).addScaledVector(seq.impactDir, seq.skidDist);
+                        seq.defenderMesh.quaternion.setFromAxisAngle(seq.tipAxis, seq.tipAngle);
+                        seq.defenderMesh.position.y = Math.sin(seq.tipAngle) * 0.38;
+                    }
+                    const settleT = Math.min(seq.elapsed / 0.44, 1); seq.attackerMesh.position.lerpVectors(seq.strikePoint, seq.toPos, settleT * 0.85); seq.attackerMesh.userData.bodyPivot.rotation.x *= 0.85;
+                    if (seq.tipAngle >= Math.PI * 0.48 && !seq.shatterTriggered) { seq.shatterTriggered = true; seq.stage = 'SETTLE'; seq.elapsed = 0; audioFX.playGroundSlamAndShatter(); camState.shakeIntensity = 0.78; fractureToppledPiece(seq.defenderMesh, seq.impactDir); scene.remove(seq.defenderMesh); }
+                } else if (seq.stage === 'SETTLE') {
+                    const t = Math.min(seq.elapsed / 0.28, 1); seq.attackerMesh.position.lerp(seq.toPos, 0.25); seq.attackerMesh.userData.bodyPivot.rotation.x = 0; seq.attackerMesh.userData.bodyPivot.rotation.y = seq.attackerMesh.userData.baseFacing;
+                    if (t >= 1) { seq.attackerMesh.position.copy(seq.toPos); const callback = seq.onComplete; activeCombatSequence = null; setTimeout(() => hideCombatTelemetry(), 900); if (callback) callback(); }
+                }
+            }
+            for (let i = activeDebris.length - 1; i >= 0; i--) {
+                const d = activeDebris[i]; d.life += dt; d.vel.y -= 19.8 * dt; d.mesh.position.addScaledVector(d.vel, dt);
+                d.mesh.rotation.x += d.rotVel.x * dt; d.mesh.rotation.y += d.rotVel.y * dt; d.mesh.rotation.z += d.rotVel.z * dt;
+                if (d.mesh.position.y < d.radius) { d.mesh.position.y = d.radius; d.vel.y = Math.abs(d.vel.y) > 1.2 ? -d.vel.y * d.bounce : 0; d.vel.x *= d.friction; d.vel.z *= d.friction; d.rotVel.multiplyScalar(0.85); }
+                const lifeRatio = d.life / d.maxLife; if (lifeRatio > 0.75) { const fade = Math.max(0.001, 1 - (lifeRatio - 0.75) / 0.25); d.mesh.scale.multiplyScalar(0.94 + 0.05 * fade); }
+                if (d.life >= d.maxLife) { scene.remove(d.mesh); activeDebris.splice(i, 1); }
+            }
+            for (let i = activeShockwaves.length - 1; i >= 0; i--) {
+                const sw = activeShockwaves[i]; sw.age += dt; const p = sw.age / sw.maxAge, scale = 1 + p * 8.5; sw.mesh.scale.set(scale, scale, 1); sw.mesh.material.opacity = Math.max(0, (1 - p) * 0.85);
+                if (p >= 1) { scene.remove(sw.mesh); activeShockwaves.splice(i, 1); }
+            }
+        }
+
+        /* 6. CHESS LOGIC & AUTOMATON */
+        const game = new Chess(); const pieceMeshes = {};
+        let selectedSquare = null, legalMovesForSelected = [], vsAutomaton = true, isAnimating = false, moveFlight = null;
+        const capturedPieces = { w: [], b: [] };
+        const PIECE_SYMBOLS = { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' };
+
+        function syncBoardFromChessState() {
+            Object.keys(pieceMeshes).forEach((sq) => { scene.remove(pieceMeshes[sq]); delete pieceMeshes[sq]; });
+            const board = game.board();
+            for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) { const cell = board[r][f]; if (cell) { const sq = String.fromCharCode(97 + f) + (8 - r), mesh = createSculptedPiece(cell.type, cell.color), pos = boardToWorld(f, r); mesh.position.set(pos.x, 0, pos.z); scene.add(mesh); pieceMeshes[sq] = mesh; } }
+            clearHighlights(); updateHUD();
+        }
+        function clearHighlights() { while (highlightMeshes.length > 0) boardGroup.remove(highlightMeshes.pop()); }
+        function showSquareHighlights(originSquare, moves) {
+            clearHighlights();
+            const originCoords = squareToCoords(originSquare);
+            const selMesh = new THREE.Mesh(new THREE.RingGeometry(0.72, 0.92, 24), new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide })); selMesh.rotation.x = -Math.PI / 2; selMesh.position.set(originCoords.x, 0.03, originCoords.z); boardGroup.add(selMesh); highlightMeshes.push(selMesh);
+            moves.forEach((m) => {
+                const targetCoords = squareToCoords(m.to), isCapture = Boolean(m.captured);
+                const marker = new THREE.Mesh(isCapture ? new THREE.RingGeometry(0.68, 0.96, 6) : new THREE.CircleGeometry(0.36, 20), new THREE.MeshBasicMaterial({ color: isCapture ? 0xf59e0b : 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.88 }));
+                marker.rotation.x = -Math.PI / 2; marker.position.set(targetCoords.x, 0.035, targetCoords.z); marker.userData = { targetSquare: m.to }; boardGroup.add(marker); highlightMeshes.push(marker);
+            });
+        }
+        function executeChessMove(moveObj) {
+            if (isAnimating) return; isAnimating = true; clearHighlights(); selectedSquare = null;
+            const result = game.move({ from: moveObj.from, to: moveObj.to, promotion: 'q' });
+            if (!result) { isAnimating = false; return; }
+            const attackerMesh = pieceMeshes[result.from], fromCoords = squareToCoords(result.from), toCoords = squareToCoords(result.to);
+            let capturedSquare = result.to;
+            if (result.flags.includes('e')) { const epRank = result.color === 'w' ? parseInt(result.to[1], 10) - 1 : parseInt(result.to[1], 10) + 1; capturedSquare = result.to[0] + epRank; }
+            const defenderMesh = result.captured ? pieceMeshes[capturedSquare] : null;
+            delete pieceMeshes[result.from]; if (defenderMesh && capturedSquare !== result.to) delete pieceMeshes[capturedSquare]; pieceMeshes[result.to] = attackerMesh;
+            if (result.flags.includes('k') || result.flags.includes('q')) {
+                const rankChar = result.color === 'w' ? '1' : '8', rookFrom = result.flags.includes('k') ? 'h' + rankChar : 'a' + rankChar, rookTo = result.flags.includes('k') ? 'f' + rankChar : 'd' + rankChar, rookMesh = pieceMeshes[rookFrom];
+                if (rookMesh) { delete pieceMeshes[rookFrom]; pieceMeshes[rookTo] = rookMesh; const rPos = squareToCoords(rookTo); rookMesh.position.set(rPos.x, 0, rPos.z); }
+            }
+            const finishTurn = () => {
+                if (result.flags.includes('p')) { scene.remove(attackerMesh); const queenMesh = createSculptedPiece('q', result.color); queenMesh.position.set(toCoords.x, 0, toCoords.z); scene.add(queenMesh); pieceMeshes[result.to] = queenMesh; }
+                if (result.captured) capturedPieces[result.color === 'w' ? 'b' : 'w'].push(result.captured);
+                isAnimating = false; updateHUD();
+                if (!game.game_over() && vsAutomaton && game.turn() === 'b') setTimeout(() => triggerAutomatonMove(), 420);
+            };
+            if (defenderMesh) startKnockDownSequence({ attackerMesh, defenderMesh, fromPos: fromCoords, toPos: toCoords, onComplete: finishTurn });
+            else { const isKnight = result.piece === 'n'; audioFX.playStoneSlide(isKnight ? 0.48 : 0.38); moveFlight = { mesh: attackerMesh, from: new THREE.Vector3(fromCoords.x, 0, fromCoords.z), to: new THREE.Vector3(toCoords.x, 0, toCoords.z), isKnight, elapsed: 0, duration: isKnight ? 0.46 : 0.36, onComplete: finishTurn }; }
+        }
+        function triggerAutomatonMove() {
+            if (game.game_over() || isAnimating) return;
+            const moves = game.moves({ verbose: true }); if (moves.length === 0) return;
+            const pieceValues = { p: 10, n: 32, b: 33, r: 50, q: 90, k: 900 }, centerSquares = new Set(['d4', 'e4', 'd5', 'e5', 'c4', 'f4', 'c5', 'f5']);
+            let bestScore = -Infinity, bestMoves = [];
+            moves.forEach((m) => {
+                let score = (Math.random() - 0.5) * 4;
+                if (m.captured) score += pieceValues[m.captured] * 3.2 - pieceValues[m.piece] * 0.25;
+                if (centerSquares.has(m.to)) score += 8;
+                if (m.san.includes('+')) score += 12;
+                if (score > bestScore) { bestScore = score; bestMoves = [m]; } else if (Math.abs(score - bestScore) < 1.5) bestMoves.push(m);
+            });
+            executeChessMove(bestMoves[Math.floor(Math.random() * bestMoves.length)] || moves[0]);
+        }
+
+        /* 7. DEMO KNOCK-DOWN */
+        function triggerDemoKnockDownShowcase() {
+            if (isAnimating || activeCombatSequence) return; isAnimating = true; clearHighlights(); selectedSquare = null;
+            const attackerTypes = ['k', 'q', 'n', 'r'], defenderTypes = ['q', 'k', 'r', 'b'];
+            const atkType = attackerTypes[Math.floor(Math.random() * attackerTypes.length)], defType = defenderTypes[Math.floor(Math.random() * defenderTypes.length)];
+            const demoFrom = boardToWorld(3, 4), demoTo = boardToWorld(4, 3), hiddenReal = [];
+            ['d4', 'e5'].forEach((sq) => { if (pieceMeshes[sq]) { pieceMeshes[sq].visible = false; hiddenReal.push(pieceMeshes[sq]); } });
+            const demoAttacker = createSculptedPiece(atkType, 'w'); demoAttacker.position.set(demoFrom.x, 0, demoFrom.z); scene.add(demoAttacker);
+            const demoDefender = createSculptedPiece(defType, 'b'); demoDefender.position.set(demoTo.x, 0, demoTo.z); scene.add(demoDefender);
+            const prevRadius = camState.targetRadius; camState.targetRadius = 19.5;
+            startKnockDownSequence({ attackerMesh: demoAttacker, defenderMesh: demoDefender, fromPos: demoFrom, toPos: demoTo, isDemo: true, onComplete: () => { setTimeout(() => { scene.remove(demoAttacker); hiddenReal.forEach((m) => { m.visible = true; }); camState.targetRadius = prevRadius; isAnimating = false; }, 520); } });
+        }
+
+        /* 8. HUD */
+        function showCombatTelemetry(title, subtitle) { const el = document.getElementById('combat-telemetry'); document.getElementById('telemetry-title').textContent = title; document.getElementById('telemetry-subtitle').textContent = subtitle; el.classList.remove('opacity-0', '-translate-y-2'); el.classList.add('opacity-100', 'translate-y-0'); }
+        function hideCombatTelemetry() { const el = document.getElementById('combat-telemetry'); el.classList.remove('opacity-100', 'translate-y-0'); el.classList.add('opacity-0', '-translate-y-2'); }
+        function updateHUD() {
+            const turn = game.turn(), turnDot = document.getElementById('turn-dot'), turnText = document.getElementById('turn-text'), subStatus = document.getElementById('game-substatus');
+            if (turn === 'w') { turnDot.className = 'w-3 h-3 rounded-full bg-white shadow-[0_0_10px_#00f0ff]'; turnText.textContent = 'WHITE MARBLE TURN'; }
+            else { turnDot.className = 'w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_#f59e0b]'; turnText.textContent = vsAutomaton ? 'AUTOMATON THINKING...' : 'DARK OBSIDIAN TURN'; }
+            if (game.in_checkmate()) { const winner = turn === 'w' ? 'DARK OBSIDIAN' : 'WHITE MARBLE'; subStatus.textContent = `CHECKMATE • ${winner} TRIUMPHS`; showCombatTelemetry(`CHECKMATE — ${winner} VICTORY`, 'VBLOCKS CATHEDRAL GRANDMASTER'); }
+            else if (game.in_draw() || game.in_stalemate()) subStatus.textContent = 'DRAW // CATHEDRAL STALEMATE';
+            else if (game.in_check()) { subStatus.textContent = '⚠ KING UNDER ATTACK (CHECK)'; showCombatTelemetry('ROYAL CHECK DECLARED', 'DEFEND YOUR SOVEREIGN MONOLITH'); setTimeout(() => hideCombatTelemetry(), 1800); }
+            else subStatus.textContent = 'VBLOCKS // IONITY-GLOBAL READY';
+            document.getElementById('captured-black').innerHTML = capturedPieces.b.map((p) => `<span class="drop-shadow">${PIECE_SYMBOLS[p]}</span>`).join('');
+            document.getElementById('captured-white').innerHTML = capturedPieces.w.map((p) => `<span class="drop-shadow">${PIECE_SYMBOLS[p]}</span>`).join('');
+        }
+
+        /* 9. INTERACTION */
+        const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+        let isDragging = false, pointerDownPos = { x: 0, y: 0 }, prevPointer = { x: 0, y: 0 };
+        function onPointerDown(e) { const clientX = e.touches ? e.touches[0].clientX : e.clientX, clientY = e.touches ? e.touches[0].clientY : e.clientY; isDragging = true; pointerDownPos = { x: clientX, y: clientY }; prevPointer = { x: clientX, y: clientY }; }
+        function onPointerMove(e) {
+            if (!isDragging) return; const clientX = e.touches ? e.touches[0].clientX : e.clientX, clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const dx = clientX - prevPointer.x, dy = clientY - prevPointer.y; prevPointer = { x: clientX, y: clientY };
+            camState.targetTheta -= dx * 0.0065; camState.targetPhi = Math.max(0.2, Math.min(1.38, camState.targetPhi - dy * 0.0055));
+        }
+        function onPointerUp(e) {
+            if (!isDragging) return; isDragging = false;
+            const clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX, clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+            if (Math.hypot(clientX - pointerDownPos.x, clientY - pointerDownPos.y) < 8) handleBoardClick(clientX, clientY);
+        }
+        function handleBoardClick(clientX, clientY) {
+            if (isAnimating || activeCombatSequence || game.game_over()) return; if (vsAutomaton && game.turn() === 'b') return;
+            pointer.x = (clientX / window.innerWidth) * 2 - 1; pointer.y = -(clientY / window.innerHeight) * 2 + 1; raycaster.setFromCamera(pointer, camera);
+            const pieceObjects = [];
+            Object.entries(pieceMeshes).forEach(([sq, group]) => { group.traverse((child) => { if (child.isMesh) { child.userData.parentSquare = sq; pieceObjects.push(child); } }); });
+            const hits = raycaster.intersectObjects([...tileMeshes, ...pieceObjects], false); if (hits.length === 0) return;
+            const hitObj = hits[0].object, clickedSquare = hitObj.userData.square || hitObj.userData.parentSquare; if (!clickedSquare) return;
+            if (selectedSquare) { const chosenMove = legalMovesForSelected.find((m) => m.to === clickedSquare); if (chosenMove) { executeChessMove(chosenMove); return; } }
+            const pieceOnSq = game.get(clickedSquare);
+            if (pieceOnSq && pieceOnSq.color === game.turn()) { selectedSquare = clickedSquare; legalMovesForSelected = game.moves({ square: clickedSquare, verbose: true }); audioFX.playSelect(); showSquareHighlights(clickedSquare, legalMovesForSelected); }
+            else { selectedSquare = null; legalMovesForSelected = []; clearHighlights(); }
+        }
+        renderer.domElement.addEventListener('mousedown', onPointerDown); window.addEventListener('mousemove', onPointerMove); window.addEventListener('mouseup', onPointerUp);
+        renderer.domElement.addEventListener('touchstart', onPointerDown, { passive: true }); window.addEventListener('touchmove', onPointerMove, { passive: true }); window.addEventListener('touchend', onPointerUp, { passive: true });
+        renderer.domElement.addEventListener('wheel', (e) => { camState.targetRadius = Math.max(14, Math.min(38, camState.targetRadius + e.deltaY * 0.015)); }, { passive: true });
+        document.getElementById('btn-demo-knockdown').addEventListener('click', () => triggerDemoKnockDownShowcase());
+        document.getElementById('btn-mode').addEventListener('click', () => { vsAutomaton = !vsAutomaton; document.getElementById('mode-label').textContent = vsAutomaton ? 'VS AUTOMATON' : '2P PASS & PLAY'; updateHUD(); if (vsAutomaton && game.turn() === 'b' && !isAnimating) triggerAutomatonMove(); });
+        document.getElementById('btn-camera').addEventListener('click', () => { camState.presetIndex = (camState.presetIndex + 1) % CAMERA_PRESETS.length; const p = CAMERA_PRESETS[camState.presetIndex]; camState.targetTheta = p.theta; camState.targetPhi = p.phi; camState.targetRadius = p.radius; document.getElementById('camera-label').textContent = p.name; });
+        document.getElementById('btn-undo').addEventListener('click', () => { if (isAnimating || activeCombatSequence) return; game.undo(); if (vsAutomaton && game.turn() === 'b') game.undo(); capturedPieces.w.pop(); capturedPieces.b.pop(); syncBoardFromChessState(); });
+        document.getElementById('btn-audio').addEventListener('click', () => { const on = audioFX.toggle(); document.getElementById('icon-audio-on').classList.toggle('hidden', !on); document.getElementById('icon-audio-off').classList.toggle('hidden', on); });
+        document.getElementById('btn-reset').addEventListener('click', () => { if (activeCombatSequence) activeCombatSequence = null; isAnimating = false; game.reset(); capturedPieces.w = []; capturedPieces.b = []; syncBoardFromChessState(); });
+        window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+
+        /* 10. DUST & LOOP */
+        let dustSystem = null;
+        function createCathedralDustMotes() {
+            const count = 220, geo = new THREE.BufferGeometry(), positions = new Float32Array(count * 3);
+            for (let i = 0; i < count; i++) { positions[i * 3] = (Math.random() - 0.5) * 44; positions[i * 3 + 1] = Math.random() * 24; positions[i * 3 + 2] = (Math.random() - 0.5) * 44; }
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            dustSystem = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.14, transparent: true, opacity: 0.55 })); scene.add(dustSystem);
+        }
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05), elapsed = clock.getElapsedTime();
+            if (moveFlight) {
+                moveFlight.elapsed += dt; const t = Math.min(moveFlight.elapsed / moveFlight.duration, 1), smooth = t * t * (3 - 2 * t);
+                moveFlight.mesh.position.lerpVectors(moveFlight.from, moveFlight.to, smooth);
+                if (moveFlight.isKnight) { moveFlight.mesh.position.y = Math.sin(t * Math.PI) * 2.8; moveFlight.mesh.userData.bodyPivot.rotation.x = Math.sin(t * Math.PI * 2) * 0.25; }
+                if (t >= 1) { moveFlight.mesh.position.copy(moveFlight.to); moveFlight.mesh.position.y = 0; moveFlight.mesh.userData.bodyPivot.rotation.x = 0; const cb = moveFlight.onComplete; moveFlight = null; if (cb) cb(); }
+            }
+            updateCombatAndPhysics(dt);
+            Object.values(pieceMeshes).forEach((piece) => {
+                if (activeCombatSequence && (piece === activeCombatSequence.attackerMesh || piece === activeCombatSequence.defenderMesh)) return;
+                const phase = piece.userData.idlePhase; piece.userData.bodyPivot.position.y = Math.sin(elapsed * 2.1 + phase) * 0.035;
+                const queenCrystal = piece.getObjectByName('queenCrystal'); if (queenCrystal) { queenCrystal.rotation.y = elapsed * 2.4; queenCrystal.position.y = 2.58 + Math.sin(elapsed * 3.2 + phase) * 0.07; }
+            });
+            holoRings.forEach((h, i) => { h.rotation.y = elapsed * 1.15 + i; h.position.y = 4.9 + Math.sin(elapsed * 2.0 + i) * 0.16; });
+            brazierLights.forEach((b) => { b.light.intensity = b.baseIntensity + Math.sin(elapsed * 7.5 + b.phase) * 0.18; });
+            if (dustSystem) dustSystem.rotation.y = elapsed * 0.02;
+            camState.theta += (camState.targetTheta - camState.theta) * 0.09; camState.phi += (camState.targetPhi - camState.phi) * 0.09; camState.radius += (camState.targetRadius - camState.radius) * 0.09;
+            camera.position.set(camState.radius * Math.sin(camState.phi) * Math.sin(camState.theta), camState.radius * Math.cos(camState.phi), camState.radius * Math.sin(camState.phi) * Math.cos(camState.theta));
+            if (camState.shakeIntensity > 0.005) { camera.position.x += (Math.random() - 0.5) * camState.shakeIntensity; camera.position.y += (Math.random() - 0.5) * camState.shakeIntensity; camera.position.z += (Math.random() - 0.5) * camState.shakeIntensity; camState.shakeIntensity *= 0.86; } else camState.shakeIntensity = 0;
+            camera.lookAt(camState.lookAt); renderer.render(scene, camera);
+        }
+        window.onload = function () { buildGothicCathedralAndBranding(); buildChessboard(); createCathedralDustMotes(); syncBoardFromChessState(); animate(); };
+    </script>
+</body>
+</html>
