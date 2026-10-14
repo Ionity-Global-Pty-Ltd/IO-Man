@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>IONITY GLOBAL // VBLOCKS Wizard's Arena - Chess &amp; Checkers</title>
+    <meta name="description" content="Wizard's Arena on ionity.fun: 3D Wizard's Chess and Wizard's Checkers in a Gothic cathedral, with knock-down shatter physics, vs Automaton AI or 2-player.">
+    <meta name="author" content="Johan Wilhelm van Antwerp">
+    <meta name="theme-color" content="#0b0d13">
+    <link rel="canonical" href="https://www.ionity.fun/arena/">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Wizard's Arena — Chess &amp; Checkers | IONITY.FUN">
+    <meta property="og:description" content="3D Wizard's Chess and Checkers with physical knock-down captures. Free in the browser.">
+    <meta property="og:url" content="https://www.ionity.fun/arena/">
+    <meta property="og:image" content="https://www.ionity.fun/banners/ioman_og_1200x630.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Chess.js for full legal move validation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+    <!-- Google Fonts & Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" rel="stylesheet" />
+
+    <!--
+      IONITY GLOBAL // VBLOCKS Wizard's Arena v1.1.0 (enhanced: segmented fracture, demo knock-down, telemetry, Web Audio)
+      Games: Wizard's Chess + Wizard's Checkers (English draughts)
+      Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI
+      Governance: Policy 986 AED | License: AED 900
+      (c) 2018-2026 Antwerp Designs | Ionity (Pty) Ltd - All Rights Reserved - TM2
+      https://www.ionity.today | Ref: https://www.ionity.co.za
+    -->
+
+    <style>
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+            background-color: #0b0d13; font-family: 'Inter', sans-serif;
+            user-select: none; -webkit-user-select: none;
+        }
+        #canvas-container { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        canvas { display: block; width: 100%; height: 100%; outline: none; }
+        .font-gothic { font-family: 'Cinzel', serif; }
+        .md-surface {
+            background: rgba(22, 25, 34, 0.82);
+            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+        }
+        .md-btn { transition: all 0.2s cubic-bezier(0.2, 0, 0, 1); }
+        .md-btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); transform: translateY(-1px); }
+        .md-btn:active:not(:disabled) { transform: translateY(0px) scale(0.97); }
+        .md-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+        .md-fab {
+            background: linear-gradient(135deg, #c8a258 0%, #9a7432 100%);
+            color: #0f1118; box-shadow: 0 4px 16px rgba(200, 162, 88, 0.35);
+        }
+        .md-fab:hover { box-shadow: 0 6px 22px rgba(200, 162, 88, 0.55); filter: brightness(1.08); }
+        .game-tab { transition: all 0.2s ease; }
+        .game-tab.active {
+            background: linear-gradient(135deg, rgba(251,191,36,0.28), rgba(56,189,248,0.18));
+            color: #fef3c7; border-color: rgba(251,191,36,0.55);
+            box-shadow: 0 0 12px rgba(251,191,36,0.25);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 12px rgba(239, 68, 68, 0.5); }
+            50% { box-shadow: 0 0 24px rgba(239, 68, 68, 0.9); }
+        }
+        .check-alert { animation: pulseGlow 1.5s infinite; }
+        @keyframes knockdownPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.55), 0 0 18px rgba(245, 158, 11, 0.35); }
+            50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0), 0 0 26px rgba(245, 158, 11, 0.65); }
+        }
+        .btn-knockdown-demo { animation: knockdownPulse 2.4s infinite; }
+        #combat-telemetry { transition: opacity 0.3s ease, transform 0.3s ease; }
+    </style>
+</head>
+<body class="text-slate-100">
+
+    <div id="canvas-container"></div>
+
+    <div class="relative z-10 pointer-events-none flex flex-col justify-between w-full h-full p-3 sm:p-5">
+
+        <!-- Top Navigation Bar -->
+        <header class="w-full max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3 md-surface rounded-2xl px-4 py-2.5 pointer-events-auto border border-amber-500/20">
+
+            <div class="flex items-center gap-3">
+                <a href="https://github.com/Ionity-Global/ionity-assets-ionity-global-jwva" target="_blank" rel="noopener noreferrer" class="group relative w-11 h-11 rounded-xl bg-gradient-to-br from-amber-500/25 via-slate-900 to-cyan-500/25 border border-amber-400/50 flex items-center justify-center shadow-[0_0_18px_rgba(245,158,11,0.3)] hover:scale-105 transition-transform" title="Ionity-Global / ionity-assets-ionity-global-jwva">
+                    <svg class="w-7 h-7" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <polygon points="32,4 58,18 58,46 32,60 6,46 6,18" stroke="#fbbf24" stroke-width="3" fill="rgba(15,23,42,0.85)" />
+                        <path d="M18 22L32 48L46 22" stroke="#38bdf8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M24 22L32 37L40 22" stroke="#fbbf24" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="32" cy="13" r="3" fill="#fbbf24" />
+                    </svg>
+                </a>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-1.5 py-0.5 text-[10px] font-extrabold tracking-widest rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">VBLOCKS</span>
+                        <h1 id="game-title" class="font-gothic text-sm sm:text-base font-bold tracking-wider text-amber-100 leading-tight">IONITY GLOBAL // WIZARD'S CHESS</h1>
+                    </div>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <a href="/games/" class="text-[10px] font-bold text-amber-300 hover:text-amber-200 font-mono tracking-tight" title="Back to the ionity.fun game selection">&larr; IONITY.FUN</a>
+                        <span class="text-[10px] text-slate-500">&bull;</span>
+                        <a href="https://www.ionity.today" target="_blank" rel="noopener noreferrer" class="text-[10px] text-cyan-300/90 hover:text-cyan-200 underline decoration-cyan-500/40 font-mono tracking-tight">www.ionity.today</a>
+                        <span class="hidden sm:inline text-[10px] text-slate-500">&bull;</span>
+                        <span class="hidden sm:inline text-[10px] text-amber-300/80 uppercase tracking-wider font-semibold">Knock-Down Physics Active</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game Selector -->
+            <div id="game-switch" class="flex items-center gap-1 bg-slate-900/80 border border-amber-500/25 rounded-xl p-1" role="tablist" aria-label="Choose game">
+                <button data-game="chess" class="game-tab active md-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 border border-transparent" role="tab">
+                    <span class="text-base leading-none">♚</span><span>Chess</span>
+                </button>
+                <button data-game="checkers" class="game-tab md-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 border border-transparent" role="tab">
+                    <span class="text-base leading-none">⛂</span><span>Checkers</span>
+                </button>
+            </div>
+
+            <!-- Turn & Status -->
+            <div id="turn-badge" class="flex items-center gap-3 bg-slate-900/85 border border-slate-700/70 px-4 py-1.5 rounded-full shadow-inner transition-all duration-300">
+                <span id="turn-dot" class="w-3.5 h-3.5 rounded-full bg-stone-100 shadow-[0_0_10px_#fff] transition-all duration-300"></span>
+                <span id="turn-text" class="text-xs sm:text-sm font-semibold tracking-wide text-stone-100">White Marble's Turn</span>
+                <span id="status-chip" class="hidden text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">CHECK</span>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex items-center gap-1 sm:gap-1.5">
+                <button id="btn-demo" class="md-btn btn-knockdown-demo flex items-center gap-1 px-2.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-slate-950 font-extrabold text-xs tracking-wide" title="Close-up physical Knock-Down &amp; Structural Shatter demonstration">
+                    <span class="material-symbols-rounded text-lg">bolt</span>
+                    <span class="hidden xl:inline">DEMO KNOCK-DOWN</span>
+                </button>
+                <button id="btn-actioncam" class="md-btn flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium text-cyan-300 bg-cyan-500/15 border border-cyan-500/30" title="Toggle Dynamic Knock-Down Action Camera">
+                    <span class="material-symbols-rounded text-lg" id="actioncam-icon">videocam</span>
+                    <span class="hidden xl:inline" id="actioncam-label">Impact Cam: ON</span>
+                </button>
+                <button id="btn-mode" class="md-btn flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-amber-200 bg-amber-500/10 border border-amber-500/20" title="Toggle vs Wizard Automaton or 2-Player">
+                    <span class="material-symbols-rounded text-lg" id="mode-icon">smart_toy</span>
+                    <span id="mode-label" class="hidden md:inline">vs Automaton</span>
+                </button>
+                <button id="btn-undo" class="md-btn p-2 rounded-xl text-slate-300 hover:text-white" title="Undo Move" disabled>
+                    <span class="material-symbols-rounded text-xl">undo</span>
+                </button>
+                <button id="btn-camera" class="md-btn p-2 rounded-xl text-slate-300 hover:text-white" title="Cycle Camera Angle">
+                    <span class="material-symbols-rounded text-xl">cameraswitch</span>
+                </button>
+                <button id="btn-sound" class="md-btn p-2 rounded-xl text-slate-300 hover:text-white" title="Toggle Cathedral Audio">
+                    <span class="material-symbols-rounded text-xl" id="sound-icon">volume_up</span>
+                </button>
+                <button id="btn-new" class="md-btn md-fab flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold tracking-wide ml-1">
+                    <span class="material-symbols-rounded text-lg">restart_alt</span>
+                    <span class="hidden sm:inline">New Game</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Bottom HUD -->
+        <footer class="w-full max-w-6xl mx-auto flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-3">
+            <div class="md-surface rounded-2xl px-4 py-2.5 flex-1 flex items-center justify-between pointer-events-auto min-h-[54px]">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full bg-stone-100 border border-amber-300/60 shadow-sm"></span>
+                    <span class="text-xs font-medium text-slate-300 uppercase tracking-wider">Marble Knock-Downs</span>
+                </div>
+                <div id="captured-by-white" class="flex items-center gap-1 text-lg text-purple-300/90 font-serif overflow-x-auto max-w-[200px] sm:max-w-xs py-0.5">
+                    <span class="text-xs text-slate-500 italic font-sans">None toppled</span>
+                </div>
+            </div>
+
+            <div class="hidden lg:flex flex-col items-center justify-center md-surface px-4 py-2 rounded-xl text-[11px] text-slate-300 pointer-events-auto border border-amber-400/20">
+                <div class="flex items-center gap-1.5 font-bold text-amber-300 tracking-widest text-[10px]">
+                    <span>◆ VBLOCKS ARENA</span><span class="text-cyan-400">//</span><span>IONITY-GLOBAL-JWVA ◆</span>
+                </div>
+                <span id="hint-text" class="text-[10px] text-slate-400">Select piece to command &bull; Drag to orbit &bull; Captures trigger physical knock-downs</span>
+            </div>
+
+            <div class="md-surface rounded-2xl px-4 py-2.5 flex-1 flex items-center justify-between pointer-events-auto min-h-[54px]">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-3 h-3 rounded-full bg-indigo-950 border border-purple-400/60 shadow-sm"></span>
+                    <span class="text-xs font-medium text-slate-300 uppercase tracking-wider">Obsidian Knock-Downs</span>
+                </div>
+                <div id="captured-by-black" class="flex items-center gap-1 text-lg text-amber-100/90 font-serif overflow-x-auto max-w-[200px] sm:max-w-xs py-0.5">
+                    <span class="text-xs text-slate-500 italic font-sans">None toppled</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Combat telemetry banner (knock-downs, check, crowning) -->
+    <div id="combat-telemetry" class="fixed bottom-24 sm:bottom-28 left-1/2 z-40 pointer-events-none opacity-0" style="transform: translate(-50%, -8px);">
+        <div class="md-surface rounded-2xl px-5 py-2.5 border border-amber-400/60 flex items-center gap-3 shadow-2xl">
+            <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
+            <div class="text-center">
+                <div id="telemetry-title" class="font-gothic text-xs sm:text-sm font-bold tracking-widest uppercase text-amber-300">VBLOCKS PHYSICAL KNOCK-DOWN</div>
+                <div id="telemetry-subtitle" class="text-[11px] font-mono text-slate-300">RIGID-BODY TOPPLE &amp; STRUCTURAL FRACTURE</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="fixed inset-0 z-30 hidden items-center justify-center bg-black/65 backdrop-blur-sm p-4">
+        <div id="promotion-card" class="hidden md-surface rounded-3xl p-6 max-w-sm w-full text-center border border-amber-400/30 shadow-2xl">
+            <h2 class="font-gothic text-xl font-bold text-amber-200 mb-1">Ascension Ritual</h2>
+            <p class="text-xs text-slate-300 mb-5">Choose the form your Pawn shall take upon reaching the sanctum's edge:</p>
+            <div class="grid grid-cols-4 gap-2.5">
+                <button data-promo="q" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♛</span><span class="text-[11px] font-medium text-slate-200">Queen</span></button>
+                <button data-promo="r" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♜</span><span class="text-[11px] font-medium text-slate-200">Rook</span></button>
+                <button data-promo="b" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♝</span><span class="text-[11px] font-medium text-slate-200">Bishop</span></button>
+                <button data-promo="n" class="promo-btn md-btn flex flex-col items-center p-3 rounded-2xl bg-slate-800/70 border border-slate-700 hover:border-amber-400"><span class="text-3xl mb-1">♞</span><span class="text-[11px] font-medium text-slate-200">Knight</span></button>
+            </div>
+        </div>
+
+        <div id="gameover-card" class="hidden md-surface rounded-3xl p-7 max-w-md w-full text-center border border-amber-400/40 shadow-2xl">
+            <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-300">
+                <span class="material-symbols-rounded text-3xl">trophy</span>
+            </div>
+            <h2 id="gameover-title" class="font-gothic text-2xl font-bold text-amber-100 mb-2">Checkmate</h2>
+            <p id="gameover-subtitle" class="text-sm text-slate-300 mb-6">White Marble triumphs in the Cathedral.</p>
+            <div class="flex items-center justify-center gap-3">
+                <button id="btn-modal-close" class="md-btn px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 border border-slate-700">Inspect Board</button>
+                <button id="btn-modal-new" class="md-btn md-fab px-6 py-2.5 rounded-xl text-xs font-bold">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /***********************************************************************
+         * 1. SOUND ENGINE (native Web Audio)
+         ***********************************************************************/
+        // Native Web Audio cathedral acoustics (no external audio library):
+        // stone slides, two-stage knock-down strike + ground-slam fracture, arcane chimes.
+        class SoundEngine {
+            constructor() { this.ctx = null; this.enabled = true; this.master = null; }
+            init() {
+                if (!this.ctx) {
+                    const AC = window.AudioContext || window.webkitAudioContext;
+                    if (!AC) return false;
+                    this.ctx = new AC();
+                    this.master = this.ctx.createGain();
+                    this.master.gain.value = 0.9;
+                    // Simple cathedral reverb: feedback delay network
+                    const dry = this.ctx.createGain(); dry.gain.value = 1;
+                    const wet = this.ctx.createGain(); wet.gain.value = 0.28;
+                    const d1 = this.ctx.createDelay(); d1.delayTime.value = 0.083;
+                    const d2 = this.ctx.createDelay(); d2.delayTime.value = 0.127;
+                    const fb = this.ctx.createGain(); fb.gain.value = 0.55;
+                    const lp = this.ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2400;
+                    this.master.connect(dry); dry.connect(this.ctx.destination);
+                    this.master.connect(d1); d1.connect(d2); d2.connect(lp); lp.connect(fb); fb.connect(d1);
+                    lp.connect(wet); wet.connect(this.ctx.destination);
+                }
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                return true;
+            }
+            _ok() { return this.enabled && this.init(); }
+            _tone(type, f0, f1, dur, vol, delay = 0) {
+                const now = this.ctx.currentTime + delay;
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = type;
+                o.frequency.setValueAtTime(f0, now);
+                o.frequency.exponentialRampToValueAtTime(Math.max(f1, 1), now + dur);
+                g.gain.setValueAtTime(vol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                o.connect(g); g.connect(this.master);
+                o.start(now); o.stop(now + dur + 0.02);
+            }
+            _noise(dur, freq, q, vol, delay = 0, decayShape = 0.4) {
+                const now = this.ctx.currentTime + delay;
+                const n = Math.max(1, Math.floor(this.ctx.sampleRate * dur));
+                const buf = this.ctx.createBuffer(1, n, this.ctx.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (n * decayShape));
+                const src = this.ctx.createBufferSource(); src.buffer = buf;
+                const f = this.ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+                const g = this.ctx.createGain(); g.gain.setValueAtTime(vol, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+                src.connect(f); f.connect(g); g.connect(this.master);
+                src.start(now);
+            }
+            _chime(freqs, dur = 0.9, vol = 0.06, stagger = 0.06) {
+                freqs.forEach((f, i) => this._tone('triangle', f, f * 0.999, dur, vol, i * stagger));
+            }
+            playSelect() { if (!this._ok()) return; this._tone('sine', 520, 780, 0.16, 0.08); }
+            // Heavy stone scraping slide + settle thud
+            playMove(isHeavy = false) {
+                if (!this._ok()) return;
+                this._noise(isHeavy ? 0.45 : 0.36, isHeavy ? 150 : 200, 3.2, 0.16, 0, 0.9);
+                this._tone('triangle', isHeavy ? 95 : 115, 38, 0.16, 0.24, isHeavy ? 0.4 : 0.32);
+            }
+            // Stage 1: kinetic strike — sub-bass punch + stone crack transient
+            playKnockdownHit() {
+                if (!this._ok()) return;
+                this._tone('sawtooth', 150, 32, 0.3, 0.32);
+                this._tone('square', 920, 180, 0.1, 0.14);
+            }
+            // Stage 2: toppled monolith slams the board and fractures into chunks
+            playGroundSlamAndShatter() {
+                if (!this._ok()) return;
+                this._tone('sine', 95, 22, 0.5, 0.5);
+                [0, 0.04, 0.09, 0.16, 0.24, 0.34].forEach((off, i) =>
+                    this._noise(0.12 + Math.random() * 0.1, 500 + i * 260 + Math.random() * 300, 2, 0.26 / (1 + i * 0.25), off));
+            }
+            playCheck() { if (!this._ok()) return; this._chime([440, 659, 880], 1.0, 0.07, 0.03); }
+            playCrown() { if (!this._ok()) return; this._chime([523, 659, 784, 1047], 1.2, 0.06, 0.08); }
+        }
+        const soundFX = new SoundEngine();
+
+        /***********************************************************************
+         * 2. PROCEDURAL TEXTURES
+         ***********************************************************************/
+        function createMarbleTexture(withVblocksWatermark = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#f3efe6'; ctx.fillRect(0, 0, 512, 512);
+            ctx.strokeStyle = 'rgba(180, 165, 140, 0.35)'; ctx.lineWidth = 3;
+            for (let i = 0; i < 16; i++) {
+                ctx.beginPath();
+                let x = Math.random() * 512, y = 0;
+                ctx.moveTo(x, y);
+                while (y < 512) { x += (Math.random() - 0.5) * 50; y += Math.random() * 60; ctx.lineTo(x, y); }
+                ctx.stroke();
+            }
+            if (withVblocksWatermark) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(180, 130, 45, 0.32)'; ctx.lineWidth = 6;
+                ctx.strokeRect(24, 24, 464, 464);
+                ctx.beginPath(); ctx.moveTo(170, 175); ctx.lineTo(256, 330); ctx.lineTo(342, 175);
+                ctx.strokeStyle = 'rgba(195, 142, 48, 0.28)'; ctx.lineWidth = 14; ctx.stroke();
+                ctx.font = 'bold 46px Cinzel, serif'; ctx.fillStyle = 'rgba(160, 115, 35, 0.36)';
+                ctx.textAlign = 'center'; ctx.fillText('VBLOCKS', 256, 445);
+                ctx.restore();
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        function createObsidianTexture(withVblocksWatermark = false) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#12101b'; ctx.fillRect(0, 0, 512, 512);
+            ctx.strokeStyle = 'rgba(139, 92, 246, 0.28)'; ctx.lineWidth = 2.5;
+            for (let i = 0; i < 18; i++) {
+                ctx.beginPath();
+                let x = Math.random() * 512, y = 0;
+                ctx.moveTo(x, y);
+                while (y < 512) { x += (Math.random() - 0.5) * 65; y += Math.random() * 55; ctx.lineTo(x, y); }
+                ctx.stroke();
+            }
+            if (withVblocksWatermark) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.28)'; ctx.lineWidth = 6;
+                ctx.strokeRect(24, 24, 464, 464);
+                ctx.beginPath(); ctx.moveTo(170, 175); ctx.lineTo(256, 330); ctx.lineTo(342, 175);
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)'; ctx.lineWidth = 14; ctx.stroke();
+                ctx.font = 'bold 46px Cinzel, serif'; ctx.fillStyle = 'rgba(251, 191, 36, 0.34)';
+                ctx.textAlign = 'center'; ctx.fillText('VBLOCKS', 256, 445);
+                ctx.restore();
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+
+        function createVblocksCenterMedallionTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            ctx.save(); ctx.translate(512, 512);
+            const grad = ctx.createRadialGradient(0, 0, 40, 0, 0, 490);
+            grad.addColorStop(0, 'rgba(56, 189, 248, 0.32)');
+            grad.addColorStop(0.55, 'rgba(245, 158, 11, 0.22)');
+            grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, 490, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(0, 0, 450, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(0, 0, 418, 0, Math.PI * 2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-185, -170); ctx.lineTo(0, 155); ctx.lineTo(185, -170);
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 36; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(-115, -170); ctx.lineTo(0, 45); ctx.lineTo(115, -170);
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 22; ctx.stroke();
+            ctx.fillStyle = 'rgba(11, 13, 19, 0.88)'; ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 8;
+            ctx.fillRect(-370, -45, 740, 115); ctx.strokeRect(-370, -45, 740, 115);
+            ctx.font = '900 104px Cinzel, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 24; ctx.fillStyle = '#ffffff';
+            ctx.fillText('VBLOCKS', 0, 16);
+            ctx.shadowBlur = 10; ctx.font = 'bold 42px Inter, sans-serif'; ctx.fillStyle = '#fbbf24';
+            ctx.fillText('IONITY GLOBAL', 0, -255);
+            ctx.font = 'bold 34px monospace'; ctx.fillStyle = '#38bdf8';
+            ctx.fillText('IONITY-ASSETS-JWVA', 0, 275);
+            ctx.restore();
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.anisotropy = 4;
+            return tex;
+        }
+
+        function createVblocksPlaqueTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024; canvas.height = 160;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#090b10'; ctx.fillRect(0, 0, 1024, 160);
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 10; ctx.strokeRect(8, 8, 1008, 144);
+            ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 3; ctx.strokeRect(20, 20, 984, 120);
+            ctx.font = '900 56px Cinzel, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 16; ctx.fillStyle = '#fef3c7';
+            ctx.fillText('◆ VBLOCKS  //  IONITY GLOBAL ◆', 512, 62);
+            ctx.shadowBlur = 0; ctx.font = 'bold 26px monospace'; ctx.fillStyle = '#38bdf8';
+            ctx.fillText('github.com/Ionity-Global/ionity-assets-ionity-global-jwva', 512, 118);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createCornerHologramTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 512);
+            grad.addColorStop(0, 'rgba(56, 189, 248, 0.05)');
+            grad.addColorStop(0.5, 'rgba(245, 158, 11, 0.28)');
+            grad.addColorStop(1, 'rgba(56, 189, 248, 0.05)');
+            ctx.fillStyle = grad; ctx.fillRect(16, 16, 224, 480);
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 6; ctx.strokeRect(16, 16, 224, 480);
+            ctx.save(); ctx.translate(128, 256); ctx.rotate(-Math.PI / 2);
+            ctx.font = '900 54px Cinzel, serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#38bdf8'; ctx.shadowBlur = 15; ctx.fillText('VBLOCKS', 0, -10);
+            ctx.font = 'bold 24px Inter, sans-serif'; ctx.fillStyle = '#fbbf24'; ctx.fillText('IONITY GLOBAL', 0, 32);
+            ctx.restore();
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        function createCathedralBannerTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 1024;
+            const ctx = canvas.getContext('2d');
+            const grad = ctx.createLinearGradient(0, 0, 0, 1024);
+            grad.addColorStop(0, '#090d16'); grad.addColorStop(0.5, '#111c2d'); grad.addColorStop(1, '#06080f');
+            ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 1024);
+            ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 12; ctx.strokeRect(20, 20, 472, 984);
+            ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 4; ctx.strokeRect(38, 38, 436, 948);
+            ctx.strokeStyle = '#00f0ff'; ctx.lineWidth = 16; ctx.shadowColor = '#00f0ff'; ctx.shadowBlur = 25;
+            ctx.beginPath(); ctx.moveTo(140, 120); ctx.lineTo(256, 320); ctx.lineTo(372, 120); ctx.stroke();
+            ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.font = '900 84px Cinzel, serif';
+            ctx.fillText('VBLOCKS', 256, 460);
+            ctx.fillStyle = '#fbbf24'; ctx.shadowColor = '#f59e0b'; ctx.font = '800 42px monospace';
+            ctx.fillText('IONITY GLOBAL', 256, 560);
+            ctx.fillStyle = '#38bdf8'; ctx.font = '700 32px monospace';
+            ctx.fillText('ASSETS // JWVA', 256, 630);
+            ctx.strokeStyle = 'rgba(0, 240, 255, 0.45)'; ctx.lineWidth = 6;
+            ctx.beginPath(); ctx.moveTo(110, 920); ctx.quadraticCurveTo(110, 720, 256, 690); ctx.quadraticCurveTo(402, 720, 402, 920); ctx.stroke();
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        /***********************************************************************
+         * 3. SCENE, CAMERA, RENDERER, LIGHTING & CATHEDRAL
+         ***********************************************************************/
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0b0d13);
+        scene.fog = new THREE.FogExp2(0x0b0d13, 0.016);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 200);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.12;
+        container.appendChild(renderer.domElement);
+
+        let useActionCam = true;
+        const cameraControl = {
+            theta: 0, phi: Math.PI / 3.1, radius: 21,
+            targetTheta: 0, targetPhi: Math.PI / 3.1, targetRadius: 21,
+            lookAtTarget: new THREE.Vector3(0, 0.4, 0),
+            desiredLookAt: new THREE.Vector3(0, 0.4, 0),
+            shakeIntensity: 0,
+            isDragging: false,
+            previousMousePosition: { x: 0, y: 0 },
+            presetIndex: 0,
+            presets: [
+                { name: 'White Command', theta: 0, phi: Math.PI / 3.1, radius: 21 },
+                { name: 'Side Nave', theta: Math.PI / 2, phi: Math.PI / 3.0, radius: 22 },
+                { name: 'Black Command', theta: Math.PI, phi: Math.PI / 3.1, radius: 21 },
+                { name: 'Cathedral Isometric', theta: Math.PI / 4, phi: Math.PI / 2.7, radius: 22 },
+                { name: 'VBLOCKS Overhead', theta: 0, phi: 0.24, radius: 23 }
+            ],
+            triggerShake(strength = 0.45) { this.shakeIntensity = Math.max(this.shakeIntensity, strength); },
+            update(dt = 0.016) {
+                this.targetPhi = Math.max(0.18, Math.min(Math.PI / 2.15, this.targetPhi));
+                this.targetRadius = Math.max(10, Math.min(36, this.targetRadius));
+                this.theta += (this.targetTheta - this.theta) * 0.08;
+                this.phi += (this.targetPhi - this.phi) * 0.08;
+                this.radius += (this.targetRadius - this.radius) * 0.08;
+                this.lookAtTarget.lerp(this.desiredLookAt, 0.1);
+                let sx = 0, sy = 0, sz = 0;
+                if (this.shakeIntensity > 0.005) {
+                    sx = (Math.random() - 0.5) * this.shakeIntensity;
+                    sy = (Math.random() - 0.5) * this.shakeIntensity;
+                    sz = (Math.random() - 0.5) * this.shakeIntensity;
+                    this.shakeIntensity *= Math.pow(0.04, dt);
+                } else { this.shakeIntensity = 0; }
+                camera.position.x = this.radius * Math.sin(this.phi) * Math.sin(this.theta) + sx;
+                camera.position.y = this.radius * Math.cos(this.phi) + sy;
+                camera.position.z = this.radius * Math.sin(this.phi) * Math.cos(this.theta) + sz;
+                camera.lookAt(this.lookAtTarget);
+            },
+            cyclePreset() {
+                this.presetIndex = (this.presetIndex + 1) % this.presets.length;
+                const p = this.presets[this.presetIndex];
+                this.targetTheta = p.theta; this.targetPhi = p.phi; this.targetRadius = p.radius;
+                this.desiredLookAt.set(0, 0.4, 0);
+                document.getElementById('btn-camera').title = 'Camera: ' + p.name + ' (click to cycle)';
+                showCombatTelemetry('CAMERA // ' + p.name.toUpperCase(), 'DRAG TO ORBIT • SCROLL TO ZOOM', 1100);
+            }
+        };
+
+        scene.add(new THREE.AmbientLight(0x2d3548, 1.3));
+
+        const keyLight = new THREE.DirectionalLight(0xffdfa8, 2.2);
+        keyLight.position.set(12, 24, 14);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 2048;
+        keyLight.shadow.mapSize.height = 2048;
+        keyLight.shadow.camera.near = 5;
+        keyLight.shadow.camera.far = 55;
+        const d = 11;
+        keyLight.shadow.camera.left = -d; keyLight.shadow.camera.right = d;
+        keyLight.shadow.camera.top = d; keyLight.shadow.camera.bottom = -d;
+        keyLight.shadow.bias = -0.0008;
+        keyLight.shadow.normalBias = 0.02;
+        scene.add(keyLight);
+
+        const moonLight = new THREE.DirectionalLight(0x6384ff, 1.3);
+        moonLight.position.set(-16, 18, -14);
+        scene.add(moonLight);
+
+        // Cyan VBLOCKS core underglow above the board
+        const vblocksCoreLight = new THREE.PointLight(0x00f0ff, 0.9, 16);
+        vblocksCoreLight.position.set(0, 3.2, 0);
+        scene.add(vblocksCoreLight);
+
+        const brazierPositions = [[-7.2, 2.5, -7.2], [7.2, 2.5, -7.2], [-7.2, 2.5, 7.2], [7.2, 2.5, 7.2]];
+        const brazierLights = [];
+        brazierPositions.forEach(pos => {
+            const pLight = new THREE.PointLight(0xff9d42, 1.1, 18, 2);
+            pLight.position.set(pos[0], pos[1], pos[2]);
+            scene.add(pLight);
+            brazierLights.push(pLight);
+        });
+
+        function buildGothicCathedral() {
+            const cathedralGroup = new THREE.Group();
+            const stoneMat = new THREE.MeshStandardMaterial({ color: 0x161922, roughness: 0.85, metalness: 0.1 });
+            const darkTrimMat = new THREE.MeshStandardMaterial({ color: 0x0e1017, roughness: 0.7, metalness: 0.25 });
+            const goldAccentMat = new THREE.MeshStandardMaterial({ color: 0xc59b48, roughness: 0.35, metalness: 0.8 });
+
+            const floorMesh = new THREE.Mesh(new THREE.CylinderGeometry(45, 45, 0.5, 64), darkTrimMat);
+            floorMesh.position.y = -1.6; floorMesh.receiveShadow = true;
+            cathedralGroup.add(floorMesh);
+
+            const dais1 = new THREE.Mesh(new THREE.BoxGeometry(13.5, 0.6, 13.5), stoneMat);
+            dais1.position.y = -1.1; dais1.receiveShadow = true; cathedralGroup.add(dais1);
+            const dais2 = new THREE.Mesh(new THREE.BoxGeometry(11.6, 0.5, 11.6), darkTrimMat);
+            dais2.position.y = -0.55; dais2.receiveShadow = true; cathedralGroup.add(dais2);
+
+            const emberMat = new THREE.MeshBasicMaterial({ color: 0xffaa33 });
+            brazierPositions.forEach(([bx, by, bz]) => {
+                const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 2.8, 8), stoneMat);
+                pedestal.position.set(bx, 0.1, bz); pedestal.castShadow = true;
+                cathedralGroup.add(pedestal);
+                const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.2, 0.4, 8), goldAccentMat);
+                bowl.position.set(bx, 1.6, bz); cathedralGroup.add(bowl);
+                const ember = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 1), emberMat);
+                ember.position.set(bx, 1.9, bz); cathedralGroup.add(ember);
+            });
+
+            const neonMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff });
+            const numBays = 6, spacing = 8.5, aisleX = 16;
+            for (let i = -numBays / 2; i <= numBays / 2; i++) {
+                const zPos = i * spacing;
+                [-aisleX, aisleX].forEach(xPos => {
+                    const pillarGroup = new THREE.Group();
+                    pillarGroup.position.set(xPos, -1.3, zPos);
+                    const coreCol = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 22, 12), stoneMat);
+                    coreCol.position.y = 11; coreCol.castShadow = true; coreCol.receiveShadow = true;
+                    pillarGroup.add(coreCol);
+                    for (let a = 0; a < 4; a++) {
+                        const angle = (a * Math.PI) / 2;
+                        const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.28, 22, 8), darkTrimMat);
+                        shaft.position.set(Math.cos(angle) * 0.78, 11, Math.sin(angle) * 0.78);
+                        pillarGroup.add(shaft);
+                    }
+                    const base = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 2.4), darkTrimMat);
+                    base.position.y = 0.6; pillarGroup.add(base);
+                    const capital = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 0.9, 1.2, 8), goldAccentMat);
+                    capital.position.y = 21.5; pillarGroup.add(capital);
+                    const neon = new THREE.Mesh(new THREE.BoxGeometry(0.12, 16, 0.12), neonMat);
+                    neon.position.set(xPos > 0 ? -1.0 : 1.0, 9.5, 0);
+                    pillarGroup.add(neon);
+                    cathedralGroup.add(pillarGroup);
+                });
+                const archGroup = new THREE.Group();
+                archGroup.position.set(0, 20.5, zPos);
+                const leftRib = new THREE.Mesh(new THREE.BoxGeometry(18, 0.55, 0.55), stoneMat);
+                leftRib.position.set(-7.5, 4.5, 0); leftRib.rotation.z = Math.PI / 5.5; archGroup.add(leftRib);
+                const rightRib = new THREE.Mesh(new THREE.BoxGeometry(18, 0.55, 0.55), stoneMat);
+                rightRib.position.set(7.5, 4.5, 0); rightRib.rotation.z = -Math.PI / 5.5; archGroup.add(rightRib);
+                const keystone = new THREE.Mesh(new THREE.OctahedronGeometry(0.7, 0), goldAccentMat);
+                keystone.position.set(0, 9.6, 0); archGroup.add(keystone);
+                cathedralGroup.add(archGroup);
+            }
+
+            const roseGroup = new THREE.Group();
+            roseGroup.position.set(0, 12, -32);
+            roseGroup.add(new THREE.Mesh(new THREE.RingGeometry(6.5, 7.6, 32), stoneMat));
+            roseGroup.add(new THREE.Mesh(new THREE.CircleGeometry(6.5, 32),
+                new THREE.MeshBasicMaterial({ color: 0x3b5284, transparent: true, opacity: 0.28, side: THREE.DoubleSide })));
+            for (let s = 0; s < 12; s++) {
+                const spoke = new THREE.Mesh(new THREE.BoxGeometry(0.22, 13, 0.25), stoneMat);
+                spoke.rotation.z = (s * Math.PI) / 12;
+                roseGroup.add(spoke);
+            }
+            const roseGlow = new THREE.Mesh(new THREE.TorusGeometry(6.4, 0.12, 8, 48), neonMat);
+            roseGroup.add(roseGlow);
+            cathedralGroup.add(roseGroup);
+
+            // VBLOCKS // IONITY GLOBAL banners flanking the rose window
+            const bannerMat = new THREE.MeshBasicMaterial({ map: createCathedralBannerTexture(), side: THREE.DoubleSide });
+            [-11, 11].forEach(bx => {
+                const banner = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 8.4), bannerMat);
+                banner.position.set(bx, 10.5, -30);
+                cathedralGroup.add(banner);
+            });
+            scene.add(cathedralGroup);
+        }
+        buildGothicCathedral();
+
+        const dustCount = 160;
+        const dustGeo = new THREE.BufferGeometry();
+        const dustPositions = new Float32Array(dustCount * 3);
+        for (let i = 0; i < dustCount; i++) {
+            dustPositions[i * 3] = (Math.random() - 0.5) * 32;
+            dustPositions[i * 3 + 1] = Math.random() * 16;
+            dustPositions[i * 3 + 2] = (Math.random() - 0.5) * 32;
+        }
+        dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+        scene.add(new THREE.Points(dustGeo, new THREE.PointsMaterial({ color: 0xfcd34d, size: 0.09, transparent: true, opacity: 0.45 })));
+
+        /***********************************************************************
+         * 4. BOARD, MATERIALS & PIECE GEOMETRY
+         ***********************************************************************/
+        const TILE_SIZE = 1.15;
+        const BOARD_OFFSET = (7 * TILE_SIZE) / 2;
+        const FILES = 'abcdefgh';
+
+        const marbleTex = createMarbleTexture(false);
+        const obsidianTex = createObsidianTexture(false);
+        const boardLightTileTex = createMarbleTexture(true);
+        const boardDarkTileTex = createObsidianTexture(true);
+
+        const whitePieceMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xfbf8f1, map: marbleTex, roughness: 0.22, metalness: 0.05, clearcoat: 0.4, clearcoatRoughness: 0.2
+        });
+        const blackPieceMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x151221, map: obsidianTex, roughness: 0.12, metalness: 0.35, clearcoat: 0.9, clearcoatRoughness: 0.08,
+            emissive: 0x190d2c, emissiveIntensity: 0.35
+        });
+        const goldTrimMaterial = new THREE.MeshStandardMaterial({ color: 0xd4af37, roughness: 0.28, metalness: 0.88 });
+        const purpleTrimMaterial = new THREE.MeshStandardMaterial({
+            color: 0x8b5cf6, roughness: 0.25, metalness: 0.7, emissive: 0x4c1d95, emissiveIntensity: 0.4
+        });
+
+        const boardGroup = new THREE.Group();
+        scene.add(boardGroup);
+        const tileMeshes = [];
+        const highlightMeshes = {};
+        const vblocksHolos = [];
+        let centerMedallionMesh = null;
+
+        function buildChessboard() {
+            const frameMat = new THREE.MeshStandardMaterial({ color: 0x161923, roughness: 0.55, metalness: 0.35 });
+            const outerSpan = TILE_SIZE * 8 + 1.35;
+            const frameMesh = new THREE.Mesh(new THREE.BoxGeometry(outerSpan, 0.46, outerSpan), frameMat);
+            frameMesh.position.y = -0.23; frameMesh.receiveShadow = true;
+            boardGroup.add(frameMesh);
+
+            const inlayMesh = new THREE.Mesh(new THREE.BoxGeometry(TILE_SIZE * 8 + 0.32, 0.48, TILE_SIZE * 8 + 0.32), goldTrimMaterial);
+            inlayMesh.position.y = -0.252; // top sits just below the tiles so the inlay frames (not covers) the board
+            boardGroup.add(inlayMesh);
+
+            const plaqueMat = new THREE.MeshBasicMaterial({ map: createVblocksPlaqueTexture() });
+            const plaqueLength = TILE_SIZE * 6.8;
+            const halfOuter = outerSpan / 2 + 0.02;
+            [
+                { pos: [0, -0.22, halfOuter], rot: [0, 0, 0] },
+                { pos: [0, -0.22, -halfOuter], rot: [0, Math.PI, 0] },
+                { pos: [halfOuter, -0.22, 0], rot: [0, Math.PI / 2, 0] },
+                { pos: [-halfOuter, -0.22, 0], rot: [0, -Math.PI / 2, 0] }
+            ].forEach(cfg => {
+                const pMesh = new THREE.Mesh(new THREE.PlaneGeometry(plaqueLength, 0.42), plaqueMat);
+                pMesh.position.set(...cfg.pos);
+                pMesh.rotation.set(...cfg.rot);
+                boardGroup.add(pMesh);
+            });
+
+            const holoMat = new THREE.MeshBasicMaterial({
+                map: createCornerHologramTexture(), transparent: true, opacity: 0.88, side: THREE.DoubleSide, depthWrite: false
+            });
+            const cornerOffset = outerSpan / 2 + 0.25;
+            [[-cornerOffset, -cornerOffset], [cornerOffset, -cornerOffset], [-cornerOffset, cornerOffset], [cornerOffset, cornerOffset]]
+                .forEach(([cx, cz], idx) => {
+                    const obelisk = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.35, 0.7, 6), goldTrimMaterial);
+                    obelisk.position.set(cx, 0.12, cz);
+                    boardGroup.add(obelisk);
+                    const holoGroup = new THREE.Group();
+                    holoGroup.position.set(cx, 1.25, cz);
+                    const banner1 = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 1.35), holoMat);
+                    const banner2 = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 1.35), holoMat);
+                    banner2.rotation.y = Math.PI / 2;
+                    holoGroup.add(banner1, banner2);
+                    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 0), new THREE.MeshStandardMaterial({
+                        color: 0x00f0ff, emissive: 0x00a8ff, emissiveIntensity: 0.9, roughness: 0.1, metalness: 0.9 }));
+                    crystal.position.y = 0.95;
+                    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.025, 8, 24), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+                    halo.position.y = 0.95; halo.rotation.x = Math.PI / 3;
+                    holoGroup.add(crystal, halo);
+                    boardGroup.add(holoGroup);
+                    vblocksHolos.push({ group: holoGroup, basePhase: idx * 1.5 });
+                });
+
+            const lightSquareMat = new THREE.MeshStandardMaterial({ color: 0xe2dcd0, map: boardLightTileTex, roughness: 0.32, metalness: 0.1 });
+            const darkSquareMat = new THREE.MeshStandardMaterial({ color: 0x1e2230, map: boardDarkTileTex, roughness: 0.25, metalness: 0.28 });
+            const tileGeo = new THREE.BoxGeometry(TILE_SIZE * 0.98, 0.2, TILE_SIZE * 0.98);
+            const ringGeo = new THREE.RingGeometry(TILE_SIZE * 0.32, TILE_SIZE * 0.42, 24);
+            ringGeo.rotateX(-Math.PI / 2);
+            const dotGeo = new THREE.CircleGeometry(TILE_SIZE * 0.16, 20);
+            dotGeo.rotateX(-Math.PI / 2);
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const isLight = (r + c) % 2 === 0;
+                    const sqName = `${FILES[c]}${8 - r}`;
+                    const tileMesh = new THREE.Mesh(tileGeo, isLight ? lightSquareMat : darkSquareMat);
+                    const x = c * TILE_SIZE - BOARD_OFFSET;
+                    const z = r * TILE_SIZE - BOARD_OFFSET;
+                    tileMesh.position.set(x, -0.1, z);
+                    tileMesh.receiveShadow = true;
+                    tileMesh.userData = { square: sqName, row: r, col: c };
+                    boardGroup.add(tileMesh);
+                    tileMeshes.push(tileMesh);
+
+                    const markerGroup = new THREE.Group();
+                    markerGroup.position.set(x, 0.02, z);
+                    markerGroup.visible = false;
+                    const ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }));
+                    const dotMesh = new THREE.Mesh(dotGeo, new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 }));
+                    markerGroup.add(ringMesh, dotMesh);
+                    boardGroup.add(markerGroup);
+                    highlightMeshes[sqName] = { group: markerGroup, ring: ringMesh, dot: dotMesh };
+                }
+            }
+
+            const medallionGeo = new THREE.PlaneGeometry(TILE_SIZE * 3.15, TILE_SIZE * 3.15);
+            medallionGeo.rotateX(-Math.PI / 2);
+            centerMedallionMesh = new THREE.Mesh(medallionGeo, new THREE.MeshBasicMaterial({
+                map: createVblocksCenterMedallionTexture(), transparent: true, opacity: 0.92, depthWrite: false
+            }));
+            centerMedallionMesh.position.set(0, 0.008, 0);
+            boardGroup.add(centerMedallionMesh);
+        }
+        buildChessboard();
+
+        function squareToWorld(square) {
+            const col = FILES.indexOf(square[0]);
+            const row = 8 - parseInt(square[1], 10);
+            return new THREE.Vector3(col * TILE_SIZE - BOARD_OFFSET, 0, row * TILE_SIZE - BOARD_OFFSET);
+        }
+
+        // --- Chess pieces ---
+        function createWizardPieceMesh(type, color) {
+            const group = new THREE.Group();
+            const mainMat = color === 'w' ? whitePieceMaterial : blackPieceMaterial;
+            const trimMat = color === 'w' ? goldTrimMaterial : purpleTrimMaterial;
+            const add = (mesh, x, y, z, shadow = true) => { mesh.position.set(x, y, z); mesh.castShadow = shadow; group.add(mesh); return mesh; };
+
+            add(new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.44, 0.18, 16), mainMat), 0, 0.09, 0).receiveShadow = true;
+            const collarGeo = new THREE.TorusGeometry(0.35, 0.035, 10, 24);
+            collarGeo.rotateX(Math.PI / 2);
+            add(new THREE.Mesh(collarGeo, trimMat), 0, 0.18, 0, false);
+            const fwd = color === 'w' ? -1 : 1;
+
+            if (type === 'p') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.32, 0.58, 12), mainMat), 0, 0.47, 0);
+                add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.38, 0.12), trimMat), 0, 0.48, 0.18 * fwd);
+                add(new THREE.Mesh(new THREE.OctahedronGeometry(0.22, 1), mainMat), 0, 0.92, 0);
+                add(new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.72, 6), trimMat), -0.22, 0.66, 0.12 * fwd); // halberd pike
+            } else if (type === 'r') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.95, 8), mainMat), 0, 0.65, 0);
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.3, 0.25, 8), mainMat), 0, 1.2, 0);
+                for (let i = 0; i < 4; i++) {
+                    const a = (i * Math.PI) / 2;
+                    add(new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.14), trimMat), Math.cos(a) * 0.24, 1.38, Math.sin(a) * 0.24, false);
+                }
+                add(new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.38, 6), trimMat), 0, 0.62, 0.38 * fwd).rotation.x = (Math.PI / 2) * fwd; // siege ram
+            } else if (type === 'n') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.34, 0.55, 10), mainMat), 0, 0.45, 0);
+                add(new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.68, 0.36), mainMat), 0, 0.92, 0.05 * fwd).rotation.x = 0.28 * fwd;
+                add(new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.45, 6), mainMat), 0, 1.18, 0.26 * fwd).rotation.x = (Math.PI / 2.4) * fwd;
+                add(new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.62, 0.12), trimMat), 0, 0.96, -0.14 * fwd, false).rotation.x = 0.25 * fwd;
+                add(new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.88, 8), trimMat), 0.26, 0.78, 0.2 * fwd).rotation.x = (Math.PI / 3) * fwd; // war lance
+            } else if (type === 'b') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.34, 0.98, 14), mainMat), 0, 0.67, 0);
+                add(new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.52, 12), mainMat), 0, 1.38, 0);
+                add(new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.025, 8, 20), trimMat), 0, 1.22, 0, false).rotation.x = Math.PI / 2;
+                add(new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), trimMat), 0, 1.68, 0, false);
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.98, 8), trimMat), 0.28, 0.7, 0.14 * fwd); // crosier staff
+                add(new THREE.Mesh(new THREE.OctahedronGeometry(0.07, 0), trimMat), 0.28, 1.23, 0.14 * fwd, false);
+            } else if (type === 'q') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.37, 1.18, 16), mainMat), 0, 0.77, 0);
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.21, 0.25, 12), trimMat), 0, 1.45, 0, false);
+                group.userData.floatingGem = add(new THREE.Mesh(new THREE.OctahedronGeometry(0.16, 0), mainMat), 0, 1.72, 0);
+                add(new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.82, 6), trimMat), -0.28, 0.8, 0.15 * fwd); // arcane scepter
+            } else if (type === 'k') {
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.39, 1.28, 12), mainMat), 0, 0.82, 0);
+                add(new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.25, 0.28, 8), trimMat), 0, 1.55, 0);
+                add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.34, 0.09), trimMat), 0, 1.84, 0, false);
+                add(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.08, 0.09), trimMat), 0, 1.88, 0, false);
+                add(new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.95, 0.04), trimMat), 0, 0.72, 0.36 * fwd); // greatsword
+                add(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.05, 0.07), trimMat), 0, 1.0, 0.36 * fwd, false);
+            }
+            return group;
+        }
+
+        // --- Checkers pieces: carved marble/obsidian discs; kings are stacked & crowned ---
+        function createCheckerPieceMesh(type, color) {
+            const group = new THREE.Group();
+            const mainMat = color === 'w' ? whitePieceMaterial : blackPieceMaterial;
+            const trimMat = color === 'w' ? goldTrimMaterial : purpleTrimMaterial;
+
+            const addDisc = (y) => {
+                const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.45, 0.2, 32), mainMat);
+                disc.position.y = y; disc.castShadow = true; disc.receiveShadow = true;
+                group.add(disc);
+                const rimGeo = new THREE.TorusGeometry(0.425, 0.032, 10, 32);
+                rimGeo.rotateX(Math.PI / 2);
+                const rim = new THREE.Mesh(rimGeo, trimMat);
+                rim.position.y = y + 0.1;
+                group.add(rim);
+                const grooveGeo = new THREE.TorusGeometry(0.28, 0.018, 8, 28);
+                grooveGeo.rotateX(Math.PI / 2);
+                const groove = new THREE.Mesh(grooveGeo, trimMat);
+                groove.position.y = y + 0.102;
+                group.add(groove);
+            };
+
+            addDisc(0.1);
+            // V-chevron VBLOCKS emblem on the top face
+            const emblemY = type === 'k' ? 0.53 : 0.21;
+            if (type !== 'k') {
+                const vL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.24), trimMat);
+                vL.position.set(-0.06, emblemY, 0); vL.rotation.y = 0.45; group.add(vL);
+                const vR = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.02, 0.24), trimMat);
+                vR.position.set(0.06, emblemY, 0); vR.rotation.y = -0.45; group.add(vR);
+            } else {
+                addDisc(0.31);
+                // Crown of 6 points + floating gem
+                const crownBand = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.1, 18), trimMat);
+                crownBand.position.y = 0.47; crownBand.castShadow = true; group.add(crownBand);
+                for (let i = 0; i < 6; i++) {
+                    const a = (i / 6) * Math.PI * 2;
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.16, 6), trimMat);
+                    spike.position.set(Math.cos(a) * 0.2, 0.6, Math.sin(a) * 0.2);
+                    group.add(spike);
+                }
+                const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.1, 0), color === 'w' ? goldTrimMaterial : purpleTrimMaterial);
+                gem.position.y = 0.78; gem.castShadow = true;
+                group.add(gem);
+                group.userData.floatingGem = gem;
+            }
+            return group;
+        }
+
+        /***********************************************************************
+         * 5. KNOCK-DOWN DEBRIS, SHOCKWAVES & DUST
+         ***********************************************************************/
+        const activeFragments = [];
+        const activeShockwaves = [];
+        const activeDustPlumes = [];
+
+        function spawnImpactPlume(worldPos, colorHex = 0xfbbf24, count = 18) {
+            const plumeMat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.85 });
+            for (let i = 0; i < count; i++) {
+                const pMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(0.05 + Math.random() * 0.07, 0), plumeMat.clone());
+                pMesh.position.set(worldPos.x + (Math.random() - 0.5) * 0.45, 0.08 + Math.random() * 0.25, worldPos.z + (Math.random() - 0.5) * 0.45);
+                scene.add(pMesh);
+                const angle = Math.random() * Math.PI * 2;
+                const spd = 0.8 + Math.random() * 2.6;
+                activeDustPlumes.push({
+                    mesh: pMesh,
+                    vel: new THREE.Vector3(Math.cos(angle) * spd, 0.8 + Math.random() * 1.8, Math.sin(angle) * spd),
+                    life: 1.0, decay: 1.4 + Math.random() * 0.8
+                });
+            }
+        }
+
+        function spawnShockwave(worldPos, colorHex) {
+            const ringGeo = new THREE.RingGeometry(0.15, 0.36, 32);
+            ringGeo.rotateX(-Math.PI / 2);
+            const ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.95, side: THREE.DoubleSide }));
+            ringMesh.position.set(worldPos.x, 0.03, worldPos.z);
+            scene.add(ringMesh);
+            activeShockwaves.push({ mesh: ringMesh, scale: 1, opacity: 0.95 });
+        }
+
+        // Breaks the toppled piece apart into its ACTUAL sculpted segments (base, body, head,
+        // crown, weapon...) — each cloned into world space as a tumbling rigid-body chunk.
+        function spawnSegmentChunks(victimMesh, impactDir) {
+            victimMesh.updateMatrixWorld(true);
+            const parts = victimMesh.children.filter(c => c.isMesh);
+            parts.forEach((part, idx) => {
+                const chunk = part.clone();
+                part.getWorldPosition(chunk.position);
+                part.getWorldQuaternion(chunk.quaternion);
+                chunk.castShadow = true;
+                scene.add(chunk);
+                const lateral = new THREE.Vector3(-impactDir.z, 0, impactDir.x).multiplyScalar((Math.random() - 0.5) * 2.6);
+                const boost = 1.0 + (idx / Math.max(1, parts.length - 1)) * 1.6 + Math.random() * 1.1;
+                activeFragments.push({
+                    mesh: chunk, shared: true,
+                    velocity: new THREE.Vector3(impactDir.x * 2.2 * boost + lateral.x, 1.2 + idx * 0.35 + Math.random() * 1.6, impactDir.z * 2.2 * boost + lateral.z),
+                    rotSpeed: new THREE.Vector3((Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9),
+                    floorY: 0.1, life: 1.0, decay: 0.3 + Math.random() * 0.1
+                });
+            });
+        }
+
+        function spawnKnockdownFracture(worldPos, victimColor, impactDir = new THREE.Vector3(0, 0, 1), discShaped = false, victimMesh = null) {
+            const fragMat = victimColor === 'w' ? whitePieceMaterial : blackPieceMaterial;
+            const accentMat = victimColor === 'w' ? goldTrimMaterial : purpleTrimMaterial;
+            if (victimMesh) spawnSegmentChunks(victimMesh, impactDir);
+
+            const structural = victimMesh ? [] : discShaped ? [
+                { geo: new THREE.CylinderGeometry(0.42, 0.45, 0.1, 6, 1, false, 0, Math.PI), mat: fragMat, yOff: 0.15, boost: 1.0 },
+                { geo: new THREE.CylinderGeometry(0.42, 0.45, 0.1, 6, 1, false, Math.PI, Math.PI * 0.6), mat: fragMat, yOff: 0.2, boost: 1.5 },
+                { geo: new THREE.TorusGeometry(0.3, 0.03, 8, 16, Math.PI), mat: accentMat, yOff: 0.25, boost: 1.9 }
+            ] : [
+                { geo: new THREE.CylinderGeometry(0.28, 0.36, 0.22, 12), mat: fragMat, yOff: 0.15, boost: 0.8 },
+                { geo: new THREE.CylinderGeometry(0.18, 0.26, 0.48, 10), mat: fragMat, yOff: 0.35, boost: 1.45 },
+                { geo: new THREE.OctahedronGeometry(0.22, 1), mat: accentMat, yOff: 0.55, boost: 2.1 },
+                { geo: new THREE.TorusGeometry(0.28, 0.04, 8, 16), mat: accentMat, yOff: 0.25, boost: 1.2 }
+            ];
+
+            structural.forEach(chunk => {
+                const mesh = new THREE.Mesh(chunk.geo, chunk.mat);
+                mesh.position.set(worldPos.x + impactDir.x * 0.25 + (Math.random() - 0.5) * 0.2, chunk.yOff, worldPos.z + impactDir.z * 0.25 + (Math.random() - 0.5) * 0.2);
+                mesh.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+                mesh.castShadow = true;
+                scene.add(mesh);
+                const lateral = new THREE.Vector3(-impactDir.z, 0, impactDir.x).multiplyScalar((Math.random() - 0.5) * 2.2);
+                activeFragments.push({
+                    mesh,
+                    velocity: new THREE.Vector3(impactDir.x * 2.6 * chunk.boost + lateral.x, 1.4 + Math.random() * 2.0, impactDir.z * 2.6 * chunk.boost + lateral.z),
+                    rotSpeed: new THREE.Vector3((Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9),
+                    floorY: 0.12, life: 1.0, decay: 0.24 + Math.random() * 0.12
+                });
+            });
+
+            for (let i = 0; i < 30; i++) {
+                const size = 0.06 + Math.random() * 0.14;
+                const geo = i % 3 === 0 ? new THREE.OctahedronGeometry(size, 0) : new THREE.TetrahedronGeometry(size, 0);
+                const mesh = new THREE.Mesh(geo, i % 5 === 0 ? accentMat : fragMat);
+                mesh.position.set(worldPos.x + (Math.random() - 0.5) * 0.45, 0.18 + Math.random() * 0.55, worldPos.z + (Math.random() - 0.5) * 0.45);
+                mesh.rotation.set(Math.random() * 6, Math.random() * 6, Math.random() * 6);
+                mesh.castShadow = true;
+                scene.add(mesh);
+                const spreadAngle = Math.atan2(impactDir.z, impactDir.x) + (Math.random() - 0.5) * 2.1;
+                const speed = 1.6 + Math.random() * 4.5;
+                activeFragments.push({
+                    mesh,
+                    velocity: new THREE.Vector3(Math.cos(spreadAngle) * speed, 1.8 + Math.random() * 3.6, Math.sin(spreadAngle) * speed),
+                    rotSpeed: new THREE.Vector3((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14, (Math.random() - 0.5) * 14),
+                    floorY: 0.06, life: 1.0, decay: 0.35 + Math.random() * 0.28
+                });
+            }
+
+            spawnImpactPlume(worldPos, victimColor === 'w' ? 0xfef3c7 : 0xc084fc, 22);
+            spawnShockwave(worldPos, victimColor === 'w' ? 0xfbbf24 : 0x38bdf8);
+        }
+
+        function updateParticlesAndEffects(dt) {
+            for (let i = activeFragments.length - 1; i >= 0; i--) {
+                const frag = activeFragments[i];
+                frag.velocity.y -= 15.5 * dt;
+                frag.mesh.position.addScaledVector(frag.velocity, dt);
+                const minH = frag.floorY || 0.06;
+                if (frag.mesh.position.y < minH) {
+                    frag.mesh.position.y = minH;
+                    frag.velocity.y *= -0.36;
+                    frag.velocity.x *= 0.80;
+                    frag.velocity.z *= 0.80;
+                    frag.rotSpeed.multiplyScalar(0.82);
+                }
+                frag.mesh.rotation.x += frag.rotSpeed.x * dt;
+                frag.mesh.rotation.y += frag.rotSpeed.y * dt;
+                frag.mesh.rotation.z += frag.rotSpeed.z * dt;
+                frag.life -= frag.decay * dt;
+                if (frag.life <= 0) {
+                    scene.remove(frag.mesh);
+                    if (!frag.shared) frag.mesh.geometry.dispose();
+                    activeFragments.splice(i, 1);
+                } else if (frag.life < 0.28) {
+                    frag.mesh.scale.setScalar(Math.max(0.01, frag.life / 0.28));
+                }
+            }
+            for (let i = activeDustPlumes.length - 1; i >= 0; i--) {
+                const p = activeDustPlumes[i];
+                p.vel.y -= 3.5 * dt;
+                p.mesh.position.addScaledVector(p.vel, dt);
+                p.life -= p.decay * dt;
+                if (p.life <= 0) {
+                    scene.remove(p.mesh); p.mesh.geometry.dispose(); p.mesh.material.dispose();
+                    activeDustPlumes.splice(i, 1);
+                } else {
+                    p.mesh.material.opacity = p.life * 0.8;
+                    p.mesh.scale.setScalar(1 + (1 - p.life) * 1.5);
+                }
+            }
+            for (let i = activeShockwaves.length - 1; i >= 0; i--) {
+                const sw = activeShockwaves[i];
+                sw.scale += 6.5 * dt;
+                sw.opacity -= 1.8 * dt;
+                sw.mesh.scale.setScalar(sw.scale);
+                sw.mesh.material.opacity = Math.max(0, sw.opacity);
+                if (sw.opacity <= 0) {
+                    scene.remove(sw.mesh); sw.mesh.geometry.dispose(); sw.mesh.material.dispose();
+                    activeShockwaves.splice(i, 1);
+                }
+            }
+        }
+
+        /***********************************************************************
+         * 6. CHECKERS ENGINE (English draughts: 8x8, forced capture,
+         *    multi-jumps, men move forward, kings both ways, crowning ends turn)
+         ***********************************************************************/
+        const CK_ALL_DIRS = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+        const ckSq = (r, c) => `${FILES[c]}${8 - r}`;
+        const ckInB = (r, c) => r >= 0 && r < 8 && c >= 0 && c < 8;
+        const ckOpp = (color) => (color === 'w' ? 'b' : 'w');
+        const ckCrownRow = (color) => (color === 'w' ? 0 : 7);
+        function ckDirs(p) {
+            if (p.type === 'k') return CK_ALL_DIRS;
+            return p.color === 'w' ? [[-1, -1], [-1, 1]] : [[1, -1], [1, 1]];
+        }
+
+        function ckJumps(grid, r, c, p, path, caps, out) {
+            let extended = false;
+            for (const [dr, dc] of ckDirs(p)) {
+                const mr = r + dr, mc = c + dc, lr = r + 2 * dr, lc = c + 2 * dc;
+                if (!ckInB(lr, lc)) continue;
+                const mid = grid[mr][mc];
+                if (!mid || mid.color === p.color) continue;
+                if (caps.some(([a, b]) => a === mr && b === mc)) continue;
+                if (grid[lr][lc] !== null) continue;
+                extended = true;
+                const nPath = path.concat([[lr, lc]]);
+                const nCaps = caps.concat([[mr, mc]]);
+                if (p.type === 'c' && lr === ckCrownRow(p.color)) {
+                    out.push({ path: nPath, caps: nCaps, promote: true });
+                } else {
+                    ckJumps(grid, lr, lc, p, nPath, nCaps, out);
+                }
+            }
+            if (!extended && caps.length) out.push({ path, caps, promote: false });
+        }
+
+        function ckGenMoves(grid, color) {
+            const jumps = [], steps = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = grid[r][c];
+                    if (!p || p.color !== color) continue;
+                    const out = [];
+                    grid[r][c] = null;
+                    ckJumps(grid, r, c, p, [], [], out);
+                    grid[r][c] = p;
+                    out.forEach(j => jumps.push({ fr: r, fc: c, path: j.path, caps: j.caps, promote: j.promote }));
+                    if (jumps.length) continue;
+                    for (const [dr, dc] of ckDirs(p)) {
+                        const nr = r + dr, nc = c + dc;
+                        if (ckInB(nr, nc) && grid[nr][nc] === null) {
+                            steps.push({ fr: r, fc: c, path: [[nr, nc]], caps: [], promote: p.type === 'c' && nr === ckCrownRow(color) });
+                        }
+                    }
+                }
+            }
+            return jumps.length ? jumps : steps;
+        }
+
+        function ckApply(grid, m) {
+            const g = grid.map(row => row.slice());
+            const p = g[m.fr][m.fc];
+            g[m.fr][m.fc] = null;
+            m.caps.forEach(([a, b]) => { g[a][b] = null; });
+            const [tr, tc] = m.path[m.path.length - 1];
+            g[tr][tc] = m.promote ? { type: 'k', color: p.color } : p;
+            return g;
+        }
+
+        function ckEval(grid, color) {
+            let score = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = grid[r][c];
+                    if (!p) continue;
+                    let v;
+                    if (p.type === 'k') {
+                        v = 175;
+                    } else {
+                        const adv = p.color === 'w' ? 7 - r : r;
+                        v = 100 + adv * 5;
+                        if ((p.color === 'w' && r === 7) || (p.color === 'b' && r === 0)) v += 8; // back-rank guard
+                    }
+                    if (c >= 2 && c <= 5 && r >= 2 && r <= 5) v += 5;
+                    if (c === 0 || c === 7) v -= 3;
+                    score += p.color === color ? v : -v;
+                }
+            }
+            return score;
+        }
+
+        function ckNegamax(grid, color, depth, alpha, beta) {
+            const moves = ckGenMoves(grid, color);
+            if (!moves.length) return -(100000 + depth);
+            if (depth === 0) return ckEval(grid, color);
+            let best = -Infinity;
+            for (const m of moves) {
+                const s = -ckNegamax(ckApply(grid, m), ckOpp(color), depth - 1, -beta, -alpha);
+                if (s > best) best = s;
+                if (best > alpha) alpha = best;
+                if (alpha >= beta) break;
+            }
+            return best;
+        }
+
+        class CheckersGame {
+            constructor() { this.reset(); }
+            reset() {
+                this.grid = Array.from({ length: 8 }, () => Array(8).fill(null));
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        if ((r + c) % 2 !== 1) continue; // dark squares only
+                        if (r <= 2) this.grid[r][c] = { type: 'c', color: 'b' };
+                        if (r >= 5) this.grid[r][c] = { type: 'c', color: 'w' };
+                    }
+                }
+                this.turnColor = 'w';
+                this.quietPlies = 0;
+                this.hist = [];
+            }
+            turn() { return this.turnColor; }
+            board() { return this.grid; }
+            get(sq) {
+                const c = FILES.indexOf(sq[0]), r = 8 - parseInt(sq[1], 10);
+                return this.grid[r][c];
+            }
+            _wrap(m) {
+                const p = this.grid[m.fr][m.fc];
+                const last = m.path[m.path.length - 1];
+                return {
+                    from: ckSq(m.fr, m.fc),
+                    to: ckSq(last[0], last[1]),
+                    path: m.path.map(([r, c]) => ckSq(r, c)),
+                    capturedSquares: m.caps.map(([r, c]) => ckSq(r, c)),
+                    captured: m.caps.length ? m.caps.map(([r, c]) => this.grid[r][c].type) : undefined,
+                    promote: m.promote,
+                    color: p.color,
+                    piece: p.type,
+                    flags: '',
+                    _raw: m
+                };
+            }
+            moves(opts = {}) {
+                let list = ckGenMoves(this.grid, this.turnColor).map(m => this._wrap(m));
+                if (opts.square) list = list.filter(m => m.from === opts.square);
+                return list;
+            }
+            mustCapture() {
+                const list = ckGenMoves(this.grid, this.turnColor);
+                return list.length > 0 && list[0].caps.length > 0;
+            }
+            captureSources() {
+                const list = ckGenMoves(this.grid, this.turnColor);
+                if (!list.length || !list[0].caps.length) return [];
+                return [...new Set(list.map(m => ckSq(m.fr, m.fc)))];
+            }
+            move(mv) {
+                this.hist.push({ grid: this.grid, turn: this.turnColor, quiet: this.quietPlies, move: mv });
+                this.grid = ckApply(this.grid, mv._raw);
+                this.quietPlies = (mv._raw.caps.length || mv.piece === 'c') ? 0 : this.quietPlies + 1;
+                this.turnColor = ckOpp(this.turnColor);
+                return mv;
+            }
+            undo() {
+                const h = this.hist.pop();
+                if (!h) return null;
+                this.grid = h.grid; this.turnColor = h.turn; this.quietPlies = h.quiet;
+                return h.move;
+            }
+            history() { return this.hist.map(h => h.move); }
+            hasMoves() { return ckGenMoves(this.grid, this.turnColor).length > 0; }
+            isDraw() { return this.quietPlies >= 80; } // 40 king moves each without capture or man advance
+            isGameOver() { return !this.hasMoves() || this.isDraw(); }
+            bestMove(depth = 6) {
+                const raw = ckGenMoves(this.grid, this.turnColor);
+                for (let i = raw.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [raw[i], raw[j]] = [raw[j], raw[i]]; }
+                let best = raw[0], bestS = -Infinity;
+                for (const m of raw) {
+                    const s = -ckNegamax(ckApply(this.grid, m), ckOpp(this.turnColor), depth - 1, -Infinity, -bestS);
+                    if (s > bestS) { bestS = s; best = m; }
+                }
+                return best ? this._wrap(best) : null;
+            }
+        }
+
+        /***********************************************************************
+         * 7. SHARED GAME STATE, ANIMATIONS & AUTOMATON AI
+         ***********************************************************************/
+        const chess = new Chess();
+        const checkers = new CheckersGame();
+        let gameMode = 'chess'; // 'chess' | 'checkers'
+        const pieceMeshes = {};
+        let selectedSquare = null;
+        let legalMovesForSelected = [];
+        let isAnimating = false;
+        let playVsAI = true;
+        let pendingPromotionMove = null;
+        let gameOverShown = false;
+        let aiTimer = null;
+        const activeAnimations = [];
+
+        const isChess = () => gameMode === 'chess';
+        const currentTurn = () => (isChess() ? chess.turn() : checkers.turn());
+        const isGameOver = () => (isChess() ? chess.game_over() : checkers.isGameOver());
+        const moveHistory = () => (isChess() ? chess.history({ verbose: true }) : checkers.history());
+
+        function syncBoardFromState() {
+            Object.keys(pieceMeshes).forEach(sq => { scene.remove(pieceMeshes[sq]); delete pieceMeshes[sq]; });
+            const board = isChess() ? chess.board() : checkers.board();
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const piece = board[r][c];
+                    if (!piece) continue;
+                    const sq = `${FILES[c]}${8 - r}`;
+                    const mesh = isChess() ? createWizardPieceMesh(piece.type, piece.color) : createCheckerPieceMesh(piece.type, piece.color);
+                    mesh.position.copy(squareToWorld(sq));
+                    mesh.userData.square = sq;
+                    mesh.userData.type = piece.type;
+                    mesh.userData.color = piece.color;
+                    mesh.userData.phase = Math.random() * Math.PI * 2;
+                    scene.add(mesh);
+                    pieceMeshes[sq] = mesh;
+                }
+            }
+            clearHighlights();
+            updateUI();
+        }
+
+        function setMarker(sq, ringHex, dotHex) {
+            const h = highlightMeshes[sq];
+            if (!h) return;
+            h.group.visible = true;
+            h.ring.material.color.setHex(ringHex);
+            if (dotHex === null) { h.dot.visible = false; } else { h.dot.visible = true; h.dot.material.color.setHex(dotHex); }
+        }
+
+        function clearHighlights() {
+            Object.values(highlightMeshes).forEach(h => { h.group.visible = false; });
+            if (isChess()) {
+                if (chess.in_check()) {
+                    const turnColor = chess.turn();
+                    Object.keys(pieceMeshes).forEach(sq => {
+                        const m = pieceMeshes[sq];
+                        if (m && m.userData.type === 'k' && m.userData.color === turnColor) setMarker(sq, 0xef4444, null);
+                    });
+                }
+            } else if (!isAnimating && !isGameOver() && !(playVsAI && checkers.turn() === 'b')) {
+                // Forced-capture hint: mark every piece that must jump
+                checkers.captureSources().forEach(sq => setMarker(sq, 0xf43f5e, null));
+            }
+        }
+
+        function showHighlightsForSquare(sq) {
+            clearHighlights();
+            setMarker(sq, 0xfbbf24, null);
+            legalMovesForSelected.forEach(m => {
+                if (m.captured || m.flags.includes('e')) setMarker(m.to, 0xf43f5e, 0xf43f5e);
+                else setMarker(m.to, 0x38bdf8, 0x38bdf8);
+            });
+        }
+
+        function focusActionCam(endPos) {
+            const saved = { radius: cameraControl.targetRadius, phi: cameraControl.targetPhi };
+            if (useActionCam) {
+                cameraControl.desiredLookAt.set(endPos.x * 0.55, 0.5, endPos.z * 0.55);
+                cameraControl.targetRadius = Math.max(13.5, saved.radius - 4.2);
+            }
+            return () => {
+                if (useActionCam) {
+                    cameraControl.desiredLookAt.set(0, 0.4, 0);
+                    cameraControl.targetRadius = saved.radius;
+                    cameraControl.targetPhi = saved.phi;
+                }
+            };
+        }
+
+        // ---------- CHESS move animation ----------
+        function executeAnimatedMove(moveObj, onComplete) {
+            isAnimating = true;
+            clearHighlights();
+            const fromSq = moveObj.from, toSq = moveObj.to;
+            const attackerMesh = pieceMeshes[fromSq];
+            let victimSq = toSq;
+            if (moveObj.flags.includes('e')) victimSq = `${toSq[0]}${moveObj.color === 'w' ? '5' : '4'}`;
+            const victimMesh = pieceMeshes[victimSq];
+            const startPos = squareToWorld(fromSq), endPos = squareToWorld(toSq);
+
+            if (moveObj.flags.includes('k') || moveObj.flags.includes('q')) {
+                const rank = moveObj.color === 'w' ? '1' : '8';
+                const rookFrom = moveObj.flags.includes('k') ? `h${rank}` : `a${rank}`;
+                const rookTo = moveObj.flags.includes('k') ? `f${rank}` : `d${rank}`;
+                const rookMesh = pieceMeshes[rookFrom];
+                if (rookMesh) {
+                    delete pieceMeshes[rookFrom];
+                    pieceMeshes[rookTo] = rookMesh;
+                    rookMesh.userData.square = rookTo;
+                    activeAnimations.push({ type: 'slide', mesh: rookMesh, startPos: squareToWorld(rookFrom), endPos: squareToWorld(rookTo), elapsed: 0, duration: 0.48 });
+                }
+            }
+
+            if (victimMesh) {
+                const impactDir = new THREE.Vector3().subVectors(endPos, startPos);
+                if (impactDir.lengthSq() < 0.001) impactDir.set(0, 0, 1);
+                impactDir.normalize();
+                const toppleAxis = new THREE.Vector3(0, 1, 0).cross(impactDir).normalize();
+                const restoreCam = focusActionCam(endPos);
+                showCombatTelemetry('PHYSICAL KNOCK-DOWN STRIKE!', 'KINETIC LUNGE • RIGID TOPPLE • GROUND-SLAM FRACTURE');
+                activeAnimations.push({
+                    type: 'attack_knockdown', mesh: attackerMesh, victimMesh, victimSq,
+                    victimColor: moveObj.color === 'w' ? 'b' : 'w',
+                    startPos, endPos, victimStartPos: victimMesh.position.clone().setY(0),
+                    impactDir, toppleAxis, hitTriggered: false, shattered: false,
+                    elapsed: 0, duration: 1.18,
+                    onDone: () => { restoreCam(); finalizeMoveState(fromSq, toSq, moveObj, attackerMesh); if (onComplete) onComplete(); }
+                });
+            } else {
+                const isKnight = moveObj.piece === 'n';
+                soundFX.playMove(moveObj.piece === 'r' || moveObj.piece === 'k');
+                activeAnimations.push({
+                    type: isKnight ? 'leap' : 'slide', mesh: attackerMesh, startPos, endPos,
+                    elapsed: 0, duration: isKnight ? 0.52 : 0.38,
+                    onDone: () => { finalizeMoveState(fromSq, toSq, moveObj, attackerMesh); if (onComplete) onComplete(); }
+                });
+            }
+        }
+
+        function finalizeMoveState(fromSq, toSq, moveObj, attackerMesh) {
+            delete pieceMeshes[fromSq];
+            if (moveObj.flags.includes('p') && moveObj.promotion) {
+                scene.remove(attackerMesh);
+                const promotedMesh = createWizardPieceMesh(moveObj.promotion, moveObj.color);
+                promotedMesh.position.copy(squareToWorld(toSq));
+                Object.assign(promotedMesh.userData, { square: toSq, type: moveObj.promotion, color: moveObj.color, phase: Math.random() * Math.PI * 2 });
+                scene.add(promotedMesh);
+                pieceMeshes[toSq] = promotedMesh;
+                spawnImpactPlume(squareToWorld(toSq), 0xfbbf24, 24);
+                spawnShockwave(squareToWorld(toSq), 0xfbbf24);
+                soundFX.playCrown();
+            } else {
+                pieceMeshes[toSq] = attackerMesh;
+                attackerMesh.userData.square = toSq;
+                attackerMesh.position.copy(squareToWorld(toSq));
+                attackerMesh.rotation.set(0, 0, 0);
+            }
+            isAnimating = false;
+            if (moveObj.promotion) showCombatTelemetry('ASCENSION RITUAL', 'PAWN ASCENDS TO ' + ({ q: 'QUEEN', r: 'ROOK', b: 'BISHOP', n: 'KNIGHT' })[moveObj.promotion]);
+            if (chess.in_checkmate()) showCombatTelemetry('CHECKMATE', 'VBLOCKS CATHEDRAL GRANDMASTER', 2600);
+            else if (chess.in_check()) { soundFX.playCheck(); showCombatTelemetry('ROYAL CHECK DECLARED', 'DEFEND YOUR SOVEREIGN'); }
+            clearHighlights();
+            updateUI();
+            maybeTriggerAI();
+        }
+
+        // ---------- CHECKERS move animation ----------
+        function executeCheckersMove(mv) {
+            isAnimating = true;
+            clearHighlights();
+            const mesh = pieceMeshes[mv.from];
+            const points = [squareToWorld(mv.from), ...mv.path.map(squareToWorld)];
+
+            if (!mv.capturedSquares.length) {
+                soundFX.playMove(mv.piece === 'k');
+                activeAnimations.push({
+                    type: 'slide', mesh, startPos: points[0], endPos: points[1], elapsed: 0, duration: 0.4,
+                    onDone: () => finalizeCheckersMove(mv, mesh)
+                });
+                return;
+            }
+
+            const victims = mv.capturedSquares.map((sq, i) => {
+                const dir = new THREE.Vector3().subVectors(points[i + 1], points[i]).setY(0).normalize();
+                const vm = pieceMeshes[sq];
+                return {
+                    mesh: vm, sq,
+                    pos: vm ? vm.position.clone().setY(0) : squareToWorld(sq),
+                    dir, axis: new THREE.Vector3(0, 1, 0).cross(dir).normalize(),
+                    color: mv.color === 'w' ? 'b' : 'w', hit: false, shattered: false
+                };
+            });
+            const restoreCam = focusActionCam(points[points.length - 1]);
+            const n = victims.length;
+            showCombatTelemetry(n === 1 ? 'VAULTING KNOCK-DOWN!' : (n === 2 ? 'DOUBLE' : n === 3 ? 'TRIPLE' : n + 'x') + (n > 1 ? ' CHAIN JUMP!' : ''),
+                n + ' PIECE' + (n > 1 ? 'S' : '') + ' TOPPLED • GROUND-SLAM FRACTURE');
+            activeAnimations.push({
+                type: 'checker_jumps', mesh, points, victims, elapsed: 0,
+                duration: 0.66 * (points.length - 1),
+                onDone: () => { restoreCam(); finalizeCheckersMove(mv, mesh); }
+            });
+        }
+
+        function shatterCheckerVictim(v) {
+            if (v.shattered) return;
+            v.shattered = true;
+            soundFX.playGroundSlamAndShatter();
+            cameraControl.triggerShake(0.45);
+            const pos = v.mesh ? v.mesh.position.clone() : v.pos.clone();
+            spawnKnockdownFracture(pos, v.color, v.dir, true, v.mesh || null);
+            if (v.mesh) {
+                scene.remove(v.mesh);
+                if (pieceMeshes[v.sq] === v.mesh) delete pieceMeshes[v.sq];
+            }
+        }
+
+        function finalizeCheckersMove(mv, mesh) {
+            delete pieceMeshes[mv.from];
+            const endPos = squareToWorld(mv.to);
+            if (mv.promote) {
+                scene.remove(mesh);
+                const km = createCheckerPieceMesh('k', mv.color);
+                km.position.copy(endPos);
+                Object.assign(km.userData, { square: mv.to, type: 'k', color: mv.color, phase: Math.random() * Math.PI * 2 });
+                scene.add(km);
+                pieceMeshes[mv.to] = km;
+                spawnImpactPlume(endPos, 0xfbbf24, 26);
+                spawnShockwave(endPos, 0xfbbf24);
+                soundFX.playCrown();
+                showCombatTelemetry('CROWNED!', (mv.color === 'w' ? 'MARBLE' : 'OBSIDIAN') + ' KING MAY NOW MOVE BACKWARD');
+            } else {
+                pieceMeshes[mv.to] = mesh;
+                mesh.userData.square = mv.to;
+                mesh.position.copy(endPos);
+                mesh.rotation.set(0, 0, 0);
+            }
+            isAnimating = false;
+            clearHighlights();
+            updateUI();
+            maybeTriggerAI();
+        }
+
+        let telemetryTimer = null;
+        function showCombatTelemetry(title, subtitle, ms = 1700) {
+            const el = document.getElementById('combat-telemetry');
+            if (!el) return;
+            document.getElementById('telemetry-title').textContent = title;
+            document.getElementById('telemetry-subtitle').textContent = subtitle;
+            el.style.opacity = '1';
+            el.style.transform = 'translate(-50%, 0)';
+            clearTimeout(telemetryTimer);
+            telemetryTimer = setTimeout(() => {
+                el.style.opacity = '0';
+                el.style.transform = 'translate(-50%, -8px)';
+            }, ms);
+        }
+
+        // One-click showcase duel on the centre VBLOCKS medallion (does not affect the game)
+        function triggerDemoKnockDown() {
+            if (isAnimating) return;
+            isAnimating = true;
+            clearTimeout(aiTimer);
+            selectedSquare = null; legalMovesForSelected = [];
+            clearHighlights();
+            const hideSqs = isChess() ? ['d4', 'e5'] : ['d4', 'e5', 'f6'];
+            const hidden = [];
+            hideSqs.forEach(sq => { if (pieceMeshes[sq]) { pieceMeshes[sq].visible = false; hidden.push(pieceMeshes[sq]); } });
+            const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+            const fromPos = squareToWorld('d4'), toPos = squareToWorld('e5');
+            const attacker = isChess() ? createWizardPieceMesh(pick(['k', 'q', 'n', 'r']), 'w') : createCheckerPieceMesh(pick(['c', 'k']), 'w');
+            const defender = isChess() ? createWizardPieceMesh(pick(['q', 'k', 'r', 'b']), 'b') : createCheckerPieceMesh(pick(['c', 'k']), 'b');
+            attacker.position.copy(fromPos); defender.position.copy(toPos);
+            scene.add(attacker, defender);
+            const restoreCam = focusActionCam(toPos);
+            showCombatTelemetry('DEMO KNOCK-DOWN // VBLOCKS PHYSICS', 'KINETIC LUNGE • RIGID TOPPLE • GROUND-SLAM FRACTURE', 2200);
+            const epoch = animEpoch;
+            const finish = () => {
+                setTimeout(() => {
+                    if (epoch !== animEpoch) return;
+                    scene.remove(attacker);
+                    hidden.forEach(m => { m.visible = true; });
+                    restoreCam();
+                    isAnimating = false;
+                    clearHighlights();
+                    updateUI();
+                    maybeTriggerAI();
+                }, 500);
+            };
+            const dir = new THREE.Vector3().subVectors(toPos, fromPos).normalize();
+            if (isChess()) {
+                activeAnimations.push({
+                    type: 'attack_knockdown', mesh: attacker, victimMesh: defender, victimSq: null, victimColor: 'b',
+                    startPos: fromPos, endPos: toPos, victimStartPos: toPos.clone(), impactDir: dir,
+                    toppleAxis: new THREE.Vector3(0, 1, 0).cross(dir).normalize(),
+                    hitTriggered: false, shattered: false, elapsed: 0, duration: 1.18, onDone: finish
+                });
+            } else {
+                activeAnimations.push({
+                    type: 'checker_jumps', mesh: attacker, points: [fromPos, squareToWorld('f6')],
+                    victims: [{ mesh: defender, sq: null, pos: toPos.clone(), dir, axis: new THREE.Vector3(0, 1, 0).cross(dir).normalize(), color: 'b', hit: false, shattered: false }],
+                    elapsed: 0, duration: 0.8, onDone: finish
+                });
+            }
+        }
+
+        function maybeTriggerAI() {
+            clearTimeout(aiTimer);
+            if (!isGameOver() && playVsAI && currentTurn() === 'b') aiTimer = setTimeout(triggerAutomatonMove, 420);
+        }
+
+        function triggerAutomatonMove() {
+            if (isGameOver() || isAnimating || !playVsAI || currentTurn() !== 'b') return;
+            if (!isChess()) {
+                const mv = checkers.bestMove(6);
+                if (mv) executeCheckersMove(checkers.move(mv));
+                return;
+            }
+            const legalMoves = chess.moves({ verbose: true });
+            if (!legalMoves.length) return;
+            const pieceValues = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+            function evaluateBoard() {
+                const b = chess.board();
+                let score = 0;
+                for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+                    const p = b[r][c];
+                    if (!p) continue;
+                    const val = pieceValues[p.type] + (3.5 - Math.abs(3.5 - c)) * 4 + (3.5 - Math.abs(3.5 - r)) * 4;
+                    score += p.color === 'b' ? val : -val;
+                }
+                return score;
+            }
+            let bestMove = legalMoves[0], bestScore = -Infinity;
+            for (const m of legalMoves) {
+                chess.move(m);
+                let replyWorst = Infinity;
+                const oppMoves = chess.moves({ verbose: true });
+                if (!oppMoves.length) {
+                    replyWorst = chess.in_checkmate() ? 99999 : 0;
+                } else {
+                    for (const om of oppMoves) {
+                        chess.move(om);
+                        const s = evaluateBoard() + (Math.random() * 12 - 6);
+                        if (s < replyWorst) replyWorst = s;
+                        chess.undo();
+                    }
+                }
+                chess.undo();
+                if (m.captured) replyWorst += 22;
+                if (replyWorst > bestScore) { bestScore = replyWorst; bestMove = m; }
+            }
+            const executed = chess.move(bestMove);
+            if (executed) executeAnimatedMove(executed);
+        }
+
+        /***********************************************************************
+         * 8. INPUT (MOUSE & TOUCH)
+         ***********************************************************************/
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+        let pointerDownPos = { x: 0, y: 0 };
+
+        function onPointerDown(e) {
+            const p = e.touches ? e.touches[0] : e;
+            pointerDownPos = { x: p.clientX, y: p.clientY };
+            cameraControl.isDragging = true;
+            cameraControl.previousMousePosition = { x: p.clientX, y: p.clientY };
+        }
+        function onPointerMove(e) {
+            if (!cameraControl.isDragging) return;
+            const p = e.touches ? e.touches[0] : e;
+            cameraControl.targetTheta -= (p.clientX - cameraControl.previousMousePosition.x) * 0.0065;
+            cameraControl.targetPhi -= (p.clientY - cameraControl.previousMousePosition.y) * 0.0055;
+            cameraControl.previousMousePosition = { x: p.clientX, y: p.clientY };
+        }
+        function onPointerUp(e) {
+            if (!cameraControl.isDragging) return;
+            cameraControl.isDragging = false;
+            const p = e.changedTouches ? e.changedTouches[0] : e;
+            if (Math.hypot(p.clientX - pointerDownPos.x, p.clientY - pointerDownPos.y) < 6) handleBoardClick(p.clientX, p.clientY);
+        }
+
+        function handleBoardClick(clientX, clientY) {
+            if (isAnimating || isGameOver()) return;
+            if (playVsAI && currentTurn() === 'b') return;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+            pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            const pieceHits = raycaster.intersectObjects(Object.values(pieceMeshes), true);
+            const tileHits = raycaster.intersectObjects(tileMeshes, false);
+            let clickedSquare = null;
+            if (pieceHits.length) {
+                let obj = pieceHits[0].object;
+                while (obj && !obj.userData.square && obj.parent) obj = obj.parent;
+                if (obj && obj.userData.square) clickedSquare = obj.userData.square;
+            }
+            if (!clickedSquare && tileHits.length) clickedSquare = tileHits[0].object.userData.square;
+            if (!clickedSquare) { selectedSquare = null; legalMovesForSelected = []; clearHighlights(); return; }
+
+            const matchingMove = legalMovesForSelected.find(m => m.to === clickedSquare);
+            if (selectedSquare && matchingMove) {
+                if (isChess()) {
+                    if (matchingMove.flags.includes('p')) {
+                        pendingPromotionMove = { from: selectedSquare, to: clickedSquare };
+                        openPromotionModal();
+                        return;
+                    }
+                    const res = chess.move({ from: selectedSquare, to: clickedSquare });
+                    selectedSquare = null; legalMovesForSelected = [];
+                    if (res) executeAnimatedMove(res);
+                } else {
+                    const res = checkers.move(matchingMove);
+                    selectedSquare = null; legalMovesForSelected = [];
+                    executeCheckersMove(res);
+                }
+                return;
+            }
+
+            const pieceOnSquare = isChess() ? chess.get(clickedSquare) : checkers.get(clickedSquare);
+            if (pieceOnSquare && pieceOnSquare.color === currentTurn()) {
+                selectedSquare = clickedSquare;
+                legalMovesForSelected = isChess()
+                    ? chess.moves({ square: clickedSquare, verbose: true })
+                    : checkers.moves({ square: clickedSquare });
+                soundFX.playSelect();
+                showHighlightsForSquare(clickedSquare);
+            } else {
+                selectedSquare = null; legalMovesForSelected = [];
+                clearHighlights();
+            }
+        }
+
+        const domElem = renderer.domElement;
+        domElem.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+        domElem.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp, { passive: true });
+        domElem.addEventListener('wheel', (e) => { e.preventDefault(); cameraControl.targetRadius += e.deltaY * 0.012; }, { passive: false });
+
+        /***********************************************************************
+         * 9. UI
+         ***********************************************************************/
+        const turnDot = document.getElementById('turn-dot');
+        const turnText = document.getElementById('turn-text');
+        const turnBadge = document.getElementById('turn-badge');
+        const statusChip = document.getElementById('status-chip');
+        const btnUndo = document.getElementById('btn-undo');
+        const capturedByWhiteEl = document.getElementById('captured-by-white');
+        const capturedByBlackEl = document.getElementById('captured-by-black');
+        const CHIP_RED = 'text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40';
+        const CHIP_AMBER = 'text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/40';
+
+        const chessGlyph = { p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚' };
+        const checkerGlyph = { w: { c: '⛀', k: '⛁' }, b: { c: '⛂', k: '⛃' } };
+
+        function setChip(text, cls) {
+            if (!text) { statusChip.classList.add('hidden'); return; }
+            statusChip.className = cls;
+            statusChip.textContent = text;
+        }
+
+        function updateUI() {
+            const turn = currentTurn();
+            const history = moveHistory();
+            btnUndo.disabled = history.length === 0 || isAnimating;
+
+            if (turn === 'w') {
+                turnDot.className = 'w-3.5 h-3.5 rounded-full bg-stone-100 shadow-[0_0_10px_#fff] transition-all duration-300';
+                turnText.textContent = "White Marble's Turn";
+                turnText.className = 'text-xs sm:text-sm font-semibold tracking-wide text-stone-100';
+            } else {
+                turnDot.className = 'w-3.5 h-3.5 rounded-full bg-purple-500 shadow-[0_0_12px_#a855f7] transition-all duration-300';
+                turnText.textContent = playVsAI ? 'Automaton Thinking...' : "Dark Obsidian's Turn";
+                turnText.className = 'text-xs sm:text-sm font-semibold tracking-wide text-purple-200';
+            }
+            turnBadge.classList.remove('check-alert');
+
+            if (isChess()) {
+                if (chess.in_checkmate()) {
+                    setChip('CHECKMATE', CHIP_RED);
+                    turnBadge.classList.add('check-alert');
+                    showGameOverModal('Checkmate', turn === 'w' ? "Dark Obsidian shatters the Marble King's defenses!" : 'White Marble triumphs in the Gothic Sanctuary!');
+                } else if (chess.game_over()) {
+                    setChip('DRAW', CHIP_AMBER);
+                    showGameOverModal('Sanctuary Stalemate', 'Neither Marble nor Obsidian could claim dominion.');
+                } else if (chess.in_check()) {
+                    setChip('CHECK', CHIP_RED);
+                    turnBadge.classList.add('check-alert');
+                } else {
+                    setChip(null);
+                }
+            } else {
+                if (!checkers.hasMoves()) {
+                    setChip('VICTORY', CHIP_AMBER);
+                    showGameOverModal('Board Conquered',
+                        turn === 'w' ? 'Dark Obsidian has left the Marble legion without a move!' : 'White Marble sweeps the Obsidian legion from the board!');
+                } else if (checkers.isDraw()) {
+                    setChip('DRAW', CHIP_AMBER);
+                    showGameOverModal('Sanctuary Stalemate', 'Forty moves each without a capture: the duel is drawn.');
+                } else if (checkers.mustCapture()) {
+                    setChip('JUMP REQUIRED', CHIP_RED);
+                } else {
+                    setChip(null);
+                }
+            }
+
+            // Spoils
+            const whiteSpoils = [], blackSpoils = [];
+            history.forEach(m => {
+                if (!m.captured) return;
+                const caps = Array.isArray(m.captured) ? m.captured : [m.captured];
+                caps.forEach(t => (m.color === 'w' ? whiteSpoils : blackSpoils).push(t));
+            });
+            const glyph = (t, victimColor) => (isChess() ? chessGlyph[t] : checkerGlyph[victimColor][t]);
+            const order = { q: 1, r: 2, b: 3, n: 4, k: 0, c: 5, p: 5 };
+            whiteSpoils.sort((a, b) => order[a] - order[b]);
+            blackSpoils.sort((a, b) => order[a] - order[b]);
+            const none = '<span class="text-xs text-slate-500 italic font-sans">None toppled</span>';
+            capturedByWhiteEl.innerHTML = whiteSpoils.length ? whiteSpoils.map(p => `<span class="drop-shadow">${glyph(p, 'b')}</span>`).join('') : none;
+            capturedByBlackEl.innerHTML = blackSpoils.length ? blackSpoils.map(p => `<span class="drop-shadow">${glyph(p, 'w')}</span>`).join('') : none;
+        }
+
+        const modalOverlay = document.getElementById('modal-overlay');
+        const promotionCard = document.getElementById('promotion-card');
+        const gameoverCard = document.getElementById('gameover-card');
+
+        function openPromotionModal() {
+            modalOverlay.classList.remove('hidden'); modalOverlay.classList.add('flex');
+            promotionCard.classList.remove('hidden'); gameoverCard.classList.add('hidden');
+        }
+        function showGameOverModal(title, subtitle) {
+            if (gameOverShown) return;
+            gameOverShown = true;
+            document.getElementById('gameover-title').textContent = title;
+            document.getElementById('gameover-subtitle').textContent = subtitle;
+            modalOverlay.classList.remove('hidden'); modalOverlay.classList.add('flex');
+            promotionCard.classList.add('hidden'); gameoverCard.classList.remove('hidden');
+        }
+        function closeModal() { modalOverlay.classList.add('hidden'); modalOverlay.classList.remove('flex'); }
+
+        document.querySelectorAll('.promo-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                closeModal();
+                if (!pendingPromotionMove) return;
+                const res = chess.move({ from: pendingPromotionMove.from, to: pendingPromotionMove.to, promotion: btn.getAttribute('data-promo') });
+                pendingPromotionMove = null; selectedSquare = null; legalMovesForSelected = [];
+                if (res) executeAnimatedMove(res);
+            });
+        });
+
+        // Cancel any in-flight move/knock-down so switching games or restarting is always instant
+        let animEpoch = 0;
+        function abortAnimations() {
+            animEpoch++;
+            activeAnimations.forEach(a => {
+                [a.mesh, a.victimMesh, ...(a.victims || []).map(v => v.mesh)].forEach(m => { if (m) scene.remove(m); });
+            });
+            activeAnimations.length = 0;
+            isAnimating = false;
+            cameraControl.desiredLookAt.set(0, 0.4, 0);
+        }
+
+        function newGame() {
+            clearTimeout(aiTimer);
+            abortAnimations();
+            closeModal();
+            chess.reset();
+            checkers.reset();
+            selectedSquare = null; legalMovesForSelected = []; pendingPromotionMove = null;
+            gameOverShown = false;
+            syncBoardFromState();
+            soundFX.playSelect();
+        }
+
+        const GAME_META = {
+            chess: {
+                title: "IONITY GLOBAL // WIZARD'S CHESS",
+                doc: "IONITY GLOBAL // VBLOCKS Wizard's Chess",
+                hint: 'Select piece to command &bull; Drag to orbit &bull; Captures trigger physical knock-downs'
+            },
+            checkers: {
+                title: "IONITY GLOBAL // WIZARD'S CHECKERS",
+                doc: "IONITY GLOBAL // VBLOCKS Wizard's Checkers",
+                hint: 'Dark squares only &bull; Jumps are mandatory &bull; Chain jumps knock down every piece in the path'
+            }
+        };
+
+        function setGameMode(mode) {
+            if (mode === gameMode) return;
+            gameMode = mode;
+            document.querySelectorAll('.game-tab').forEach(t => t.classList.toggle('active', t.dataset.game === mode));
+            document.getElementById('game-title').textContent = GAME_META[mode].title;
+            document.getElementById('hint-text').innerHTML = GAME_META[mode].hint;
+            document.title = GAME_META[mode].doc;
+            newGame();
+        }
+        document.querySelectorAll('.game-tab').forEach(t => t.addEventListener('click', () => setGameMode(t.dataset.game)));
+
+        document.getElementById('btn-new').addEventListener('click', newGame);
+        document.getElementById('btn-modal-new').addEventListener('click', newGame);
+        document.getElementById('btn-modal-close').addEventListener('click', closeModal);
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (isAnimating) return;
+            clearTimeout(aiTimer);
+            const engine = isChess() ? chess : checkers;
+            if (playVsAI && engine.turn() === 'w' && moveHistory().length >= 2) { engine.undo(); engine.undo(); }
+            else engine.undo();
+            selectedSquare = null; legalMovesForSelected = [];
+            gameOverShown = false;
+            closeModal();
+            syncBoardFromState();
+            soundFX.playMove();
+            maybeTriggerAI();
+        });
+
+        document.getElementById('btn-demo').addEventListener('click', triggerDemoKnockDown);
+        document.getElementById('btn-camera').addEventListener('click', () => { cameraControl.cyclePreset(); soundFX.playSelect(); });
+
+        document.getElementById('btn-mode').addEventListener('click', () => {
+            playVsAI = !playVsAI;
+            document.getElementById('mode-icon').textContent = playVsAI ? 'smart_toy' : 'group';
+            document.getElementById('mode-label').textContent = playVsAI ? 'vs Automaton' : '2-Player Pass';
+            clearHighlights();
+            updateUI();
+            if (!isAnimating) maybeTriggerAI();
+        });
+
+        document.getElementById('btn-sound').addEventListener('click', () => {
+            soundFX.enabled = !soundFX.enabled;
+            document.getElementById('sound-icon').textContent = soundFX.enabled ? 'volume_up' : 'volume_off';
+        });
+
+        document.getElementById('btn-actioncam').addEventListener('click', () => {
+            useActionCam = !useActionCam;
+            document.getElementById('actioncam-icon').textContent = useActionCam ? 'videocam' : 'videocam_off';
+            document.getElementById('actioncam-label').textContent = useActionCam ? 'Impact Cam: ON' : 'Impact Cam: OFF';
+            document.getElementById('btn-actioncam').className = useActionCam
+                ? 'md-btn flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium text-cyan-300 bg-cyan-500/15 border border-cyan-500/30'
+                : 'md-btn flex items-center gap-1 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-400 bg-slate-800/40 border border-slate-700/40';
+        });
+
+        /***********************************************************************
+         * 10. MAIN LOOP
+         ***********************************************************************/
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.1);
+            const elapsedTime = clock.getElapsedTime();
+
+            cameraControl.update(dt);
+
+            vblocksHolos.forEach(h => {
+                h.group.rotation.y = elapsedTime * 0.85 + h.basePhase;
+                h.group.position.y = 1.22 + Math.sin(elapsedTime * 2.4 + h.basePhase) * 0.08;
+            });
+            if (centerMedallionMesh) centerMedallionMesh.material.opacity = 0.84 + Math.sin(elapsedTime * 2.5) * 0.1;
+            brazierLights.forEach((light, idx) => { light.intensity = 1.05 + Math.sin(elapsedTime * 7 + idx * 2.1) * 0.15; });
+
+            const posAttr = dustGeo.attributes.position;
+            for (let i = 0; i < dustCount; i++) {
+                let y = posAttr.getY(i) + dt * 0.22;
+                if (y > 16) y = 0.2;
+                posAttr.setY(i, y);
+            }
+            posAttr.needsUpdate = true;
+
+            Object.values(pieceMeshes).forEach(mesh => {
+                const phase = mesh.userData.phase || 0;
+                const isSelected = mesh.userData.square === selectedSquare;
+                if (!isAnimating) {
+                    const targetHover = isSelected ? 0.22 + Math.sin(elapsedTime * 5) * 0.05 : Math.sin(elapsedTime * 2.2 + phase) * 0.025;
+                    mesh.position.y += (Math.max(0, targetHover) - mesh.position.y) * 0.15;
+                }
+                if (mesh.userData.floatingGem) mesh.userData.floatingGem.rotation.y = elapsedTime * 1.8 + phase;
+            });
+
+            for (let i = activeAnimations.length - 1; i >= 0; i--) {
+                const anim = activeAnimations[i];
+                anim.elapsed += dt;
+                const t = Math.min(1, anim.elapsed / anim.duration);
+                const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+                if (anim.type === 'slide') {
+                    anim.mesh.position.lerpVectors(anim.startPos, anim.endPos, ease);
+                    anim.mesh.position.y = Math.sin(t * Math.PI) * 0.14;
+                } else if (anim.type === 'leap') {
+                    anim.mesh.position.lerpVectors(anim.startPos, anim.endPos, ease);
+                    anim.mesh.position.y = Math.sin(t * Math.PI) * 1.35;
+                    anim.mesh.rotation.x = Math.sin(t * Math.PI * 2) * 0.28;
+                } else if (anim.type === 'checker_jumps') {
+                    // Each hop: piece vaults over the victim; victim is struck, tips over, skids and shatters
+                    const segCount = anim.points.length - 1;
+                    const segF = Math.min(segCount - 1e-6, t * segCount);
+                    const seg = Math.floor(segF);
+                    const lt = segF - seg;
+                    const le = lt < 0.5 ? 2 * lt * lt : 1 - Math.pow(-2 * lt + 2, 2) / 2;
+                    anim.mesh.position.lerpVectors(anim.points[seg], anim.points[seg + 1], le);
+                    anim.mesh.position.y = Math.sin(lt * Math.PI) * 0.95;
+                    anim.mesh.rotation.y = (seg + le) * Math.PI;
+
+                    anim.victims.forEach((v, vi) => {
+                        if (vi < seg) { shatterCheckerVictim(v); return; }
+                        if (vi !== seg || v.shattered) return;
+                        if (lt >= 0.35 && !v.hit) {
+                            v.hit = true;
+                            soundFX.playKnockdownHit();
+                            cameraControl.triggerShake(0.25);
+                            spawnImpactPlume(v.pos, 0x38bdf8, 12);
+                        }
+                        if (v.hit && v.mesh) {
+                            const kd = Math.min(1, (lt - 0.35) / 0.32);
+                            v.mesh.position.copy(v.pos).addScaledVector(v.dir, kd * 0.45);
+                            v.mesh.position.y = Math.sin(kd * Math.PI) * 0.18;
+                            v.mesh.setRotationFromAxisAngle(v.axis, kd * kd * Math.PI * 0.5);
+                            if (kd >= 1) shatterCheckerVictim(v);
+                        }
+                    });
+                    if (t >= 1) anim.victims.forEach(shatterCheckerVictim);
+                } else if (anim.type === 'attack_knockdown') {
+                    // Stage 1 wind-up -> Stage 2 charge -> Stage 3 knock-down -> Stage 4 ground-slam shatter
+                    if (t < 0.18) {
+                        const windT = t / 0.18;
+                        anim.mesh.position.copy(anim.startPos).addScaledVector(anim.impactDir, -0.28 * Math.sin(windT * Math.PI * 0.5));
+                        anim.mesh.position.y = windT * 0.22;
+                        anim.mesh.setRotationFromAxisAngle(anim.toppleAxis, -windT * 0.38);
+                    } else if (t < 0.38) {
+                        const chargeT = (t - 0.18) / 0.20;
+                        const chargeEase = chargeT * chargeT;
+                        const strikePoint = anim.endPos.clone().addScaledVector(anim.impactDir, -0.32);
+                        anim.mesh.position.lerpVectors(anim.startPos, strikePoint, chargeEase);
+                        anim.mesh.position.y = Math.sin(chargeT * Math.PI) * 0.55;
+                        anim.mesh.setRotationFromAxisAngle(anim.toppleAxis, -0.38 + chargeEase * 0.92);
+                    } else if (t < 0.78) {
+                        if (!anim.hitTriggered) {
+                            anim.hitTriggered = true;
+                            soundFX.playKnockdownHit();
+                            cameraControl.triggerShake(0.32);
+                            spawnImpactPlume(anim.endPos, 0x38bdf8, 16);
+                        }
+                        const kdT = (t - 0.38) / 0.40;
+                        const strikePoint = anim.endPos.clone().addScaledVector(anim.impactDir, -0.32);
+                        const advancePoint = anim.endPos.clone().addScaledVector(anim.impactDir, -0.08);
+                        anim.mesh.position.lerpVectors(strikePoint, advancePoint, kdT);
+                        anim.mesh.position.y = Math.max(0, (1 - kdT) * 0.15);
+                        anim.mesh.setRotationFromAxisAngle(anim.toppleAxis, (1 - kdT) * 0.45);
+                        if (anim.victimMesh && kdT < 0.08) {
+                            // Hit-stop: defender shudders violently before losing balance
+                            anim.victimMesh.position.copy(anim.victimStartPos);
+                            anim.victimMesh.position.x += (Math.random() - 0.5) * 0.12;
+                            anim.victimMesh.position.z += (Math.random() - 0.5) * 0.12;
+                        } else if (anim.victimMesh) {
+                            const kd = (kdT - 0.08) / 0.92;
+                            const skidDist = (1 - Math.pow(1 - kd, 2)) * 0.68;
+                            anim.victimMesh.position.copy(anim.victimStartPos).addScaledVector(anim.impactDir, skidDist);
+                            anim.victimMesh.position.y = kd < 0.3
+                                ? Math.sin((kd / 0.3) * Math.PI) * 0.22
+                                : Math.abs(Math.sin((kd - 0.3) * Math.PI * 2.5)) * 0.08 * (1 - kd);
+                            anim.victimMesh.setRotationFromAxisAngle(anim.toppleAxis, Math.pow(kd, 1.65) * (Math.PI * 0.49));
+                        }
+                    } else {
+                        if (!anim.shattered) {
+                            anim.shattered = true;
+                            soundFX.playGroundSlamAndShatter();
+                            cameraControl.triggerShake(0.55);
+                            const slamPos = anim.endPos.clone();
+                            if (anim.victimMesh) slamPos.copy(anim.victimMesh.position);
+                            spawnKnockdownFracture(slamPos, anim.victimColor, anim.impactDir, false, anim.victimMesh);
+                            if (anim.victimMesh) {
+                                scene.remove(anim.victimMesh);
+                                if (pieceMeshes[anim.victimSq] === anim.victimMesh) delete pieceMeshes[anim.victimSq];
+                            }
+                        }
+                        const settleT = (t - 0.78) / 0.22;
+                        const advancePoint = anim.endPos.clone().addScaledVector(anim.impactDir, -0.08);
+                        anim.mesh.position.lerpVectors(advancePoint, anim.endPos, settleT);
+                        anim.mesh.position.y = 0;
+                        anim.mesh.rotation.set(0, 0, 0);
+                    }
+                }
+
+                if (t >= 1) {
+                    activeAnimations.splice(i, 1);
+                    if (anim.onDone) anim.onDone();
+                }
+            }
+
+            updateParticlesAndEffects(dt);
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.addEventListener('load', () => {
+            syncBoardFromState();
+            animate();
+        });
+
+        // Test/automation hook
+        window.__arena = { triggerDemoKnockDown, chess, checkers, setGameMode, newGame, triggerAutomatonMove, executeCheckersMove, executeAnimatedMove, get state() { return { gameMode, isAnimating, playVsAI, pieces: Object.keys(pieceMeshes).length }; } };
+    </script>
+</body>
+</html>

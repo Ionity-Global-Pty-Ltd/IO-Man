@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <!--
 =====================================================================================
- IONITY.FUN - GAME SELECTION HUB  |  Document ID: GME-2026-10-011  |  Version: 1.0.0
- Launcher for the Ionity Global arcade: IO-MAN, IO-COMBAT, PAWN* SOVEREIGN REALM MMO
+ IONITY.FUN - GAME SELECTION HUB  |  Document ID: GME-2026-10-011  |  Version: 1.1.0
+ Launcher for the Ionity Global arcade: IO-MAN, IO-COMBAT, PAWN* SOVEREIGN REALM MMO, WIZARD'S ARENA
 -------------------------------------------------------------------------------------
  Author: Johan Wilhelm van Antwerp | Ionity (Pty) Ltd | AEDI (Antwerp Ecosystems Designs Ionity)
  ORCID: 0009-0005-7181-0347 | Established 2018 | Centurion, Gauteng, South Africa
@@ -18,7 +18,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>IONITY.FUN — Game Selection</title>
-<meta name="description" content="ionity.fun — the Ionity Global arcade. Pick your game: IO-MAN (ASCII beat-em-up), IO-COMBAT (2D fighter) or PAWN* Sovereign Realm (isometric .IO MMO ARPG with cloud sync).">
+<meta name="description" content="ionity.fun — the Ionity Global arcade. Pick your game: IO-MAN (ASCII beat-em-up), IO-COMBAT (2D fighter), PAWN* Sovereign Realm (isometric .IO MMO ARPG with cloud sync) or Wizard's Arena (3D chess &amp; checkers).">
 <meta name="author" content="Johan Wilhelm van Antwerp">
 <meta name="theme-color" content="#0d1b2a">
 <meta name="copyright" content="© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd. All rights reserved.">
@@ -26,7 +26,7 @@
 <link rel="canonical" href="https://www.ionity.fun/games/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="IONITY.FUN — Game Selection">
-<meta property="og:description" content="Three free browser games by Ionity Global: IO-MAN, IO-COMBAT and the PAWN* Sovereign Realm MMO.">
+<meta property="og:description" content="Four free browser games by Ionity Global: IO-MAN, IO-COMBAT, the PAWN* Sovereign Realm MMO and Wizard's Arena chess &amp; checkers.">
 <meta property="og:url" content="https://www.ionity.fun/games/">
 <meta property="og:image" content="https://www.ionity.fun/banners/ioman_og_1200x630.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -48,10 +48,10 @@
   .status i { width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); animation:pulse 1.6s infinite; }
   @keyframes pulse { 50% { opacity:.35; } }
   h2.sel { font-family:'JetBrains Mono',monospace; font-size:13px; letter-spacing:.3em; color:var(--dim); text-align:center; margin:0 0 18px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr)); gap:18px; }
   .card { position:relative; display:flex; flex-direction:column; min-height:360px; padding:22px; border-radius:18px; border:1px solid rgba(255,255,255,.1); background:rgba(5,9,18,.85); text-decoration:none; color:inherit; overflow:hidden; transition:transform .25s cubic-bezier(.16,1,.3,1), border-color .25s, box-shadow .25s; outline:none; }
   .card:hover, .card:focus-visible { transform:translateY(-6px); }
-  .card.ioman { --c:var(--cy); } .card.combat { --c:var(--red); } .card.pawn { --c:var(--cy2); }
+  .card.ioman { --c:var(--cy); } .card.combat { --c:var(--red); } .card.pawn { --c:var(--cy2); } .card.arena { --c:var(--gold); }
   .card:hover, .card:focus-visible { border-color:var(--c); box-shadow:0 0 40px -8px var(--c), 0 24px 50px rgba(0,0,0,.6); }
   .card .glow { position:absolute; width:260px; height:260px; border-radius:50%; filter:blur(70px); opacity:.22; background:var(--c); top:-120px; right:-100px; pointer-events:none; }
   .num { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--c); letter-spacing:.2em; }
@@ -76,7 +76,7 @@
   <header>
     <h1 class="wordmark">IONITY<span>.FUN</span></h1>
     <div class="tag">Ionity Global Arcade · AEDI · South Africa</div>
-    <div class="status"><i></i> <span id="st">SELECT A GAME · PRESS 1 / 2 / 3</span></div>
+    <div class="status"><i></i> <span id="st">SELECT A GAME · PRESS 1 / 2 / 3 / 4</span></div>
   </header>
 
   <h2 class="sel">— GAME SELECTION —</h2>
@@ -116,10 +116,21 @@
       <div class="meta"><span class="hot">MMO · LIVE</span><span>GOOGLE SIGN-IN</span><span>CLOUD SAVE</span><span>REALM CHAT</span><span>LEADERBOARD</span></div>
       <div class="play"><span>ENTER THE REALM</span><span>→</span></div>
     </a>
+
+    <a class="card arena" href="/arena/" data-key="4">
+      <div class="glow"></div>
+      <div class="new">NEW · 3D</div>
+      <div class="num">04 · BOARD · STRATEGY</div>
+      <div class="art big">♚ ⛂</div>
+      <h3>WIZARD'S ARENA — Chess &amp; Checkers</h3>
+      <p>Two board games in one 3D Gothic cathedral. Full-rules Wizard's Chess and Wizard's Checkers with forced jumps and chain captures — every capture is a physical knock-down that shatters the piece into its sculpted parts.</p>
+      <div class="meta"><span class="hot">v1.1</span><span>2 GAMES</span><span>VS AUTOMATON AI</span><span>2-PLAYER</span><span>3D · MOBILE</span></div>
+      <div class="play"><span>ENTER THE ARENA</span><span>→</span></div>
+    </a>
   </div>
 
   <footer>
-    <div><kbd>1</kbd> IO-MAN · <kbd>2</kbd> IO-COMBAT · <kbd>3</kbd> PAWN* MMO</div>
+    <div><kbd>1</kbd> IO-MAN · <kbd>2</kbd> IO-COMBAT · <kbd>3</kbd> PAWN* MMO · <kbd>4</kbd> WIZARD'S ARENA</div>
     <div>© 2018–2026 Antwerp Designs | Ionity (Pty) Ltd · All rights reserved · TM2 · Policy 986 AED · License AED 900</div>
     <div><a href="https://www.ionity.today">www.ionity.today</a> · <a href="https://www.ionity.world">www.ionity.world</a> · <a href="https://www.ionity.co.za">www.ionity.co.za</a> · <a href="mailto:ai@ionity.today">ai@ionity.today</a></div>
     <div>Ionity refers exclusively to ionity.today / ionity.world / ionity.fun and is not affiliated with ionity.com. · Building Tomorrow, Today.</div>
@@ -129,7 +140,7 @@
   const cards = [...document.querySelectorAll('.card')];
   addEventListener('keydown', e => { const c = cards.find(x => x.dataset.key === e.key); if (c) location.href = c.getAttribute('href'); });
   const st = document.getElementById('st');
-  cards.forEach(c => { c.addEventListener('mouseenter', () => st.textContent = 'LOADING TARGET: ' + c.querySelector('h3').textContent.toUpperCase()); c.addEventListener('mouseleave', () => st.textContent = 'SELECT A GAME · PRESS 1 / 2 / 3'); });
+  cards.forEach(c => { c.addEventListener('mouseenter', () => st.textContent = 'LOADING TARGET: ' + c.querySelector('h3').textContent.toUpperCase()); c.addEventListener('mouseleave', () => st.textContent = 'SELECT A GAME · PRESS 1 / 2 / 3 / 4'); });
 </script>
 </body>
 </html>
