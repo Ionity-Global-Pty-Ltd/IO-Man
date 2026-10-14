@@ -132,7 +132,7 @@
                 </div>
             </div>
             <div class="mt-4 pt-3 border-t border-slate-800 text-[10px] mono-tag text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
-                <span>© 2018-2026 Antwerp Designs | Ionity (Pty) Ltd · TM2</span><span>Policy 986 AED · AED 900</span><span>www.ionity.today · www.ionity.fun</span><span>WASD move · SPACE jump (double) · Right-drag/Q,E orbit · Wheel zoom · R/T tilt · 1-4 skills · F loot · K skin · B build · V town · Enter chat · L leaderboard</span>
+                <span>© 2018-2026 Antwerp Designs | Ionity (Pty) Ltd · TM2</span><span>Policy 986 AED · AED 900</span><span>www.ionity.today · www.ionity.fun</span><span>WASD move · SPACE jump (double) · Right-drag/Q,E orbit · Wheel zoom · R/T tilt · Tab target · X clear · 1-4 skills · F loot · K skin · B build · V town · Enter chat · L leaderboard</span>
             </div>
         </div>
     </div>
@@ -367,14 +367,14 @@
 
     /* 3. SCENE */
     const container = $('canvas-container');
-    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b1320); scene.fog = new THREE.FogExp2(0x0b1320, 0.0065);
+    const scene = new THREE.Scene(); scene.background = new THREE.Color(0x0b1320);
     const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 420);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(window.innerWidth, window.innerHeight); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
-    scene.add(new THREE.HemisphereLight(0x93c5fd, 0x3f2e21, 0.75));
-    const sunLight = new THREE.DirectionalLight(0xfff1d6, 1.45); sunLight.position.set(60, 95, 45); sunLight.castShadow = true; sunLight.shadow.mapSize.width = 2048; sunLight.shadow.mapSize.height = 2048; sunLight.shadow.camera.near = 10; sunLight.shadow.camera.far = 260;
+    scene.add(new THREE.HemisphereLight(0x9ec5ff, 0x4a3a28, 0.95));
+    const sunLight = new THREE.DirectionalLight(0xffe9c4, 1.7); sunLight.position.set(60, 95, 45); sunLight.castShadow = true; sunLight.shadow.mapSize.width = 2048; sunLight.shadow.mapSize.height = 2048; sunLight.shadow.camera.near = 10; sunLight.shadow.camera.far = 260;
     const sd = 85; sunLight.shadow.camera.left = -sd; sunLight.shadow.camera.right = sd; sunLight.shadow.camera.top = sd; sunLight.shadow.camera.bottom = -sd; sunLight.shadow.bias = -0.0005; scene.add(sunLight); scene.add(sunLight.target);
 
     const CHUNK_SIZE = 60, CHUNK_SEGMENTS = 32, activeChunks = new Map();
@@ -402,7 +402,7 @@
             if (wy < 5.5) { const tree = new THREE.Group(); tree.position.set(wx, wy, wz); const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 2.4, 6), trunkMat); trunk.position.y = 1.2; trunk.castShadow = true; tree.add(trunk); const c1 = new THREE.Mesh(new THREE.ConeGeometry(1.7, 3.4, 7), pineLeavesMat); c1.position.y = 3.2; c1.castShadow = true; tree.add(c1); const c2 = new THREE.Mesh(new THREE.ConeGeometry(1.25, 2.6, 7), pineLeavesMat); c2.position.y = 4.8; c2.castShadow = true; tree.add(c2); chunkGroup.add(tree); }
             else { const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6, 0), rockMat); rock.position.set(wx, wy + 0.6, wz); rock.scale.set(1.4, 0.9, 1.2); rock.castShadow = true; rock.receiveShadow = true; chunkGroup.add(rock); }
         }
-        scene.add(chunkGroup); activeChunks.set(key, chunkGroup);
+        addGrassToChunk(cx, cz, chunkGroup); scene.add(chunkGroup); activeChunks.set(key, chunkGroup);
     }
     function updateEndlessWorldChunks(px, pz) { const ccx = Math.round(px / CHUNK_SIZE), ccz = Math.round(pz / CHUNK_SIZE); for (let dx = -2; dx <= 2; dx++) for (let dz = -2; dz <= 2; dz++) generateChunk(ccx + dx, ccz + dz); }
 
@@ -489,7 +489,7 @@
     function heroDamage(raw, src) {
         if (hero.dead) return;
         if (!hero.isGrounded) { spawnFloatingText(hero.pos, 'DODGED (AIRBORNE)!', '#38bdf8'); return; }
-        const reduced = Math.round(raw * (1 - getHeroDamageReduction() / 100)); hero.hp = Math.max(0, hero.hp - reduced); spawnFloatingText(hero.pos, `-${reduced}`, '#f43f5e'); sfx.playHit(); updateAllHUD();
+        const reduced = Math.round(raw * (1 - getHeroDamageReduction() / 100)); hero.hp = Math.max(0, hero.hp - reduced); spawnFloatingText(hero.pos, `-${reduced}`, '#f43f5e'); sfx.playHit(); spawnSparks(hero.pos.clone().add(new THREE.Vector3(0, 1.8, 0)), 0xf43f5e, 8, .7); camShake = Math.max(camShake, .25); if (casting) cancelCast(); updateAllHUD();
         if (hero.hp <= 0) onHeroDeath();
     }
     function onHeroDeath() {
@@ -497,6 +497,52 @@
         const t = setInterval(() => { n--; $('death-sub').textContent = `Spirit returns to Red Cloud Mesa in ${n}s… (-${pen} ZAR-T)`; if (n <= 0) { clearInterval(t); ov.classList.add('hidden'); ov.classList.remove('flex'); hero.dead = false; hero.hp = hero.maxHp; hero.pos.set(0, getTerrainHeight(0, 0), 0); updateAllHUD(); saveProgress(true); } }, 1000);
         systemChat(`${hero.name} fell on the plains.`);
     }
+
+
+    /* 6b. VISUAL FX: sky, sun, grass, particles, shockwaves, trails, target ring, cast bar */
+    const fxDebris = [], fxRings = [], fxTrails = [], fxLights = []; let camShake = 0;
+    function makeSpriteTex(inner, outer) { const c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); const g = x.createRadialGradient(64, 64, 0, 64, 64, 64); g.addColorStop(0, inner); g.addColorStop(0.35, inner); g.addColorStop(1, outer); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return new THREE.CanvasTexture(c); }
+    const glowTex = makeSpriteTex('rgba(255,255,255,1)', 'rgba(255,255,255,0)');
+    // Sky dome + sun
+    (function buildSky() {
+        const c = document.createElement('canvas'); c.width = 4; c.height = 256; const x = c.getContext('2d'); const g = x.createLinearGradient(0, 0, 0, 256); g.addColorStop(0, '#1b2d5a'); g.addColorStop(0.45, '#5b8ed6'); g.addColorStop(0.72, '#f3c27a'); g.addColorStop(1, '#2a1a12'); x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+        const tex = new THREE.CanvasTexture(c); const sky = new THREE.Mesh(new THREE.SphereGeometry(380, 24, 16), new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide, fog: false })); sky.name = 'sky'; scene.add(sky); window.__sky = sky;
+        const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeSpriteTex('rgba(255,240,200,1)', 'rgba(255,200,120,0)'), transparent: true, fog: false, depthWrite: false })); sun.scale.set(70, 70, 1); sun.name = 'sun'; scene.add(sun); window.__sun = sun;
+        for (let i = 0; i < 14; i++) { const cl = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeSpriteTex('rgba(255,255,255,0.85)', 'rgba(255,255,255,0)'), transparent: true, opacity: 0.55, fog: false, depthWrite: false })); cl.scale.set(60 + Math.random() * 60, 22 + Math.random() * 14, 1); cl.userData.off = [(Math.random() - .5) * 500, 70 + Math.random() * 40, (Math.random() - .5) * 500]; cl.name = 'cloud'; scene.add(cl); fxLights.push(cl); }
+        scene.background = new THREE.Color(0x0b1320); scene.fog = new THREE.FogExp2(0x9fb6d8, 0.0042);
+    })();
+    // Instanced grass per chunk
+    const grassGeo = new THREE.ConeGeometry(0.14, 1.1, 3); grassGeo.translate(0, 0.55, 0);
+    const grassMat = new THREE.MeshStandardMaterial({ color: 0x5f8f3a, roughness: 0.9, flatShading: true });
+    function addGrassToChunk(cx, cz, chunkGroup) {
+        const count = 260, inst = new THREE.InstancedMesh(grassGeo, grassMat, count), m = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(); let n = 0;
+        for (let i = 0; i < count; i++) { const s1 = Math.sin(cx * 12.9 + cz * 78.2 + i * 3.7) * 43758.5, fx_ = s1 - Math.floor(s1), s2 = Math.cos(cx * 93.9 + cz * 67.3 + i * 5.1) * 23421.6, fz_ = s2 - Math.floor(s2); const wx = cx * CHUNK_SIZE + (fx_ - .5) * CHUNK_SIZE, wz = cz * CHUNK_SIZE + (fz_ - .5) * CHUNK_SIZE; const wy = getTerrainHeight(wx, wz); if (wy > 5.5 || Math.hypot(wx, wz) < 30) continue; q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), fx_ * 6.28); sc.set(1, 0.7 + fz_ * 0.9, 1); m.compose(new THREE.Vector3(wx, wy, wz), q, sc); inst.setMatrixAt(n++, m); }
+        inst.count = n; inst.receiveShadow = true; chunkGroup.add(inst);
+    }
+    function spawnSparks(pos, color, count = 14, power = 1) { const geo = new THREE.OctahedronGeometry(0.1, 0); for (let i = 0; i < count; i++) { const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color })); m.position.copy(pos); scene.add(m); const a = Math.random() * 6.28, sp = (2 + Math.random() * 6) * power; fxDebris.push({ mesh: m, vel: new THREE.Vector3(Math.cos(a) * sp, 3 + Math.random() * 5 * power, Math.sin(a) * sp), rot: new THREE.Vector3(Math.random() * 10, Math.random() * 10, Math.random() * 10), r: .1, life: 0, max: .7 + Math.random() * .5, ground: pos.y - 1.2 }); } }
+    function spawnRing(pos, color, scale = 1, dur = 0.7) { const ring = new THREE.Mesh(new THREE.RingGeometry(.3, .7, 48), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: .9, depthWrite: false })); ring.rotation.x = -Math.PI / 2; ring.position.set(pos.x, getTerrainHeight(pos.x, pos.z) + .08, pos.z); scene.add(ring); fxRings.push({ mesh: ring, age: 0, max: dur, scale }); }
+    function spawnFlash(pos, color, size = 6, dur = 0.35) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); sp.position.copy(pos); sp.scale.set(size, size, 1); scene.add(sp); fxRings.push({ mesh: sp, age: 0, max: dur, flash: true, size }); const l = new THREE.PointLight(color, 3, 18); l.position.copy(pos); scene.add(l); fxRings.push({ mesh: l, age: 0, max: dur, light: true }); }
+    function spawnShatter(pos, color) { const geo = new THREE.DodecahedronGeometry(.3, 0); for (let i = 0; i < 16; i++) { const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: .6, flatShading: true })); m.scale.set(.5 + Math.random(), .4 + Math.random(), .5 + Math.random()); m.position.copy(pos).add(new THREE.Vector3((Math.random() - .5), .8 + Math.random(), (Math.random() - .5))); m.castShadow = true; scene.add(m); const a = Math.random() * 6.28, sp = 2 + Math.random() * 6; fxDebris.push({ mesh: m, vel: new THREE.Vector3(Math.cos(a) * sp, 2 + Math.random() * 6, Math.sin(a) * sp), rot: new THREE.Vector3((Math.random() - .5) * 12, (Math.random() - .5) * 12, (Math.random() - .5) * 12), r: .25, life: 0, max: 2 + Math.random(), ground: pos.y }); } spawnRing(pos, color, 1.3); camShake = Math.max(camShake, .45); }
+    function spawnFalling(pos, color, count, height, radius, onLand) { for (let i = 0; i < count; i++) { setTimeout(() => { const a = Math.random() * 6.28, r = Math.random() * radius, start = new THREE.Vector3(pos.x + Math.cos(a) * r, pos.y + height, pos.z + Math.sin(a) * r); const m = new THREE.Mesh(new THREE.OctahedronGeometry(.45, 0), new THREE.MeshBasicMaterial({ color })); m.position.copy(start); scene.add(m); const l = new THREE.PointLight(color, 1.5, 10); m.add(l); fxDebris.push({ mesh: m, vel: new THREE.Vector3(0, -28, 0), rot: new THREE.Vector3(6, 6, 0), r: .4, life: 0, max: 3, ground: getTerrainHeight(start.x, start.z) + .3, trail: color, onLand }); }, i * 90); } }
+    function updateFX(dt) {
+        for (let i = fxDebris.length - 1; i >= 0; i--) { const d = fxDebris[i]; d.life += dt; if (!d.onLand) d.vel.y -= 20 * dt; d.mesh.position.addScaledVector(d.vel, dt); d.mesh.rotation.x += d.rot.x * dt; d.mesh.rotation.y += d.rot.y * dt; if (d.trail && Math.random() < .6) addTrail(d.mesh.position, d.trail, .5); if (d.mesh.position.y < d.ground + d.r) { if (d.onLand) { const f = d.onLand; d.onLand = null; f(d.mesh.position.clone()); scene.remove(d.mesh); fxDebris.splice(i, 1); continue; } d.mesh.position.y = d.ground + d.r; d.vel.y = Math.abs(d.vel.y) > 1.2 ? -d.vel.y * .45 : 0; d.vel.x *= .85; d.vel.z *= .85; } const lr = d.life / d.max; if (lr > .75) d.mesh.scale.multiplyScalar(.94); if (lr >= 1) { scene.remove(d.mesh); fxDebris.splice(i, 1); } }
+        for (let i = fxRings.length - 1; i >= 0; i--) { const r = fxRings[i]; r.age += dt; const p = r.age / r.max; if (r.light) r.mesh.intensity = 3 * (1 - p); else if (r.flash) { const s = r.size * (1 + p * 1.5); r.mesh.scale.set(s, s, 1); r.mesh.material.opacity = 1 - p; } else { const sc = (1 + p * 9) * r.scale; r.mesh.scale.set(sc, sc, 1); r.mesh.material.opacity = Math.max(0, (1 - p) * .85); } if (p >= 1) { scene.remove(r.mesh); fxRings.splice(i, 1); } }
+        for (let i = fxTrails.length - 1; i >= 0; i--) { const t = fxTrails[i]; t.age += dt; const p = t.age / t.max; t.mesh.material.opacity = (1 - p) * .8; const s = t.size * (1 - p * .6); t.mesh.scale.set(s, s, 1); if (p >= 1) { scene.remove(t.mesh); fxTrails.splice(i, 1); } }
+        if (window.__sky) __sky.position.copy(camera.position); if (window.__sun) __sun.position.set(camera.position.x + 220, 150, camera.position.z + 160);
+        fxLights.forEach((cl, i) => { cl.position.set(hero.pos.x + cl.userData.off[0] + Math.sin(performance.now() / 20000 + i) * 20, cl.userData.off[1], hero.pos.z + cl.userData.off[2]); });
+    }
+    function addTrail(pos, color, size = 1) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: .8 })); sp.position.copy(pos); sp.scale.set(size, size, 1); scene.add(sp); fxTrails.push({ mesh: sp, age: 0, max: .35, size }); }
+    // Target ring
+    const targetRing = new THREE.Mesh(new THREE.RingGeometry(1.4, 1.75, 40), new THREE.MeshBasicMaterial({ color: 0xf43f5e, side: THREE.DoubleSide, transparent: true, opacity: .85, depthWrite: false })); targetRing.rotation.x = -Math.PI / 2; targetRing.visible = false; scene.add(targetRing);
+    const targetArrow = new THREE.Mesh(new THREE.ConeGeometry(.35, .8, 4), new THREE.MeshBasicMaterial({ color: 0xf43f5e })); targetArrow.rotation.x = Math.PI; targetArrow.visible = false; scene.add(targetArrow);
+    function setTarget(m) { selectedTarget = m; updateTargetFrame(); if (m) { sfx.playTone(600, 900, .08, 'sine', .08); } }
+    function cycleTarget() { const list = aliveMobs().filter(m => hero.pos.distanceTo(m.mesh.position) < 45).sort((a, b) => hero.pos.distanceTo(a.mesh.position) - hero.pos.distanceTo(b.mesh.position)); if (!list.length) { spawnFloatingText(hero.pos, 'No enemies nearby', '#94a3b8'); return; } const i = selectedTarget ? list.findIndex(m => m.id === selectedTarget.id) : -1; setTarget(list[(i + 1) % list.length]); }
+    function faceTarget(t) { if (!t) return; hero.facingYaw = Math.atan2(hero.pos.x - t.mesh.position.x, hero.pos.z - t.mesh.position.z); hero.mesh.rotation.y = hero.facingYaw + Math.PI; }
+    // Casting
+    let casting = null;
+    function startCast(label, dur, color, onDone) { if (casting) return false; casting = { t: 0, dur, onDone, color }; const w = $('castbar-wrap'); $('castbar-label').textContent = label.toUpperCase(); $('castbar-fill').style.background = color; w.classList.remove('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = -2.4; u.rightArmPivot.rotation.x = -2.4; casting.glow = new THREE.PointLight(new THREE.Color(color).getHex(), 2.2, 10); casting.glow.position.set(0, 3.4, 0); hero.mesh.add(casting.glow); return true; }
+    function updateCast(dt) { if (!casting) return; casting.t += dt; const p = Math.min(1, casting.t / casting.dur); $('castbar-fill').style.width = `${p * 100}%`; $('castbar-pct').textContent = `${Math.round(p * 100)}%`; if (Math.random() < .7) addTrail(hero.mesh.localToWorld(new THREE.Vector3(.5 + (Math.random() - .5) * .6, 3.2 + Math.random() * .6, .4)), new THREE.Color(casting.color).getHex(), .6); if (p >= 1) { const c = casting; casting = null; hero.mesh.remove(c.glow); $('castbar-wrap').classList.add('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = 0; u.rightArmPivot.rotation.x = -1.3; setTimeout(() => { if (hero.mesh) hero.mesh.userData.rightArmPivot.rotation.x = 0; }, 220); c.onDone(); } }
+    function cancelCast() { if (!casting) return; hero.mesh.remove(casting.glow); casting = null; $('castbar-wrap').classList.add('hidden'); const u = hero.mesh.userData; u.leftArmPivot.rotation.x = 0; u.rightArmPivot.rotation.x = 0; spawnFloatingText(hero.pos, 'Cast interrupted', '#94a3b8'); }
 
     /* 7. SHARED WORLD: BEASTS, CREEPS, STRUCTURES, CORE (Realtime Database) */
     const worldMobs = {}, activeProjectiles = [], playerStructures = {}, remotePlayers = {};
@@ -526,7 +572,7 @@
                 const mo = worldMobs[id]; const wasAlive = !(mo.state || '').startsWith('DEAD');
                 mo.tx = m.x; mo.tz = m.z; mo.hp = m.hp; mo.maxHp = m.maxHp; mo.state = m.state; mo.lootedBy = m.lootedBy || {}; mo.skinnedBy = m.skinnedBy || {}; mo.killer = m.killer; mo.diedAt = m.diedAt || 0;
                 const dead = (m.state || '').startsWith('DEAD');
-                if (dead && wasAlive && mo.hp <= 0) { mo.mesh.rotation.z = Math.PI / 2; }
+                if (dead && wasAlive && mo.hp <= 0) { mo.mesh.rotation.z = Math.PI / 2; spawnShatter(mo.mesh.position.clone(), mo.tpl.color); spawnFlash(mo.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), 0xf59e0b, 6); }
                 if (!dead) mo.mesh.rotation.z = 0;
                 mo.mesh.userData.lootBeam.visible = dead; mo.mesh.userData.lootBeam.material.color.setHex(dead && mo.lootedBy[currentUser.uid] ? 0x10b981 : 0xf59e0b);
                 if (selectedTarget && selectedTarget.id === id) updateTargetFrame();
@@ -609,27 +655,36 @@
     }
     function fireSpellProjectile(targetMob, colorHex, dmg, isCrit = false, from = null) {
         const orb = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 10), new THREE.MeshBasicMaterial({ color: colorHex })); orb.position.copy(from || hero.pos).add(new THREE.Vector3(0, 1.9, 0)); scene.add(orb);
-        activeProjectiles.push({ mesh: orb, targetMob, speed: 34, dmg, isCrit });
+        const pl = new THREE.PointLight(colorHex, 1.6, 9); orb.add(pl); const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: colorHex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); halo.scale.set(2.2, 2.2, 1); orb.add(halo);
+        activeProjectiles.push({ mesh: orb, targetMob, speed: 34, dmg, isCrit, color: colorHex });
     }
+    const SPELL_COLORS = { druid: 0x22c55e, warrior: 0xf43f5e, mage: 0xf97316, hunter: 0xfacc15 };
     function triggerClassSkill(slot) {
-        if (hero.dead || !hero.mesh) return; if (hero.cd[slot - 1] > 0) return;
-        const c = hero.classType, basePower = (32 + hero.level * 8 + hero.bonusDmg) * (hero.plots.forge ? 1.25 : 1);
-        hero.cd[slot - 1] = SKILL_CD[c][slot - 1]; sfx.playSpell();
-        hero.mesh.userData.rightArmPivot.rotation.x = -1.35; setTimeout(() => { if (hero.mesh) hero.mesh.userData.rightArmPivot.rotation.x = 0; }, 220);
-        const aoe = (range, mult, crit) => { let n = 0; aliveMobs().forEach(m => { if (hero.pos.distanceTo(m.mesh.position) < range) { damageMob(m, basePower * mult, crit); n++; } }); return n; };
-        if (slot === 1) { const t = findNearestLivingMob(c === 'warrior' ? 7.5 : 28); if (!t) { spawnFloatingText(hero.pos, 'No target in range!', '#94a3b8'); hero.cd[0] = 0.2; return; } if (c === 'warrior' || hero.inBearForm) damageMob(t, basePower * 1.25, true); else fireSpellProjectile(t, c === 'druid' ? 0x22c55e : (c === 'mage' ? 0xf97316 : 0xfacc15), basePower); }
-        else if (slot === 2) {
-            if (c === 'druid') { hero.hp = Math.min(hero.maxHp, hero.hp + 85); spawnFloatingText(hero.pos, '+85 NATURE REJUVENATION', '#4ade80'); }
-            else if (c === 'warrior') { const t = findNearestLivingMob(24); if (t) { hero.pos.lerp(t.mesh.position, 0.78); hero.pos.y = getTerrainHeight(hero.pos.x, hero.pos.z); damageMob(t, basePower * 1.1, true); spawnFloatingText(hero.pos, '💨 INTERCEPT CHARGE!', '#f43f5e'); } }
-            else if (c === 'mage') { aoe(12, 0.85, false); spawnFloatingText(hero.pos, '❄️ FROST NOVA RING!', '#38bdf8'); }
-            else { aoe(11, 1.15, true); spawnFloatingText(hero.pos, '💣 EXPLOSIVE TRAP DETONATED!', '#f97316'); }
+        if (hero.dead || !hero.mesh || casting) return; if (hero.cd[slot - 1] > 0) return;
+        const c = hero.classType, col = SPELL_COLORS[c], basePower = (32 + hero.level * 8 + hero.bonusDmg) * (hero.plots.forge ? 1.25 : 1);
+        const begin = () => { hero.cd[slot - 1] = SKILL_CD[c][slot - 1]; sfx.playSpell(); };
+        const aoe = (range, mult, crit, color) => { let n = 0; aliveMobs().forEach(m => { if (hero.pos.distanceTo(m.mesh.position) < range) { damageMob(m, basePower * mult, crit); spawnSparks(m.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), color, 8); n++; } }); spawnRing(hero.pos, color, range / 7, .8); spawnFlash(hero.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), color, 10, .4); camShake = Math.max(camShake, .4); return n; };
+        const meleeSwing = () => { const u = hero.mesh.userData; u.rightArmPivot.rotation.x = -2.2; u.rightArmPivot.rotation.z = .6; setTimeout(() => { if (!hero.mesh) return; u.rightArmPivot.rotation.x = 0.9; u.rightArmPivot.rotation.z = 0; setTimeout(() => { if (hero.mesh) u.rightArmPivot.rotation.x = 0; }, 160); }, 110); };
+        if (slot === 1) {
+            const t = findNearestLivingMob(c === 'warrior' ? 7.5 : 30); if (!t) { spawnFloatingText(hero.pos, 'No target in range!', '#94a3b8'); return; }
+            setTarget(t); faceTarget(t);
+            if (c === 'warrior' || hero.inBearForm) { begin(); meleeSwing(); setTimeout(() => { if (worldMobs[t.id]) { damageMob(t, basePower * 1.25, true); spawnSparks(t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), col, 14, 1.2); spawnFlash(t.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), col, 4, .25); camShake = Math.max(camShake, .3); } }, 140); }
+            else { const names = { druid: 'Wrath', mage: 'Fireball', hunter: 'Aimed Shot' }; startCast(names[c], c === 'hunter' ? .5 : .7, '#' + col.toString(16).padStart(6, '0'), () => { begin(); if (!worldMobs[t.id]) return; faceTarget(t); fireSpellProjectile(t, col, basePower, Math.random() < .2); }); }
+        } else if (slot === 2) {
+            if (c === 'druid') { startCast('Rejuvenation', .9, '#4ade80', () => { begin(); hero.hp = Math.min(hero.maxHp, hero.hp + 85); spawnFloatingText(hero.pos, '+85 NATURE REJUVENATION', '#4ade80'); spawnFalling(hero.pos, 0x4ade80, 6, 6, 1.5, () => {}); spawnRing(hero.pos, 0x4ade80, .6, .9); }); }
+            else if (c === 'warrior') { const t = findNearestLivingMob(24); if (!t) { spawnFloatingText(hero.pos, 'No target to charge!', '#94a3b8'); return; } begin(); setTarget(t); faceTarget(t); const from = hero.pos.clone(); hero.pos.lerp(t.mesh.position, 0.78); hero.pos.y = getTerrainHeight(hero.pos.x, hero.pos.z); for (let i = 0; i < 12; i++) addTrail(from.clone().lerp(hero.pos, i / 12).add(new THREE.Vector3(0, 1.5, 0)), col, 1.8); meleeSwing(); damageMob(t, basePower * 1.1, true); spawnRing(hero.pos, col, .8, .5); camShake = .5; spawnFloatingText(hero.pos, '💨 INTERCEPT CHARGE!', '#f43f5e'); }
+            else if (c === 'mage') { startCast('Frost Nova', .6, '#38bdf8', () => { begin(); aoe(12, 0.85, false, 0x38bdf8); for (let i = 0; i < 10; i++) { const a = i / 10 * 6.28; const sh = new THREE.Mesh(new THREE.ConeGeometry(.35, 1.6, 5), new THREE.MeshStandardMaterial({ color: 0xbae6fd, emissive: 0x38bdf8, emissiveIntensity: .6 })); sh.position.set(hero.pos.x + Math.cos(a) * 4, hero.pos.y + .8, hero.pos.z + Math.sin(a) * 4); scene.add(sh); fxRings.push({ mesh: sh, age: 0, max: 2.5, flash: true, size: 1 }); } spawnFloatingText(hero.pos, '❄️ FROST NOVA RING!', '#38bdf8'); }); }
+            else { startCast('Flame Trap', .5, '#f97316', () => { begin(); aoe(11, 1.15, true, 0xf97316); spawnFalling(hero.pos, 0xf97316, 5, 4, 3, p => spawnFlash(p, 0xf97316, 4, .3)); spawnFloatingText(hero.pos, '💣 EXPLOSIVE TRAP DETONATED!', '#f97316'); }); }
         } else if (slot === 3) {
-            if (c === 'mage') { hero.pos.x -= Math.sin(hero.facingYaw) * 11; hero.pos.z -= Math.cos(hero.facingYaw) * 11; hero.pos.y = getTerrainHeight(hero.pos.x, hero.pos.z); spawnFloatingText(hero.pos, '⚡ ARCANE BLINK!', '#00f0ff'); }
-            if (aoe(18, 1.2, true) === 0) spawnFloatingText(hero.pos, 'AoE Unleashed!', '#38bdf8');
+            if (c === 'mage') { begin(); const from = hero.pos.clone(); hero.pos.x -= Math.sin(hero.facingYaw) * 11; hero.pos.z -= Math.cos(hero.facingYaw) * 11; hero.pos.y = getTerrainHeight(hero.pos.x, hero.pos.z); spawnFlash(from.clone().add(new THREE.Vector3(0, 1.5, 0)), 0x00f0ff, 6, .3); spawnFlash(hero.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), 0x00f0ff, 6, .3); for (let i = 0; i < 14; i++) addTrail(from.clone().lerp(hero.pos, i / 14).add(new THREE.Vector3(0, 1.5, 0)), 0x00f0ff, 1.6); spawnFloatingText(hero.pos, '⚡ ARCANE BLINK!', '#00f0ff'); if (aoe(10, 0.9, false, 0x00f0ff) === 0) spawnFloatingText(hero.pos, 'Arcane burst!', '#38bdf8'); }
+            else if (c === 'druid') { startCast('Starfall', 1.0, '#a78bfa', () => { begin(); const targets = aliveMobs().filter(m => hero.pos.distanceTo(m.mesh.position) < 18); spawnFalling(hero.pos, 0xa78bfa, Math.max(4, targets.length + 2), 26, 10, p => { spawnFlash(p, 0xa78bfa, 7, .35); spawnRing(p, 0xa78bfa, .9, .6); camShake = Math.max(camShake, .35); aliveMobs().forEach(m => { if (m.mesh.position.distanceTo(p) < 5) damageMob(m, basePower * .6, true); }); }); spawnFloatingText(hero.pos, '✨ STARFALL!', '#a78bfa'); }); }
+            else if (c === 'warrior') { begin(); meleeSwing(); setTimeout(() => { if (aoe(14, 1.2, true, 0xf43f5e) === 0) spawnFloatingText(hero.pos, 'THUNDER CLAP!', '#f43f5e'); camShake = .8; }, 160); }
+            else { const t = findNearestLivingMob(30); if (!t) { spawnFloatingText(hero.pos, 'No target in range!', '#94a3b8'); return; } startCast('Multi-Shot', .5, '#facc15', () => { begin(); faceTarget(t); const list = aliveMobs().filter(m => hero.pos.distanceTo(m.mesh.position) < 30).sort((a, b) => hero.pos.distanceTo(a.mesh.position) - hero.pos.distanceTo(b.mesh.position)).slice(0, 3); list.forEach((m, i) => setTimeout(() => worldMobs[m.id] && fireSpellProjectile(m, 0xfacc15, basePower * .85, i === 0), i * 120)); spawnFloatingText(hero.pos, '🎯 MULTI-SHOT!', '#facc15'); }); }
         } else if (slot === 4) {
-            if (c === 'druid') { hero.inBearForm = !hero.inBearForm; hero.mesh.userData.bipedGroup.visible = !hero.inBearForm; hero.mesh.userData.bearGroup.visible = hero.inBearForm; sfx.playRoar(); spawnFloatingText(hero.pos, hero.inBearForm ? '🐻 DIRE BEAR FORM (+20% ARMOR)' : '🐂 OXEN CASTER FORM', '#f59e0b'); pushPresence(true); }
-            else if (c === 'hunter') { if (!hero.wolfPetMesh) { hero.wolfPetMesh = createBeastMesh({ color: 0x38bdf8, scale: 0.72 }); scene.add(hero.wolfPetMesh); spawnFloatingText(hero.pos, '🐺 SPIRIT WOLF COMPANION SUMMONED!', '#38bdf8'); } else { const t = findNearestLivingMob(20); if (t) damageMob(t, basePower * 1.6, true); spawnFloatingText(hero.pos, '🐺 Spirit Wolf Ferocious Bite!', '#38bdf8'); } }
-            else { aoe(20, 1.85, true); spawnFloatingText(hero.pos, c === 'warrior' ? '🌪️ BLADESTORM WHIRLWIND!' : '☄️ PYROCLASM METEOR!', '#f59e0b'); }
+            if (c === 'druid') { begin(); hero.inBearForm = !hero.inBearForm; hero.mesh.userData.bipedGroup.visible = !hero.inBearForm; hero.mesh.userData.bearGroup.visible = hero.inBearForm; sfx.playRoar(); spawnFlash(hero.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), 0xf59e0b, 9, .5); spawnRing(hero.pos, 0xf59e0b, .9, .7); spawnFloatingText(hero.pos, hero.inBearForm ? '🐻 DIRE BEAR FORM (+20% ARMOR)' : '🐂 OXEN CASTER FORM', '#f59e0b'); pushPresence(true); }
+            else if (c === 'hunter') { begin(); if (!hero.wolfPetMesh) { hero.wolfPetMesh = createBeastMesh({ color: 0x38bdf8, scale: 0.72 }); hero.wolfPetMesh.position.copy(hero.pos); scene.add(hero.wolfPetMesh); spawnFlash(hero.pos.clone().add(new THREE.Vector3(2, 1, 0)), 0x38bdf8, 6, .5); spawnFloatingText(hero.pos, '🐺 SPIRIT WOLF COMPANION SUMMONED!', '#38bdf8'); } else { const t = findNearestLivingMob(20); if (t) { setTarget(t); hero.wolfPetMesh.position.copy(t.mesh.position).add(new THREE.Vector3(1.2, 0, 0)); damageMob(t, basePower * 1.6, true); spawnSparks(t.mesh.position.clone().add(new THREE.Vector3(0, 1, 0)), 0x38bdf8, 14); } spawnFloatingText(hero.pos, '🐺 Spirit Wolf Ferocious Bite!', '#38bdf8'); } }
+            else if (c === 'mage') { startCast('Meteor', 1.4, '#f97316', () => { begin(); const t = selectedTarget && worldMobs[selectedTarget.id] && !(selectedTarget.state || '').startsWith('DEAD') ? selectedTarget.mesh.position.clone() : hero.pos.clone().add(new THREE.Vector3(-Math.sin(hero.facingYaw) * 8, 0, -Math.cos(hero.facingYaw) * 8)); spawnFalling(t, 0xf97316, 1, 40, 0, p => { spawnFlash(p, 0xff8c00, 16, .6); spawnRing(p, 0xf97316, 2.2, .9); spawnSparks(p, 0xf97316, 30, 1.6); camShake = 1.2; aliveMobs().forEach(m => { if (m.mesh.position.distanceTo(p) < 12) damageMob(m, basePower * 1.85, true); }); }); spawnFloatingText(hero.pos, '☄️ PYROCLASM METEOR INCOMING!', '#f59e0b'); }); }
+            else { begin(); const u = hero.mesh.userData; let spins = 0; const spin = setInterval(() => { if (!hero.mesh) return clearInterval(spin); hero.mesh.rotation.y += .9; u.rightArmPivot.rotation.x = -1.4; u.leftArmPivot.rotation.x = -1.4; for (let i = 0; i < 3; i++) addTrail(hero.mesh.localToWorld(new THREE.Vector3(1.6, 1.8, 0)), col, 1.4); if (++spins > 14) { clearInterval(spin); u.rightArmPivot.rotation.x = 0; u.leftArmPivot.rotation.x = 0; hero.mesh.rotation.y = hero.facingYaw + Math.PI; } }, 60); aoe(20, 1.85, true, col); spawnFloatingText(hero.pos, '🌪️ BLADESTORM WHIRLWIND!', '#f59e0b'); }
         }
         updateAllHUD();
     }
@@ -691,7 +746,7 @@
     window.addEventListener('keydown', e => {
         if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT')) { if (e.key === 'Escape') document.activeElement.blur(); return; }
         const k = e.key.toLowerCase(); keys[k] = true; if (!gameStarted) return;
-        if (e.code === 'Space') { e.preventDefault(); triggerHeroJump(); } else if (['1', '2', '3', '4'].includes(k)) triggerClassSkill(parseInt(k, 10)); else if (k === 'f') tryLootNearestCorpse(); else if (k === 'k') trySkinNearestCorpse(); else if (k === 'b') $('build-drawer').classList.toggle('hidden'); else if (k === 'v') toggleModal('town-modal'); else if (k === 'l') toggleModal('lb-modal'); else if (k === 'enter') { e.preventDefault(); $('chat-input').focus(); } else if (k === '=' || k === '+') cam.dist = Math.max(6, cam.dist - 2.0); else if (k === '-') cam.dist = Math.min(42, cam.dist + 2.0); else if (e.key === 'Escape') { ['town-modal', 'lb-modal'].forEach(id => { $(id).classList.add('hidden'); $(id).classList.remove('flex'); }); }
+        if (e.code === 'Space') { e.preventDefault(); triggerHeroJump(); } else if (k === 'tab') { e.preventDefault(); cycleTarget(); } else if (k === 'x') { setTarget(null); } else if (['1', '2', '3', '4'].includes(k)) triggerClassSkill(parseInt(k, 10)); else if (k === 'f') tryLootNearestCorpse(); else if (k === 'k') trySkinNearestCorpse(); else if (k === 'b') $('build-drawer').classList.toggle('hidden'); else if (k === 'v') toggleModal('town-modal'); else if (k === 'l') toggleModal('lb-modal'); else if (k === 'enter') { e.preventDefault(); $('chat-input').focus(); } else if (k === '=' || k === '+') cam.dist = Math.max(6, cam.dist - 2.0); else if (k === '-') cam.dist = Math.min(42, cam.dist + 2.0); else if (e.key === 'Escape') { ['town-modal', 'lb-modal'].forEach(id => { $(id).classList.add('hidden'); $(id).classList.remove('flex'); }); }
     });
     window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
     function triggerHeroJump() { if (hero.dead || hero.jumpsRemaining <= 0) return; hero.velY = 12.8; hero.isGrounded = false; hero.jumpsRemaining--; sfx.playJump(); }
@@ -701,7 +756,7 @@
     window.addEventListener('mouseup', e => { if (cam.isRightDragging && cam.moved < 6 && e.button === 0 && gameStarted) clickTarget(e.clientX, e.clientY); cam.isRightDragging = false; });
     renderer.domElement.addEventListener('wheel', e => { cam.dist = Math.max(6, Math.min(44, cam.dist + e.deltaY * 0.018)); }, { passive: true });
     let lastTouchDist = 0; renderer.domElement.addEventListener('touchmove', e => { if (e.touches.length === 2) { const d = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); if (lastTouchDist) cam.dist = Math.max(6, Math.min(44, cam.dist - (d - lastTouchDist) * 0.08)); lastTouchDist = d; } }, { passive: true }); renderer.domElement.addEventListener('touchend', () => lastTouchDist = 0);
-    function clickTarget(cx, cy) { const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1), camera); const hits = rc.intersectObjects(Object.values(worldMobs).map(m => m.mesh), true); if (!hits.length) return; let o = hits[0].object; while (o.parent && o.parent !== scene) o = o.parent; const m = Object.values(worldMobs).find(x => x.mesh === o); if (m) { selectedTarget = m; updateTargetFrame(); } }
+    function clickTarget(cx, cy) { const rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2((cx / innerWidth) * 2 - 1, -(cy / innerHeight) * 2 + 1), camera); const hits = rc.intersectObjects(Object.values(worldMobs).map(m => m.mesh), true); if (!hits.length) return; let o = hits[0].object; while (o.parent && o.parent !== scene) o = o.parent; const m = Object.values(worldMobs).find(x => x.mesh === o); if (m) setTarget(m); }
 
     /* 12. UI */
     function toggleModal(id) { const m = $(id), hidden = m.classList.contains('hidden'); m.classList.toggle('hidden', !hidden); m.classList.toggle('flex', hidden); }
@@ -717,7 +772,7 @@
     function updateTargetFrame() {
         const f = $('target-frame'); if (!selectedTarget || !worldMobs[selectedTarget.id] || selectedTarget.skinnedBy[currentUser.uid]) { f.classList.add('hidden'); f.classList.remove('flex'); return; }
         f.classList.remove('hidden'); f.classList.add('flex'); $('target-name').textContent = selectedTarget.name.toUpperCase();
-        $('target-status').textContent = (selectedTarget.state || '').startsWith('DEAD') ? 'CORPSE (LOOT [F] / SKIN [K])' : (selectedTarget.isCreep ? 'CREEP INVADER' : 'WILD BEAST');
+        $('target-status').textContent = ((selectedTarget.state || '').startsWith('DEAD') ? 'CORPSE (LOOT [F] / SKIN [K])' : (selectedTarget.isCreep ? 'CREEP INVADER' : 'WILD BEAST')) + ' · ' + Math.round(hero.pos.distanceTo(selectedTarget.mesh.position)) + 'm';
         $('target-hp-bar').style.width = `${(selectedTarget.hp / selectedTarget.maxHp) * 100}%`; $('target-hp-text').textContent = `${Math.round(selectedTarget.hp)} / ${selectedTarget.maxHp}`;
     }
     function selectClassCard(cls) { document.querySelectorAll('.class-card').forEach(c => { const on = c.dataset.class === cls; c.classList.toggle('border-amber-400', on); c.classList.toggle('bg-slate-900/90', on); c.classList.toggle('border-slate-700/80', !on); c.classList.toggle('bg-slate-900/70', !on); }); hero.classType = cls; }
@@ -763,7 +818,9 @@
         if (keys['q']) cam.yaw += 1.8 * dt; if (keys['e']) cam.yaw -= 1.8 * dt; if (keys['r']) cam.pitch = Math.min(1.32, cam.pitch + 1.1 * dt); if (keys['t']) cam.pitch = Math.max(0.14, cam.pitch - 1.1 * dt);
         let mf = 0, mr = 0; if (gameStarted && !hero.dead) { if (keys['w'] || keys['arrowup']) mf += 1; if (keys['s'] || keys['arrowdown']) mf -= 1; if (keys['d'] || keys['arrowright']) mr += 1; if (keys['a'] || keys['arrowleft']) mr -= 1; }
         const moving = mf !== 0 || mr !== 0;
-        if (moving) { const yaw = cam.yaw + Math.atan2(mr, mf); hero.facingYaw = yaw; hero.mesh.rotation.y = yaw + Math.PI; const speed = hero.inBearForm ? 13.5 : 11.2; hero.pos.x -= Math.sin(yaw) * speed * dt; hero.pos.z -= Math.cos(yaw) * speed * dt; const sw = Math.sin(elapsed * 11) * 0.65; const u = hero.mesh.userData; u.leftLegPivot.rotation.x = sw; u.rightLegPivot.rotation.x = -sw; u.leftArmPivot.rotation.x = -sw * 0.7; }
+        if (moving && casting) cancelCast();
+        updateCast(dt); updateFX(dt);
+        if (moving) { const yaw = cam.yaw - Math.atan2(mr, mf); hero.facingYaw = yaw; hero.mesh.rotation.y = yaw + Math.PI; const speed = hero.inBearForm ? 13.5 : 11.2; hero.pos.x -= Math.sin(yaw) * speed * dt; hero.pos.z -= Math.cos(yaw) * speed * dt; const sw = Math.sin(elapsed * 11) * 0.65; const u = hero.mesh.userData; u.leftLegPivot.rotation.x = sw; u.rightLegPivot.rotation.x = -sw; u.leftArmPivot.rotation.x = -sw * 0.7; }
         else { const u = hero.mesh.userData; u.leftLegPivot.rotation.x *= 0.85; u.rightLegPivot.rotation.x *= 0.85; u.leftArmPivot.rotation.x *= 0.85; }
         const groundY = getTerrainHeight(hero.pos.x, hero.pos.z); hero.pos.y += hero.velY * dt; hero.velY -= 26.0 * dt;
         if (hero.pos.y <= groundY) { hero.pos.y = groundY; hero.velY = 0; hero.isGrounded = true; hero.jumpsRemaining = 2; }
@@ -771,7 +828,7 @@
         sunLight.position.set(hero.pos.x + 60, 95, hero.pos.z + 45); sunLight.target.position.set(hero.pos.x, 0, hero.pos.z); sunLight.target.updateMatrixWorld();
         for (let i = 0; i < 4; i++) { if (hero.cd[i] > 0) { hero.cd[i] -= dt; const el = $('cd-' + (i + 1)); el.style.display = hero.cd[i] > 0 ? 'flex' : 'none'; el.textContent = hero.cd[i].toFixed(1); } }
         if (hero.wolfPetMesh) { const wx = hero.pos.x + Math.cos(hero.facingYaw) * 2.4, wz = hero.pos.z - Math.sin(hero.facingYaw) * 2.4; hero.wolfPetMesh.position.x += (wx - hero.wolfPetMesh.position.x) * 0.1; hero.wolfPetMesh.position.z += (wz - hero.wolfPetMesh.position.z) * 0.1; hero.wolfPetMesh.position.y = getTerrainHeight(hero.wolfPetMesh.position.x, hero.wolfPetMesh.position.z); hero.wolfPetMesh.rotation.y = hero.mesh.rotation.y; }
-        for (let i = activeProjectiles.length - 1; i >= 0; i--) { const p = activeProjectiles[i]; if (!p.targetMob || !worldMobs[p.targetMob.id] || (p.targetMob.state || '').startsWith('DEAD')) { scene.remove(p.mesh); activeProjectiles.splice(i, 1); continue; } const tc = p.targetMob.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), dir = tc.clone().sub(p.mesh.position), d = dir.length(); if (d < 1.1) { if (!p.turret) damageMob(p.targetMob, p.dmg, p.isCrit); else turretHit(p.targetMob, p.dmg); scene.remove(p.mesh); activeProjectiles.splice(i, 1); } else { dir.normalize(); p.mesh.position.addScaledVector(dir, p.speed * dt); } }
+        for (let i = activeProjectiles.length - 1; i >= 0; i--) { const p = activeProjectiles[i]; if (!p.targetMob || !worldMobs[p.targetMob.id] || (p.targetMob.state || '').startsWith('DEAD')) { scene.remove(p.mesh); activeProjectiles.splice(i, 1); continue; } const tc = p.targetMob.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), dir = tc.clone().sub(p.mesh.position), d = dir.length(); if (d < 1.1) { spawnFlash(tc, p.color || 0x00f0ff, 5); spawnSparks(tc, p.color || 0x00f0ff, 12); if (!p.turret) damageMob(p.targetMob, p.dmg, p.isCrit); else turretHit(p.targetMob, p.dmg); scene.remove(p.mesh); activeProjectiles.splice(i, 1); } else { dir.normalize(); p.mesh.position.addScaledVector(dir, p.speed * dt); addTrail(p.mesh.position, p.color || 0x00f0ff, 1.4); } }
         Object.values(worldMobs).forEach(m => {
             m.x += (m.tx - m.x) * Math.min(1, dt * 6); m.z += (m.tz - m.z) * Math.min(1, dt * 6); const gy = getTerrainHeight(m.x, m.z); m.mesh.position.set(m.x, (m.state || '').startsWith('DEAD') ? gy + 0.35 : gy, m.z);
             if ((m.state || '').startsWith('DEAD')) return;
@@ -788,7 +845,8 @@
             if (presenceRef) pushPresence(false); if (dirtySave && performance.now() - lastSave > 4000) saveProgress(true); }
         if (sovereignCoreMesh) { sovereignCoreMesh.rotation.y = elapsed * 1.4; sovereignCoreMesh.position.y = 2.6 + Math.sin(elapsed * 2.5) * 0.22; sovereignCoreMesh.visible = !(coreState && coreState.downUntil && Date.now() < coreState.downUntil); }
         const camX = hero.pos.x + cam.dist * Math.cos(cam.pitch) * Math.sin(cam.yaw), camY = hero.pos.y + cam.dist * Math.sin(cam.pitch) + 1.8, camZ = hero.pos.z + cam.dist * Math.cos(cam.pitch) * Math.cos(cam.yaw);
-        camera.position.set(camX, Math.max(getTerrainHeight(camX, camZ) + 1.2, camY), camZ); camera.lookAt(hero.pos.x, hero.pos.y + 1.8, hero.pos.z);
+        camera.position.set(camX, Math.max(getTerrainHeight(camX, camZ) + 1.2, camY), camZ); if (camShake > .005) { camera.position.x += (Math.random() - .5) * camShake; camera.position.y += (Math.random() - .5) * camShake; camShake *= .86; } else camShake = 0; camera.lookAt(hero.pos.x, hero.pos.y + 1.8, hero.pos.z);
+        if (selectedTarget && worldMobs[selectedTarget.id]) { const tp = selectedTarget.mesh.position; const deadT = (selectedTarget.state || '').startsWith('DEAD'); targetRing.visible = true; targetRing.position.set(tp.x, getTerrainHeight(tp.x, tp.z) + .1, tp.z); targetRing.rotation.z += dt * 1.5; targetRing.material.color.setHex(deadT ? 0xf59e0b : 0xf43f5e); const s = 1 + Math.sin(elapsed * 5) * .06; targetRing.scale.set(s * selectedTarget.tpl.scale, s * selectedTarget.tpl.scale, 1); targetArrow.visible = true; targetArrow.position.set(tp.x, getTerrainHeight(tp.x, tp.z) + 3.4 + Math.sin(elapsed * 4) * .25, tp.z); targetArrow.rotation.y += dt * 2; targetArrow.material.color.setHex(deadT ? 0xf59e0b : 0xf43f5e); } else { targetRing.visible = false; targetArrow.visible = false; }
         renderer.render(scene, camera);
     }
     function turretHit(mob, dmg) { worldRef(`mobs/${mob.id}`).transaction(cur => { if (!cur || (cur.state || '').startsWith('DEAD')) return cur; cur.hp = Math.max(0, cur.hp - dmg); if (cur.hp <= 0) { cur.state = 'DEAD_LOOTABLE'; cur.killer = 'turret'; cur.diedAt = Date.now(); } return cur; }); }
